@@ -134,7 +134,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider {...AUTH_CONFIG}>
-      <BrowserRouter>
+      <BrowserRouter basename="/rep_soc_front">
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

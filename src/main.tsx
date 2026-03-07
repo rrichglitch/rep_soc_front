@@ -6,7 +6,7 @@ import App from './App.tsx'
 // Register service worker for push notifications
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
+    navigator.serviceWorker.register('/rep_soc_front/sw.js').then(
       (registration) => {
         console.log('ServiceWorker registration successful:', registration);
       },
