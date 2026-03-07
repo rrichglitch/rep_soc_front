@@ -3,12 +3,12 @@ export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud';
 export const SPACETIMEDB_MODULE = 'repsoc';
 
-// SpacetimeAuth configuration - UPDATE THIS AFTER CREATING AUTH PROJECT
+// SpacetimeAuth configuration
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
   client_id: 'client_032dcrU7dNeqH21pwTabNC',
-  redirect_uri: `${APP_URL}${BASE_PATH}/callback`,
-  post_logout_redirect_uri: APP_URL,
+  redirect_uri: `${window.location.origin}/callback`,
+  post_logout_redirect_uri: window.location.origin,
   scope: 'openid profile email',
 };
 
