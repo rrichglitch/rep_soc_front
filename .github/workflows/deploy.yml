@@ -26,20 +26,17 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: rep_soc_front/package-lock.json
 
       - name: Install dependencies
-        working-directory: rep_soc_front
         run: npm ci
 
       - name: Build
-        working-directory: rep_soc_front
         run: npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: rep_soc_front/dist
+          path: dist
 
   deploy:
     environment:
