@@ -5,7 +5,7 @@ export const SPACETIMEDB_MODULE = 'reputable_social';
 // SpacetimeAuth configuration - UPDATE THIS AFTER CREATING AUTH PROJECT
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
-  client_id: 'UPDATE_ME_AFTER_CREATING_AUTH_PROJECT',
+  client_id: '216469764654-m3p9i932n0rafahq0i2pcn5atfq0hqfn.apps.googleusercontent.com',
   redirect_uri: `${APP_URL}/callback`,
   post_logout_redirect_uri: APP_URL,
   scope: 'openid profile email',
