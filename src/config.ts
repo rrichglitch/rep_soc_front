@@ -3,13 +3,21 @@ export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud';
 export const SPACETIMEDB_MODULE = 'repsoc';
 
+const getOrigin = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'https://rrichglitch.github.io/rep_soc_front'; // fallback for dev
+};
+
 // SpacetimeAuth configuration
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
   client_id: 'client_032dcrU7dNeqH21pwTabNC',
-  redirect_uri: `${window.location.origin}/callback`,
-  post_logout_redirect_uri: window.location.origin,
+  redirect_uri: `${getOrigin()}/callback`,
+  post_logout_redirect_uri: getOrigin(),
   scope: 'openid profile email',
+  response_type: 'code',
 };
 
 export const CHAR_LIMITS = {
