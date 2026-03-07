@@ -6,6 +6,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [react()],
-    base: env.VITE_BASE_PATH || '/',
+    base: env.VITE_BASE_PATH ? env.VITE_BASE_PATH + '/' : '/',
   }
 })
