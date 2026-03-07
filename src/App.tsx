@@ -9,7 +9,7 @@ import {
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
-import { AUTH_CONFIG } from './config';
+import { AUTH_CONFIG, BASE_PATH } from './config';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MainFeedPage from './pages/MainFeedPage';
@@ -134,7 +134,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider {...AUTH_CONFIG}>
-      <BrowserRouter basename="/rep_soc_front">
+      <BrowserRouter basename={BASE_PATH}>
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

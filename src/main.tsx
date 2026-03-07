@@ -2,11 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { BASE_PATH } from './config'
 
 // Register service worker for push notifications
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/rep_soc_front/sw.js').then(
+    navigator.serviceWorker.register(`${BASE_PATH || '/'}/sw.js`).then(
       (registration) => {
         console.log('ServiceWorker registration successful:', registration);
       },

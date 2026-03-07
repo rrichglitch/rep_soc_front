@@ -1,12 +1,13 @@
 export const APP_URL = 'https://reputable.social';
+export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud';
-export const SPACETIMEDB_MODULE = 'reputable_social';
+export const SPACETIMEDB_MODULE = 'repsoc';
 
 // SpacetimeAuth configuration - UPDATE THIS AFTER CREATING AUTH PROJECT
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
   client_id: '216469764654-m3p9i932n0rafahq0i2pcn5atfq0hqfn.apps.googleusercontent.com',
-  redirect_uri: `${APP_URL}/callback`,
+  redirect_uri: `${APP_URL}${BASE_PATH}/callback`,
   post_logout_redirect_uri: APP_URL,
   scope: 'openid profile email',
 };
