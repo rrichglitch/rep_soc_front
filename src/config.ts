@@ -5,9 +5,9 @@ export const SPACETIMEDB_MODULE = 'repsoc';
 
 const getOrigin = () => {
   if (typeof window !== 'undefined') {
-    return window.location.origin;
+    return window.location.origin + (import.meta.env.VITE_BASE_PATH || '');
   }
-  return 'https://rrichglitch.github.io/rep_soc_front'; // fallback for dev
+  return 'https://rrichglitch.github.io/rep_soc_front';
 };
 
 // SpacetimeAuth configuration
