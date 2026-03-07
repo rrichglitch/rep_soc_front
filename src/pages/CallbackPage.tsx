@@ -1,27 +1,52 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 
 function CallbackPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // The react-oidc-context library automatically handles the callback
-    // This component just redirects after authentication
-    if (auth.isAuthenticated) {
-      // Check for pending profile creation
-      const pendingProfile = localStorage.getItem('pending_profile');
-      if (pendingProfile) {
-        navigate('/me', { replace: true });
-      } else {
-        navigate('/', { replace: true });
+    if (hasRedirected.current) return;
+
+    const handleAuth = async () => {
+      // Wait for auth to load if still loading
+      if (auth.isLoading) {
+        return;
       }
-    } else if (auth.error) {
-      console.error('Auth error:', auth.error);
-      navigate('/login', { replace: true });
-    }
-  }, [auth.isAuthenticated, auth.error, navigate]);
+
+      if (auth.isAuthenticated && !hasRedirected.current) {
+        hasRedirected.current = true;
+        const pendingProfile = localStorage.getItem('pending_profile');
+        if (pendingProfile) {
+          navigate('/me', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      } else if (auth.error) {
+        console.error('Auth error:', auth.error);
+        navigate('/login', { replace: true });
+      } else if (!auth.isLoading && !auth.isAuthenticated) {
+        // Not loading, not authenticated - try to trigger sign in
+        console.log('Not authenticated, attempting signin redirect');
+        auth.signinRedirect();
+      }
+    };
+
+    handleAuth();
+  }, [auth.isAuthenticated, auth.isLoading, auth.error, auth.signinRedirect, navigate]);
+
+  // Fallback timeout to prevent stuck state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!hasRedirected.current) {
+        console.log('Callback timeout - forcing redirect to login');
+        navigate('/login', { replace: true });
+      }
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <div className="callback-page">
@@ -29,6 +54,11 @@ function CallbackPage() {
         <div className="spinner"></div>
         <p>Completing sign in...</p>
       </div>
+
+      <p style={{fontSize: '12px', color: '#999', marginTop: '20px'}}>
+        Debug: {auth.isLoading ? 'Loading...' : auth.isAuthenticated ? 'Authenticated!' : 'Not authenticated'}
+        {auth.error && ` - Error: ${auth.error.message}`}
+      </p>
 
       <style>{`
         .callback-page {
