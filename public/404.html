@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reputable Social</title>
+    <link rel="icon" type="image/svg+xml" href="/rep_soc_front/vite.svg" />
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="Reputable Social - What others say about you matters" />
+    <link rel="manifest" href="/rep_soc_front/manifest.json" />
+    <link rel="apple-touch-icon" href="/rep_soc_front/icon-192.png" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // If this is the callback URL, redirect to proper callback route
+      const path = window.location.pathname;
+      const isCallback = path.includes('/callback') || path.endsWith('/callback');
+      
+      if (isCallback) {
+        // Clean URL and redirect to the SPA callback
+        const query = window.location.search;
+        window.location.href = '/rep_soc_front/#/callback' + (query || '');
+      } else {
+        // For all other routes, serve the main app
+        window.location.href = '/rep_soc_front/' + window.location.search;
+      }
+    </script>
+  </body>
+</html>
