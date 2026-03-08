@@ -5,20 +5,26 @@ export const SPACETIMEDB_MODULE = 'repsoc';
 
 const getOrigin = () => {
   if (typeof window !== 'undefined') {
-    return window.location.origin + (import.meta.env.VITE_BASE_PATH || '');
+    const origin = window.location.origin + (import.meta.env.VITE_BASE_PATH || '');
+    console.log('Auth origin:', origin);
+    return origin;
   }
   return 'https://rrichglitch.github.io/rep_soc_front';
 };
+
+const origin = getOrigin();
 
 // SpacetimeAuth configuration
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
   client_id: 'client_032dcrU7dNeqH21pwTabNC',
-  redirect_uri: `${getOrigin()}/callback`,
-  post_logout_redirect_uri: getOrigin(),
+  redirect_uri: `${origin}/callback`,
+  post_logout_redirect_uri: origin,
   scope: 'openid profile email',
   response_type: 'code',
 };
+
+console.log('AUTH_CONFIG:', AUTH_CONFIG);
 
 export const CHAR_LIMITS = {
   fullName: 100,
