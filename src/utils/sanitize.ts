@@ -75,9 +75,8 @@ export function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
     reader.onload = () => {
       const result = reader.result as string;
-      // Remove data URL prefix (e.g., "data:image/png;base64,")
-      const base64 = result.split(',')[1];
-      resolve(base64);
+      // Keep the full data URL (e.g., "data:image/png;base64,...")
+      resolve(result);
     };
     reader.onerror = (error) => reject(error);
   });

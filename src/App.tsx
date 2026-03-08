@@ -97,8 +97,18 @@ function AuthCallback({ children }: AuthCallbackProps) {
             try {
               await connectToSpacetimeDB(userEmail, accessToken);
               
-              // Check if profile exists in SpaceTimeDB by email
-              const profileExists = await checkProfileExistsByEmail(userEmail);
+              // Wait for subscription to sync and check profile
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              let profileExists = await checkProfileExistsByEmail(userEmail);
+              
+              // If not found, try one more time after another delay (in case of race condition)
+              if (!profileExists) {
+                console.log('Profile not found initially, retrying...');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                profileExists = await checkProfileExistsByEmail(userEmail);
+              }
+              
               console.log('Profile exists in DB:', profileExists);
               setHasProfileState(profileExists);
               
