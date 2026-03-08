@@ -174,6 +174,13 @@ function AuthCallback({ children }: AuthCallbackProps) {
 function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const credentials = getStoredCredentials();
+  
+  console.log('PrivateRoute check:', {
+    isAuthenticated: auth.isAuthenticated,
+    hasUser: !!auth.user,
+    hasStoredToken: !!credentials.token,
+    storedTokenLength: credentials.token?.length
+  });
 
   if (auth.isLoading) {
     return <div className="loading">Loading...</div>;
@@ -182,6 +189,8 @@ function PrivateRoute({ children }: { children: ReactNode }) {
   // Allow access if OIDC says authenticated OR if we have a stored token
   const hasStoredToken = credentials.token && credentials.token.length > 0;
   const isAuth = auth.isAuthenticated || auth.user || hasStoredToken;
+  
+  console.log('isAuth:', isAuth);
   
   if (!isAuth) {
     return <Navigate to="/login" replace />;
