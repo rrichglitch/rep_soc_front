@@ -5,45 +5,41 @@ import { useAuth } from 'react-oidc-context';
 function CallbackPage() {
   const auth = useAuth();
   const navigate = useNavigate();
-  const processed = useRef(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Log auth state for debugging
-    console.log('Callback auth state:', {
+    if (hasRedirected.current) return;
+
+    console.log('Callback checking auth:', {
       isAuthenticated: auth.isAuthenticated,
       isLoading: auth.isLoading,
-      error: auth.error,
-      user: auth.user,
-      activeNavigator: auth.activeNavigator
+      error: auth.error
     });
 
-    if (processed.current) return;
-    processed.current = true;
+    // If authenticated, redirect immediately
+    if (auth.isAuthenticated) {
+      console.log('User authenticated, redirecting');
+      hasRedirected.current = true;
+      const pendingProfile = localStorage.getItem('pending_profile');
+      navigate(pendingProfile ? '/me' : '/', { replace: true });
+      return;
+    }
 
-    // Give auth time to process the callback
-    const timer = setTimeout(() => {
-      console.log('Callback timer fired, checking auth:', {
-        isAuthenticated: auth.isAuthenticated,
-        isLoading: auth.isLoading,
-        error: auth.error
-      });
-      
-      if (auth.isAuthenticated) {
-        console.log('User is authenticated, redirecting to app');
-        const pendingProfile = localStorage.getItem('pending_profile');
-        navigate(pendingProfile ? '/me' : '/', { replace: true });
-      } else if (auth.error) {
-        console.error('Auth error:', auth.error);
-        navigate('/login', { replace: true });
-      } else if (!auth.isLoading) {
-        // Auth not loading and not authenticated - this means the callback failed
-        console.log('Auth not loading and not authenticated - callback failed');
-        navigate('/login', { replace: true });
-      }
-    }, 3000); // Increased to 3 seconds
+    // If there's an error, redirect to login
+    if (auth.error) {
+      console.error('Auth error:', auth.error);
+      hasRedirected.current = true;
+      navigate('/login', { replace: true });
+      return;
+    }
 
-    return () => clearTimeout(timer);
-  }, [auth.isAuthenticated, auth.isLoading, auth.error, auth.user, auth.activeNavigator, navigate]);
+    // If not loading and not authenticated, something went wrong
+    if (!auth.isLoading && !auth.isAuthenticated) {
+      console.log('Auth failed - not loading and not authenticated');
+      hasRedirected.current = true;
+      navigate('/login', { replace: true });
+    }
+  }, [auth.isAuthenticated, auth.isLoading, auth.error, navigate]);
 
   return (
     <div className="callback-page">
