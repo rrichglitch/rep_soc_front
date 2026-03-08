@@ -14,8 +14,8 @@ const getOrigin = () => {
 export const AUTH_CONFIG = {
   authority: 'https://auth.spacetimedb.com/oidc',
   client_id: 'client_032dcrU7dNeqH21pwTabNC',
-  redirect_uri: `${getOrigin()}/callback`,
-  post_logout_redirect_uri: getOrigin(),
+  redirect_uri: `${getOrigin()}/#/callback`,
+  post_logout_redirect_uri: `${getOrigin()}/#/`,
   scope: 'openid profile email',
   response_type: 'code',
 };
