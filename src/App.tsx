@@ -45,9 +45,23 @@ function AuthCallback({ children }: AuthCallbackProps) {
   useEffect(() => {
     const initAuth = async () => {
       if (auth.isAuthenticated) {
-        // In a real implementation, we would connect to SpacetimeDB here
-        // and get the user's identity from the token
-        setIdentity(null as unknown as Identity);
+        // Get user identity from the auth token
+        console.log('Authenticated user:', auth.user);
+        // Extract sub from id_token JWT
+        const idToken = auth.user?.id_token;
+        if (idToken) {
+          try {
+            const payload = JSON.parse(atob(idToken.split('.')[1]));
+            const sub = payload.sub;
+            console.log('Identity from token:', sub);
+            setIdentity({ toHexString: () => sub } as unknown as Identity);
+          } catch (e) {
+            console.error('Failed to parse token:', e);
+            setIdentity(null as unknown as Identity);
+          }
+        } else {
+          setIdentity(null as unknown as Identity);
+        }
         
         // Check for pending follow from QR code
         const pendingFollow = localStorage.getItem('pending_follow');
