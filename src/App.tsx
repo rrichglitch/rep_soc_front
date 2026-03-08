@@ -178,7 +178,8 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!auth.isAuthenticated) {
+  // Check both isAuthenticated and if user exists (for cases where token is valid but OIDC state hasn't synced)
+  if (!auth.isAuthenticated && !auth.user) {
     return <Navigate to="/login" replace />;
   }
 
