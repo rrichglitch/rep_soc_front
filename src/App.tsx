@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState, createContext, useContext } from 'react';
 import {
-  HashRouter,
+  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -135,9 +135,9 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider {...AUTH_CONFIG}>
-      <HashRouter>
+      <BrowserRouter basename="/rep_soc_front">
         <AppRoutes />
-      </HashRouter>
+      </BrowserRouter>
     </AuthProvider>
   );
 }
