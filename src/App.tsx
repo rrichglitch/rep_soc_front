@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
@@ -90,6 +91,26 @@ function PrivateRoute({ children }: { children: ReactNode }) {
   );
 }
 
+function RedirectHandler() {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    const redirectPath = sessionStorage.getItem('auth_redirect_path');
+    if (redirectPath) {
+      sessionStorage.removeItem('auth_redirect_path');
+      // Extract the path and query from the stored URL
+      const match = redirectPath.match(/\/rep_soc_front(\/[^?]*)?(\?.*)?/);
+      if (match) {
+        const path = match[1] || '/';
+        const query = match[2] || '';
+        navigate(path + query, { replace: true });
+      }
+    }
+  }, [navigate]);
+  
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -99,9 +120,12 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          <PrivateRoute>
-            <MainFeedPage />
-          </PrivateRoute>
+          <>
+            <RedirectHandler />
+            <PrivateRoute>
+              <MainFeedPage />
+            </PrivateRoute>
+          </>
         }
       />
       <Route
