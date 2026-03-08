@@ -78,24 +78,14 @@ function AuthCallback({ children }: AuthCallbackProps) {
           try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
             const sub = payload.sub;
-            let userEmail = payload.email;
+            const userEmail = payload.email;
             
             console.log('Identity from token:', sub);
             console.log('Email from token:', userEmail);
             
-            // Fallback to localStorage if email not in token
             if (!userEmail) {
-              const stored = localStorage.getItem('stdb_email');
-              if (stored) {
-                userEmail = stored;
-                console.log('Using email from localStorage:', userEmail);
-              }
-            }
-            
-            if (!userEmail) {
-              console.error('No email found in token or localStorage');
+              console.error('No email in token. Token payload:', payload);
               setIsLoading(false);
-              auth.signoutRedirect();
               return;
             }
             
