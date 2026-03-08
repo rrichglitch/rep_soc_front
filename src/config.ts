@@ -22,10 +22,6 @@ export const AUTH_CONFIG = {
   post_logout_redirect_uri: origin,
   scope: 'openid profile email',
   response_type: 'code',
-  loadUserInfo: false,
-  automaticSilentRenew: true,
-  monitorSession: false,
-  validateTokenOnLoad: false,
 };
 
 console.log('AUTH_CONFIG:', AUTH_CONFIG);

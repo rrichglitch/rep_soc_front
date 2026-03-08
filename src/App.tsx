@@ -174,6 +174,10 @@ function AuthCallback({ children }: AuthCallbackProps) {
 function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
 
+  if (auth.isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
+
   if (!auth.isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
