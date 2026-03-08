@@ -143,3 +143,21 @@ export async function getProfileByEmail(email: string) {
     return null;
   }
 }
+
+export async function updateProfile(
+  profilePicture?: string,
+  city?: string,
+  description?: string
+): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  console.log('Updating profile:', { profilePicture, city, description });
+  
+  await dbConnection.reducers.updateProfile({
+    profilePicture,
+    city,
+    description,
+  });
+}

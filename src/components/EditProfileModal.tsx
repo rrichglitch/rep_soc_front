@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
+import { updateProfile } from '../utils/spacetime';
 
 interface UserProfile {
   identity: string;
@@ -63,7 +64,7 @@ function EditProfileModal({ profile, onClose, onSave }: EditProfileModalProps) {
     setIsLoading(true);
 
     try {
-      let pictureData = profile.profile_picture;
+      let pictureData: string | undefined;
 
       if (profilePicture) {
         pictureData = await fileToBase64(profilePicture);
@@ -71,12 +72,21 @@ function EditProfileModal({ profile, onClose, onSave }: EditProfileModalProps) {
 
       // Call update_profile reducer
       console.log('Updating profile:', { city, description, profilePicture: pictureData });
+      
+      await updateProfile(
+        pictureData,
+        city || undefined,
+        description || undefined
+      );
+
+      // Wait for subscription sync
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       onSave({
         ...profile,
         city,
         description,
-        profile_picture: pictureData,
+        profile_picture: pictureData || profile.profile_picture,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');

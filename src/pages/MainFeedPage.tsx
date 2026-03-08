@@ -1,20 +1,35 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
+import { getProfileByEmail } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
   const navigate = useNavigate();
-  const { identity } = useApp();
+  const { email } = useApp();
   const [isLoading, setIsLoading] = useState(true);
+  const [profilePicture, setProfilePicture] = useState<string>('');
 
   useEffect(() => {
-    if (identity) {
+    if (email) {
       loadData();
     }
-  }, [identity]);
+  }, [email]);
 
   const loadData = async () => {
+    if (!email) {
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      const profile = await getProfileByEmail(email);
+      if (profile) {
+        setProfilePicture(profile.profilePicture);
+      }
+    } catch (e) {
+      console.error('Error loading profile:', e);
+    }
     setIsLoading(false);
   };
 
@@ -43,7 +58,11 @@ function MainFeedPage() {
         </div>
         <div className="header-right">
           <Link to="/me" className="profile-link">
-            <div className="profile-placeholder" />
+            {profilePicture ? (
+              <img src={profilePicture} alt="My Profile" className="profile-image" />
+            ) : (
+              <div className="profile-placeholder" />
+            )}
           </Link>
         </div>
       </header>
@@ -105,6 +124,13 @@ function MainFeedPage() {
           height: 36px;
           border-radius: 50%;
           background: #e0e0e0;
+        }
+
+        .profile-image {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
         }
 
         .main-content {
