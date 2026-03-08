@@ -116,7 +116,7 @@ export async function createProfile(
 
   console.log('Creating profile for email:', email, 'with fullName:', fullName);
   
-  dbConnection.reducers.createProfile({
+  await dbConnection.reducers.createProfile({
     email: email.toLowerCase().trim(),
     fullName,
     profilePicture,

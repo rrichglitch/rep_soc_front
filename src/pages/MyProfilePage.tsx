@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { APP_URL } from '../config';
+import { getProfileByEmail } from '../utils/spacetime';
 import ProfileHeader from '../components/ProfileHeader';
 import EditProfileModal from '../components/EditProfileModal';
 
@@ -16,20 +18,40 @@ interface UserProfile {
 }
 
 function MyProfilePage() {
-  const { identity } = useApp();
+  const { identity, email } = useApp();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
-    if (identity) {
+    if (email) {
       loadProfile();
     }
-  }, [identity]);
+  }, [email]);
 
   const loadProfile = async () => {
-    setIsLoading(false);
+    if (!email) return;
+    
+    try {
+      const profileData = await getProfileByEmail(email);
+      if (profileData) {
+        const createdAt = profileData.createdAt as unknown as Timestamp;
+        const date = new Date(Number(createdAt.microsSinceUnixEpoch) / 1000);
+        setProfile({
+          identity: profileData.identity.toHexString(),
+          full_name: profileData.fullName,
+          profile_picture: profileData.profilePicture,
+          city: profileData.city,
+          description: profileData.description,
+          created_at: date,
+        });
+      }
+    } catch (e) {
+      console.error('Error loading profile:', e);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleProfileUpdate = (updatedProfile: UserProfile) => {

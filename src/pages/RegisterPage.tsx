@@ -71,6 +71,9 @@ function RegisterPage() {
         validateAndSanitizeDescription(description)
       );
 
+      // Wait for subscription to sync
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Mark that user has a profile
       setHasProfile(true);
 
