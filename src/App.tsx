@@ -68,8 +68,12 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
   useEffect(() => {
     const initAuth = async () => {
-      if (auth.isAuthenticated) {
-        console.log('Authenticated user:', auth.user);
+      const credentials = getStoredCredentials();
+      const hasStoredToken = credentials.token && credentials.token.length > 0;
+      
+      // Handle both OIDC auth and stored token
+      if (auth.isAuthenticated && auth.user) {
+        console.log('Authenticated via OIDC:', auth.user);
         
         const idToken = auth.user?.id_token;
         const accessToken = auth.user?.access_token;
@@ -102,7 +106,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
               
               let profileExists = await checkProfileExistsByEmail(userEmail);
               
-              // If not found, try one more time after another delay (in case of race condition)
+              // If not found, try one more time after another delay
               if (!profileExists) {
                 console.log('Profile not found initially, retrying...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -122,7 +126,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
               }
             } catch (e) {
               console.error('Error connecting to SpacetimeDB:', e);
-              // Still allow access even if SpacetimeDB fails - redirect to register
               setEmail(userEmail);
               setIsLoading(false);
               navigate('/register', { replace: true });
@@ -135,12 +138,56 @@ function AuthCallback({ children }: AuthCallbackProps) {
         } else {
           setIdentity(null as unknown as Identity);
         }
+      } else if (hasStoredToken) {
+        // Handle case where we have stored token but OIDC hasn't synced
+        console.log('Using stored credentials');
         
-        const pendingFollow = localStorage.getItem('pending_follow');
-        if (pendingFollow) {
-          console.log('Pending follow found:', pendingFollow);
-          localStorage.removeItem('pending_follow');
+        // Get email from localStorage directly
+        const storedEmail = localStorage.getItem('stdb_email');
+        if (!storedEmail) {
+          console.error('No email in localStorage');
+          setIsLoading(false);
+          return;
         }
+        
+        console.log('Email from localStorage:', storedEmail);
+        setEmail(storedEmail);
+        
+        try {
+          await connectToSpacetimeDB(storedEmail, credentials.token!);
+          
+          // Wait for subscription to sync and check profile
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          let profileExists = await checkProfileExistsByEmail(storedEmail);
+          
+          if (!profileExists) {
+            console.log('Profile not found, retrying...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            profileExists = await checkProfileExistsByEmail(storedEmail);
+          }
+          
+          console.log('Profile exists in DB:', profileExists);
+          setHasProfileState(profileExists);
+          
+          if (!profileExists && !window.location.pathname.includes('/register')) {
+            console.log('No profile found, redirecting to register');
+            setIsLoading(false);
+            navigate('/register', { replace: true });
+            return;
+          }
+        } catch (e) {
+          console.error('Error connecting to SpacetimeDB:', e);
+          setIsLoading(false);
+          navigate('/register', { replace: true });
+          return;
+        }
+      }
+      
+      const pendingFollow = localStorage.getItem('pending_follow');
+      if (pendingFollow) {
+        console.log('Pending follow found:', pendingFollow);
+        localStorage.removeItem('pending_follow');
       }
       setIsLoading(false);
     };
