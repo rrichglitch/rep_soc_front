@@ -3,17 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="0;url=/rep_soc_front/" />
-    <title>Redirecting...</title>
+    <meta name="theme-color" content="#667eea" />
+    <meta name="description" content="Reputable Social - What others say about you matters" />
+    <link rel="icon" type="image/svg+xml" href="/rep_soc_front/vite.svg" />
+    <link rel="manifest" href="/rep_soc_front/manifest.json" />
+    <link rel="apple-touch-icon" href="/rep_soc_front/icon-192.png" />
+    <title>Reputable Social</title>
     <script>
-      // Store the current URL (including query params) so we can restore it
-      if (window.location.pathname.includes('/callback')) {
-        sessionStorage.setItem('auth_redirect_path', window.location.pathname + window.location.search);
+      // If this is the callback URL with auth code, let the app handle it
+      // Otherwise, redirect to the home page
+      const isCallback = window.location.pathname.includes('/callback');
+      const hasAuthCode = window.location.search.includes('code=');
+      
+      if (!isCallback || !hasAuthCode) {
+        // Not a callback with auth code, redirect to home
+        window.location.replace('/rep_soc_front/');
       }
-      window.location.replace('/rep_soc_front/');
+      // If it's a callback with auth code, stay here and let React load
     </script>
   </head>
   <body>
-    <p>Redirecting...</p>
+    <div id="root"></div>
+    <script type="module" src="/rep_soc_front/assets/index-DBSRTKfF.js"></script>
+    <link rel="stylesheet" href="/rep_soc_front/assets/index-DrX7zRE_.css">
   </body>
 </html>
