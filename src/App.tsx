@@ -11,7 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB, getStoredCredentials } from './utils/spacetime';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -173,13 +173,17 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
+  const credentials = getStoredCredentials();
 
   if (auth.isLoading) {
     return <div className="loading">Loading...</div>;
   }
 
-  // Check both isAuthenticated and if user exists (for cases where token is valid but OIDC state hasn't synced)
-  if (!auth.isAuthenticated && !auth.user) {
+  // Allow access if OIDC says authenticated OR if we have a stored token
+  const hasStoredToken = credentials.token && credentials.token.length > 0;
+  const isAuth = auth.isAuthenticated || auth.user || hasStoredToken;
+  
+  if (!isAuth) {
     return <Navigate to="/login" replace />;
   }
 
