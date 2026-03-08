@@ -105,16 +105,17 @@ function AuthCallback({ children }: AuthCallbackProps) {
               // If no profile exists, redirect to register
               if (!profileExists && location.pathname !== '/register') {
                 console.log('No profile found, redirecting to register');
-                navigate('/register', { replace: true });
+                setEmail(userEmail);
                 setIsLoading(false);
+                navigate('/register', { replace: true });
                 return;
               }
             } catch (e) {
               console.error('Error connecting to SpacetimeDB:', e);
               // Still allow access even if SpacetimeDB fails - redirect to register
               setEmail(userEmail);
-              navigate('/register', { replace: true });
               setIsLoading(false);
+              navigate('/register', { replace: true });
               return;
             }
           } catch (e) {
