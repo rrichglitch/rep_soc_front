@@ -1,11 +1,19 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 
 function CallbackPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const hasRedirected = useRef(false);
+
+  console.log('CallbackPage rendered, auth:', {
+    isAuthenticated: auth.isAuthenticated,
+    isLoading: auth.isLoading,
+    error: auth.error,
+    pathname: location.pathname
+  });
 
   useEffect(() => {
     if (hasRedirected.current) return;

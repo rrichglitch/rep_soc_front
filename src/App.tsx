@@ -229,6 +229,9 @@ function RedirectHandler() {
 }
 
 function AppRoutes() {
+  const location = useLocation();
+  console.log('Current path:', location.pathname);
+  
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -276,6 +279,9 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route path="*" element={
+        <div className="loading">Unknown route - loading auth...</div>
+      } />
     </Routes>
   );
 }
