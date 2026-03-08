@@ -46,6 +46,7 @@ export type StoryPost = __Infer<typeof StoryPost>;
 
 export const UserProfile = __t.object("UserProfile", {
   identity: __t.identity(),
+  email: __t.string(),
   fullName: __t.string(),
   profilePicture: __t.string(),
   city: __t.string(),

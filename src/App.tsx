@@ -11,6 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -22,12 +23,20 @@ import CallbackPage from './pages/CallbackPage';
 
 interface AppContextType {
   identity: Identity | null;
+  email: string | null;
   isLoading: boolean;
+  hasProfile: boolean;
+  setHasProfile: (has: boolean) => void;
+  createProfile: (fullName: string, profilePicture: string, city: string, description: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType>({
   identity: null,
+  email: null,
   isLoading: true,
+  hasProfile: false,
+  setHasProfile: () => {},
+  createProfile: async () => {},
 });
 
 export const useApp = () => useContext(AppContext);
@@ -39,22 +48,64 @@ interface AuthCallbackProps {
 function AuthCallback({ children }: AuthCallbackProps) {
   const auth = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [identity, setIdentity] = useState<Identity | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [hasProfile, setHasProfileState] = useState(false);
+
+  const setHasProfile = (has: boolean) => {
+    setHasProfileState(has);
+  };
+
+  const handleCreateProfile = async (fullName: string, profilePicture: string, city: string, description: string) => {
+    if (!email) {
+      throw new Error('No email');
+    }
+    await createProfile(email, fullName, profilePicture, city, description);
+    setHasProfile(true);
+  };
 
   useEffect(() => {
     const initAuth = async () => {
       if (auth.isAuthenticated) {
-        // Get user identity from the auth token
         console.log('Authenticated user:', auth.user);
-        // Extract sub from id_token JWT
+        
         const idToken = auth.user?.id_token;
-        if (idToken) {
+        const accessToken = auth.user?.access_token;
+        
+        if (idToken && accessToken) {
           try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
             const sub = payload.sub;
+            const userEmail = payload.email;
+            
             console.log('Identity from token:', sub);
-            setIdentity({ toHexString: () => sub } as unknown as Identity);
+            console.log('Email from token:', userEmail);
+            
+            const userIdentity = { toHexString: () => sub } as unknown as Identity;
+            setIdentity(userIdentity);
+            setEmail(userEmail);
+            
+            // Connect to SpacetimeDB with email and token
+            try {
+              await connectToSpacetimeDB(userEmail, accessToken);
+              
+              // Check if profile exists in SpaceTimeDB by email
+              const profileExists = await checkProfileExistsByEmail(userEmail);
+              console.log('Profile exists in DB:', profileExists);
+              setHasProfileState(profileExists);
+              
+              // If no profile exists, redirect to register
+              if (!profileExists && location.pathname !== '/register') {
+                console.log('No profile found, redirecting to register');
+                navigate('/register', { replace: true });
+                setIsLoading(false);
+                return;
+              }
+            } catch (e) {
+              console.error('Error connecting to SpacetimeDB:', e);
+            }
           } catch (e) {
             console.error('Failed to parse token:', e);
             setIdentity(null as unknown as Identity);
@@ -63,7 +114,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
           setIdentity(null as unknown as Identity);
         }
         
-        // Check for pending follow from QR code
         const pendingFollow = localStorage.getItem('pending_follow');
         if (pendingFollow) {
           console.log('Pending follow found:', pendingFollow);
@@ -74,7 +124,12 @@ function AuthCallback({ children }: AuthCallbackProps) {
     };
 
     initAuth();
-  }, [auth.isAuthenticated]);
+
+    // Cleanup on unmount
+    return () => {
+      disconnectFromSpacetimeDB();
+    };
+  }, [auth.isAuthenticated, navigate, location.pathname]);
 
   if (isLoading) {
     return <div className="loading">Loading...</div>;
@@ -85,7 +140,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
   }
 
   return (
-    <AppContext.Provider value={{ identity, isLoading: false }}>
+    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile, createProfile: handleCreateProfile }}>
       {children(true)}
     </AppContext.Provider>
   );

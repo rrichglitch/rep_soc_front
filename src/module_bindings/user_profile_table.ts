@@ -12,6 +12,7 @@ import {
 
 export default __t.row({
   identity: __t.identity().primaryKey(),
+  email: __t.string(),
   fullName: __t.string().name("full_name"),
   profilePicture: __t.string().name("profile_picture"),
   city: __t.string(),

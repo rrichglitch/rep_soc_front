@@ -75,11 +75,15 @@ const tablesSchema = __schema({
   user_profile: __table({
     name: 'user_profile',
     indexes: [
+      { name: 'email', algorithm: 'btree', columns: [
+        'email',
+      ] },
       { name: 'identity', algorithm: 'btree', columns: [
         'identity',
       ] },
     ],
     constraints: [
+      { name: 'user_profile_email_key', constraint: 'unique', columns: ['email'] },
       { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, UserProfileRow),

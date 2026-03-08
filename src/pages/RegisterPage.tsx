@@ -1,14 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
+import { useState, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
+import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeFullName, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 
 function RegisterPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { email, createProfile, setHasProfile } = useApp();
 
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('');
@@ -17,14 +16,6 @@ function RegisterPage() {
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
-
-  useEffect(() => {
-    if (auth.isAuthenticated) {
-      // Check if user already has a profile
-    }
-  }, [auth.isAuthenticated]);
 
   const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,18 +53,26 @@ function RegisterPage() {
         throw new Error('Profile picture is required');
       }
 
+      if (!email) {
+        throw new Error('Email not available. Please log in again.');
+      }
+
       // Convert picture to base64
       const pictureBase64 = await fileToBase64(profilePicture);
 
-      localStorage.setItem('pending_profile', JSON.stringify({
-        fullName: validateAndSanitizeFullName(fullName),
-        city: validateAndSanitizeCity(city),
-        description: validateAndSanitizeDescription(description),
-        profilePicture: pictureBase64,
-        profilePictureType: profilePicture.type,
-      }));
+      // Call the createProfile reducer to store in SpaceTimeDB
+      await createProfile(
+        validateAndSanitizeFullName(fullName),
+        pictureBase64,
+        validateAndSanitizeCity(city),
+        validateAndSanitizeDescription(description)
+      );
 
-      navigate(from, { replace: true });
+      // Mark that user has a profile
+      setHasProfile(true);
+
+      // Navigate to home
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsLoading(false);
