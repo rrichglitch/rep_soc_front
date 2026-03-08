@@ -1,6 +1,6 @@
 export const APP_URL = 'https://reputable.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
-export const SPACETIMEDB_HOST = 'maincloud';
+export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
 export const SPACETIMEDB_MODULE = 'repsoc';
 
 const getOrigin = () => {

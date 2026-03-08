@@ -13,9 +13,7 @@ export async function connectToSpacetimeDB(_email: string, token: string): Promi
     return dbConnection;
   }
 
-  const uri = SPACETIMEDB_HOST === 'maincloud' 
-    ? `wss://${SPACETIMEDB_HOST}.spacetime.xyz`
-    : `http://${SPACETIMEDB_HOST}`;
+  const uri = `wss://${SPACETIMEDB_HOST}`;
 
   console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE);
 
