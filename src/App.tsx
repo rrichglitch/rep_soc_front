@@ -103,7 +103,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
               setHasProfileState(profileExists);
               
               // If no profile exists, redirect to register
-              if (!profileExists && location.pathname !== '/register') {
+              if (!profileExists && !window.location.pathname.includes('/register')) {
                 console.log('No profile found, redirecting to register');
                 setEmail(userEmail);
                 setIsLoading(false);
@@ -137,11 +137,14 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
     initAuth();
 
-    // Cleanup on unmount
+    // Cleanup on unmount only - don't disconnect on re-renders
     return () => {
-      disconnectFromSpacetimeDB();
+      // Only disconnect if auth is no longer valid
+      if (!auth.isAuthenticated) {
+        disconnectFromSpacetimeDB();
+      }
     };
-  }, [auth.isAuthenticated, navigate, location.pathname]);
+  }, [auth.isAuthenticated]);
 
   if (isLoading) {
     return <div className="loading">Loading...</div>;
