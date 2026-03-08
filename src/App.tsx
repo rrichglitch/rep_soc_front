@@ -175,10 +175,15 @@ function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const credentials = getStoredCredentials();
   
+  // Check for OIDC storage (react-oidc-context default is "oidc.user:{authority}:{clientId}")
+  const oidcStorageKey = `oidc.user:${AUTH_CONFIG.authority}:${AUTH_CONFIG.client_id}`;
+  const oidcUser = localStorage.getItem(oidcStorageKey);
+  
   console.log('PrivateRoute check:', {
     isAuthenticated: auth.isAuthenticated,
     hasUser: !!auth.user,
     hasStoredToken: !!credentials.token,
+    hasOidcStorage: !!oidcUser,
     storedTokenLength: credentials.token?.length
   });
 
@@ -186,9 +191,9 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     return <div className="loading">Loading...</div>;
   }
 
-  // Allow access if OIDC says authenticated OR if we have a stored token
+  // Allow access if OIDC says authenticated OR if we have a stored token OR if OIDC storage has user
   const hasStoredToken = credentials.token && credentials.token.length > 0;
-  const isAuth = auth.isAuthenticated || auth.user || hasStoredToken;
+  const isAuth = auth.isAuthenticated || auth.user || hasStoredToken || !!oidcUser;
   
   console.log('isAuth:', isAuth);
   
