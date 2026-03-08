@@ -2,6 +2,7 @@ import { DbConnection, tables } from '../module_bindings';
 import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 
 let dbConnection: DbConnection | null = null;
+let subscriptionPromise: Promise<void> | null = null;
 
 const TOKEN_KEY = 'stdb_token';
 const EMAIL_KEY = 'stdb_email';
@@ -10,7 +11,7 @@ export async function connectToSpacetimeDB(email: string, token: string): Promis
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(EMAIL_KEY, email);
 
-  if (dbConnection) {
+  if (dbConnection && subscriptionPromise) {
     return dbConnection;
   }
 
@@ -25,18 +26,21 @@ export async function connectToSpacetimeDB(email: string, token: string): Promis
       .withUri(uri)
       .withDatabaseName(SPACETIMEDB_MODULE)
       .withToken(token)
-      .onConnect(async (_conn, id) => {
+      .onConnect((_conn, id) => {
         console.log('Connected to SpacetimeDB with identity:', id.toHexString());
-        await subscribeToTables();
       })
       .onDisconnect(() => {
         console.log('Disconnected from SpacetimeDB');
         dbConnection = null;
+        subscriptionPromise = null;
       })
       .onConnectError((_ctx, err) => {
         console.error('Error connecting to SpacetimeDB:', err);
       })
       .build();
+
+    subscriptionPromise = subscribeToTables();
+    await subscriptionPromise;
 
     return dbConnection;
   } catch (e) {
@@ -45,13 +49,17 @@ export async function connectToSpacetimeDB(email: string, token: string): Promis
   }
 }
 
-async function subscribeToTables() {
+async function subscribeToTables(): Promise<void> {
   if (!dbConnection) return;
   
   console.log('Subscribing to tables...');
   dbConnection.subscriptionBuilder().subscribe([
     tables.user_profile,
   ]);
+  
+  // Give some time for initial sync
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  console.log('Subscription initiated');
 }
 
 export function getDbConnection(): DbConnection | null {
@@ -62,6 +70,7 @@ export function disconnectFromSpacetimeDB() {
   if (dbConnection) {
     dbConnection.disconnect();
     dbConnection = null;
+    subscriptionPromise = null;
   }
 }
 
@@ -84,12 +93,15 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
   }
 
   try {
+    console.log('Checking profile for email:', email);
     const lowerEmail = email.toLowerCase().trim();
     for (const profile of dbConnection.db.user_profile.iter()) {
+      console.log('Found profile with email:', profile.email);
       if (profile.email === lowerEmail) {
         return true;
       }
     }
+    console.log('No profile found for email:', lowerEmail);
     return false;
   } catch (e) {
     console.error('Error checking profile:', e);
@@ -108,7 +120,7 @@ export async function createProfile(
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  console.log('Creating profile for email:', email);
+  console.log('Creating profile for email:', email, 'with fullName:', fullName);
   
   dbConnection.reducers.createProfile({
     email: email.toLowerCase().trim(),

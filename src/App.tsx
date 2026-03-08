@@ -78,10 +78,26 @@ function AuthCallback({ children }: AuthCallbackProps) {
           try {
             const payload = JSON.parse(atob(idToken.split('.')[1]));
             const sub = payload.sub;
-            const userEmail = payload.email;
+            let userEmail = payload.email;
             
             console.log('Identity from token:', sub);
             console.log('Email from token:', userEmail);
+            
+            // Fallback to localStorage if email not in token
+            if (!userEmail) {
+              const stored = localStorage.getItem('stdb_email');
+              if (stored) {
+                userEmail = stored;
+                console.log('Using email from localStorage:', userEmail);
+              }
+            }
+            
+            if (!userEmail) {
+              console.error('No email found in token or localStorage');
+              setIsLoading(false);
+              auth.signoutRedirect();
+              return;
+            }
             
             const userIdentity = { toHexString: () => sub } as unknown as Identity;
             setIdentity(userIdentity);
@@ -105,6 +121,11 @@ function AuthCallback({ children }: AuthCallbackProps) {
               }
             } catch (e) {
               console.error('Error connecting to SpacetimeDB:', e);
+              // Still allow access even if SpacetimeDB fails - redirect to register
+              setEmail(userEmail);
+              navigate('/register', { replace: true });
+              setIsLoading(false);
+              return;
             }
           } catch (e) {
             console.error('Failed to parse token:', e);
