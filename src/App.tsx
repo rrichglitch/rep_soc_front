@@ -160,7 +160,14 @@ function AuthCallback({ children }: AuthCallbackProps) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!auth.isAuthenticated) {
+  // Check both auth and stored token
+  const credentials = getStoredCredentials();
+  const hasStoredToken = credentials.token && credentials.token.length > 0;
+  const isAuth = auth.isAuthenticated || hasStoredToken;
+  
+  console.log('AuthCallback isAuth:', isAuth, 'hasStoredToken:', !!hasStoredToken);
+  
+  if (!isAuth) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
