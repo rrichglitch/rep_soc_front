@@ -58,8 +58,8 @@ function AboutPage() {
             need is a way to evaluate reliability and character.
           </p>
           <p>
-            Trust is our most valuable currency. Whether you're choosing a service provider, 
-            a business partner, or someone to collaborate with, you want to know: 
+            Trust is our most valuable currency. Whether you're choosing a business partner, 
+            someone to collaborate with, or deciding to open up to someone, you want to know: 
             <strong> can I count on this person?</strong>
           </p>
         </div>
@@ -91,8 +91,8 @@ function AboutPage() {
               you've interacted with. Did they deliver? Were they reliable? Would you recommend them?
             </li>
             <li>
-              <strong>Build Your Network</strong> – Follow people you trust to see their 
-              recommendations in your feed. Discover who others recommend.
+              <strong>Build Your Network</strong> – Follow friends, family, and acquaintances to see 
+              what others are saying about them. Discover who others recommend.
             </li>
             <li>
               <strong>Grow Your Reputation</strong> – As others post about their positive 

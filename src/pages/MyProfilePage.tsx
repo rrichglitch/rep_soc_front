@@ -336,10 +336,7 @@ function MyProfilePage() {
               <QRCodeSVG value={followUrl} size={200} />
             </div>
             <p className="qr-instruction">
-              When someone scans this code and is logged in, they will follow you.
-            </p>
-            <p className="qr-instruction">
-              If they're not logged in, they'll be taken to sign up and will automatically follow you after creating an account.
+              Anyone can scan this code to quickly follow your story.
             </p>
             <button onClick={() => setShowQR(false)} className="close-button">
               Close

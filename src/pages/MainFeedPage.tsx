@@ -145,30 +145,26 @@ function MainFeedPage() {
                 <div className="stories-list">
                   {followedStories.map((story) => (
                     <div key={story.id.toString()} className="story-card">
-                      <div className="story-context-header">
-                        <span className="context-label">Post on </span>
-                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="profile-link-text">
-                          {story.profileOwnerPicture ? (
-                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="context-avatar" />
-                          ) : (
-                            <div className="context-avatar-placeholder" />
-                          )}
-                          <span className="context-name">{story.profileOwnerName}</span>
-                        </Link>
-                      </div>
-                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
-                        <div className="story-header">
+                      <div className="story-people-inline">
+                        <Link to={`/profile/${story.posterIdentity}`} className="story-poster-inline">
                           {story.posterPicture ? (
-                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                            <img src={story.posterPicture} alt={story.posterName} className="poster-avatar-small" />
                           ) : (
-                            <div className="story-avatar-placeholder" />
+                            <div className="poster-avatar-placeholder-small" />
                           )}
-                          <div className="story-meta">
-                            <span className="story-author">{story.posterName}</span>
-                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </Link>
+                          <span className="poster-name">{story.posterName}</span>
+                        </Link>
+                        <span className="inline-arrow">→</span>
+                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="story-owner-inline">
+                          {story.profileOwnerPicture ? (
+                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="owner-avatar-small" />
+                          ) : (
+                            <div className="owner-avatar-placeholder-small" />
+                          )}
+                          <span className="owner-name">{story.profileOwnerName}</span>
+                        </Link>
+                        <span className="story-date-inline">{new Date(story.createdAt).toLocaleDateString()}</span>
+                      </div>
                       <p className="story-content">{story.content}</p>
                       {story.mediaData && story.mediaData.length > 0 && (
                         <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -395,13 +391,61 @@ function MainFeedPage() {
           color: #667eea;
         }
 
-        .story-context-header {
+        .story-people-inline {
           display: flex;
           align-items: center;
-          gap: 4px;
+          justify-content: space-between;
+          gap: 8px;
           margin-bottom: 12px;
           padding-bottom: 12px;
           border-bottom: 1px solid #eee;
+        }
+
+        .story-poster-inline,
+        .story-owner-inline {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          text-decoration: none;
+        }
+
+        .story-poster-inline:hover .poster-name,
+        .story-owner-inline:hover .owner-name {
+          color: #667eea;
+        }
+
+        .poster-avatar-small,
+        .owner-avatar-small {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .poster-avatar-placeholder-small,
+        .owner-avatar-placeholder-small {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .poster-name,
+        .owner-name {
+          font-weight: 600;
+          color: #333;
+          font-size: 14px;
+        }
+
+        .inline-arrow {
+          color: #999;
+          font-size: 16px;
+        }
+
+        .story-date-inline {
+          font-size: 12px;
+          color: #999;
+          white-space: nowrap;
         }
 
         .context-label {
