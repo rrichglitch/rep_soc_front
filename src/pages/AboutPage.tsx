@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
-import { getProfileByEmail } from '../utils/spacetime';
+import { getProfileByEmail, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
@@ -10,6 +10,12 @@ function AboutPage() {
   const auth = useAuth();
   const { email } = useApp();
   const [profilePicture, setProfilePicture] = useState<string>('');
+
+  const isAuthenticated = auth.isAuthenticated;
+
+  const handleSignIn = () => {
+    auth.signinRedirect();
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -23,17 +29,27 @@ function AboutPage() {
     loadProfile();
   }, [email]);
 
-  const handleSignIn = () => {
-    auth.signinRedirect();
-  };
+  useEffect(() => {
+    const tryAutoConnect = async () => {
+      if (isAuthenticated) return;
+      
+      const creds = getStoredCredentials();
+      if (creds.token) {
+        try {
+          await connectToSpacetimeDB('', creds.token);
+        } catch (e) {
+          console.log('Auto-connect failed:', e);
+        }
+      }
+    };
+    tryAutoConnect();
+  }, [isAuthenticated]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query)}`);
     }
   };
-
-  const isAuthenticated = auth.isAuthenticated;
 
   return (
     <div className="about-page">

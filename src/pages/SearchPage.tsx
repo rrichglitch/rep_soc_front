@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
-import { getDbConnection } from '../utils/spacetime';
+import { getDbConnection, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
 
 interface SearchResult {
   identity: string;
@@ -28,6 +28,22 @@ function SearchPage() {
   const handleSignIn = () => {
     auth.signinRedirect();
   };
+
+  useEffect(() => {
+    const tryAutoConnect = async () => {
+      if (isAuthenticated) return;
+      
+      const creds = getStoredCredentials();
+      if (creds.token) {
+        try {
+          await connectToSpacetimeDB('', creds.token);
+        } catch (e) {
+          console.log('Auto-connect failed:', e);
+        }
+      }
+    };
+    tryAutoConnect();
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -194,7 +210,10 @@ function SearchPage() {
         }
 
         .header-right {
-          width: 60px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          min-width: 80px;
         }
 
         .back-button {

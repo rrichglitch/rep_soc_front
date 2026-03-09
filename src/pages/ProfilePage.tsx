@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile } from '../utils/spacetime';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
@@ -29,6 +29,22 @@ function ProfilePage() {
   const handleSignIn = () => {
     auth.signinRedirect();
   };
+
+  useEffect(() => {
+    const tryAutoConnect = async () => {
+      if (isAuthenticated) return;
+      
+      const creds = getStoredCredentials();
+      if (creds.token) {
+        try {
+          await connectToSpacetimeDB('', creds.token);
+        } catch (e) {
+          console.log('Auto-connect failed:', e);
+        }
+      }
+    };
+    tryAutoConnect();
+  }, [isAuthenticated]);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -336,8 +352,8 @@ function ProfilePage() {
         .header-right {
           display: flex;
           align-items: center;
-          width: 60px;
           justify-content: flex-end;
+          min-width: 80px;
         }
 
         .signin-button {
