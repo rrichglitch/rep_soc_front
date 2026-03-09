@@ -198,12 +198,12 @@ function MainFeedPage() {
           display: flex;
           justify-content: center;
           width: 100%;
-          max-width: 600px;
+          max-width: 1000px;
         }
 
         .header-center .search-bar {
           width: 100%;
-          max-width: 500px;
+          max-width: 800px;
         }
 
         .header-right {

@@ -25,7 +25,7 @@ function SearchBar({ onSearch }: SearchBarProps) {
         type="text"
         value={query}
         onChange={handleChange}
-        placeholder="Search people..."
+        placeholder="Find people..."
         className="search-input"
       />
       <button type="submit" className="search-button">
