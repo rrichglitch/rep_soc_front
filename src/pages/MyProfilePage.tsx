@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { getProfileByEmail } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts } from '../utils/spacetime';
 import ProfileHeader from '../components/ProfileHeader';
 import EditProfileModal from '../components/EditProfileModal';
 
@@ -16,12 +16,24 @@ interface UserProfile {
   created_at: Date;
 }
 
+interface StoryPost {
+  id: bigint;
+  content: string;
+  mediaData: string;
+  mediaTypes: string;
+  createdAt: Date;
+  posterIdentity: string;
+  posterName: string;
+  posterPicture: string;
+}
+
 function MyProfilePage() {
   const { identity, email } = useApp();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  const [stories, setStories] = useState<StoryPost[]>([]);
 
   useEffect(() => {
     if (email) {
@@ -37,14 +49,19 @@ function MyProfilePage() {
       if (profileData) {
         const createdAt = profileData.createdAt as unknown as Timestamp;
         const date = new Date(Number(createdAt.microsSinceUnixEpoch) / 1000);
+        const identityHex = profileData.identity.toHexString();
+        
         setProfile({
-          identity: profileData.identity.toHexString(),
+          identity: identityHex,
           full_name: profileData.fullName,
           profile_picture: profileData.profilePicture,
           city: profileData.city,
           description: profileData.description,
           created_at: date,
         });
+
+        const profileStories = await getMyStoryPosts(identityHex);
+        setStories(profileStories);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -105,6 +122,34 @@ function MyProfilePage() {
           <div className="no-post-own-story">
             <p>You cannot post on your own story. Others can share stories about you.</p>
           </div>
+          
+          {stories.length === 0 ? (
+            <div className="empty-story">
+              <p>No stories about you yet.</p>
+            </div>
+          ) : (
+            <div className="stories-list">
+              {stories.map((story) => (
+                <div key={story.id.toString()} className="story-card">
+                  <div className="story-header">
+                    {story.posterPicture ? (
+                      <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                    ) : (
+                      <div className="story-avatar-placeholder" />
+                    )}
+                    <div className="story-meta">
+                      <span className="story-author">{story.posterName}</span>
+                      <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <p className="story-content">{story.content}</p>
+                  {story.mediaData && story.mediaData.length > 0 && (
+                    <img src={story.mediaData} alt="Story media" className="story-media" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
@@ -199,6 +244,76 @@ function MyProfilePage() {
         .no-post-own-story p {
           margin: 0;
           color: #666;
+        }
+
+        .empty-story {
+          text-align: center;
+          padding: 32px;
+          background: white;
+          border-radius: 12px;
+          color: #666;
+        }
+
+        .stories-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .story-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .story-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
+        .story-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .story-avatar-placeholder {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .story-meta {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .story-author {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .story-date {
+          font-size: 12px;
+          color: #999;
+        }
+
+        .story-content {
+          margin: 0;
+          color: #333;
+          line-height: 1.5;
+          white-space: pre-wrap;
+        }
+
+        .story-media {
+          margin-top: 12px;
+          max-width: 100%;
+          border-radius: 8px;
         }
 
         .qr-modal {

@@ -274,3 +274,87 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
     return [];
   }
 }
+
+export async function getMyStoryPosts(currentIdentityHex: string) {
+  if (!dbConnection) {
+    return [];
+  }
+
+  try {
+    const stories: any[] = [];
+    for (const post of dbConnection.db.story_post.iter()) {
+      if (post.profileOwnerIdentity.toHexString() === currentIdentityHex) {
+        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
+        stories.push({
+          id: post.id,
+          content: post.content,
+          mediaData: post.mediaData,
+          mediaTypes: post.mediaTypes,
+          createdAt: post.createdAt.toDate(),
+          posterIdentity: post.posterIdentity.toHexString(),
+          posterName: poster?.fullName || 'Unknown',
+          posterPicture: poster?.profilePicture || '',
+          profileOwnerIdentity: currentIdentityHex,
+        });
+      }
+    }
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt as unknown as bigint;
+      const bTime = b.createdAt as unknown as bigint;
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting my story posts:', e);
+    return [];
+  }
+}
+
+export async function getFollowedStories(currentIdentityHex: string) {
+  if (!dbConnection) {
+    return [];
+  }
+
+  try {
+    const followedIdentities: string[] = [];
+    for (const f of dbConnection.db.following.iter()) {
+      if (f.followerIdentity.toHexString() === currentIdentityHex) {
+        followedIdentities.push(f.followingIdentity.toHexString());
+      }
+    }
+
+    if (followedIdentities.length === 0) {
+      return [];
+    }
+
+    const stories: any[] = [];
+    for (const post of dbConnection.db.story_post.iter()) {
+      const profileOwnerHex = post.profileOwnerIdentity.toHexString();
+      const posterHex = post.posterIdentity.toHexString();
+      
+      if (followedIdentities.includes(profileOwnerHex) && posterHex !== profileOwnerHex) {
+        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
+        const profileOwner = dbConnection.db.user_profile.identity.find(post.profileOwnerIdentity);
+        stories.push({
+          id: post.id,
+          content: post.content,
+          mediaData: post.mediaData,
+          mediaTypes: post.mediaTypes,
+          createdAt: post.createdAt.toDate(),
+          posterIdentity: posterHex,
+          posterName: poster?.fullName || 'Unknown',
+          posterPicture: poster?.profilePicture || '',
+          profileOwnerIdentity: profileOwnerHex,
+          profileOwnerName: profileOwner?.fullName || 'Unknown',
+        });
+      }
+    }
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt as unknown as bigint;
+      const bTime = b.createdAt as unknown as bigint;
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting followed stories:', e);
+    return [];
+  }
+}

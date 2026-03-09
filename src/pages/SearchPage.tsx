@@ -128,7 +128,7 @@ function SearchPage() {
             {results.map((result) => {
               const isOwn = result.email === email;
               return (
-                <Link to={isOwn ? '/me' : `/profile/${result.identity}`} key={result.identity} className="result-card">
+                <Link to={`/profile/${result.identity}`} key={result.identity} className="result-card">
                   {result.profilePicture ? (
                     <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
                   ) : (

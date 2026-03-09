@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getFollowedStories } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
@@ -10,6 +10,8 @@ function MainFeedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string>('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [myStories, setMyStories] = useState<any[]>([]);
+  const [followedStories, setFollowedStories] = useState<any[]>([]);
 
   const loadData = async () => {
     if (!email) {
@@ -20,7 +22,16 @@ function MainFeedPage() {
     try {
       const profile = await getProfileByEmail(email);
       if (profile) {
+        const identityHex = profile.identity.toHexString();
         setProfilePicture(profile.profilePicture);
+
+        const [myFeed, followedFeed] = await Promise.all([
+          getMyStoryPosts(identityHex),
+          getFollowedStories(identityHex),
+        ]);
+        
+        setMyStories(myFeed);
+        setFollowedStories(followedFeed);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -30,7 +41,6 @@ function MainFeedPage() {
 
   useEffect(() => {
     if (email) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadData();
     }
   }, [email]);
@@ -44,6 +54,8 @@ function MainFeedPage() {
   const handleMobileSearchToggle = () => {
     setShowMobileSearch(!showMobileSearch);
   };
+
+  const hasContent = myStories.length > 0 || followedStories.length > 0;
 
   if (isLoading) {
     return (
@@ -89,14 +101,73 @@ function MainFeedPage() {
       )}
 
       <main className="main-content">
-        <div className="feed">
+        {!hasContent ? (
           <div className="empty-feed">
             <p>No posts yet. Follow some people to see their stories!</p>
             <Link to="/search" className="find-people-link">
               Find People
             </Link>
           </div>
-        </div>
+        ) : (
+          <div className="feed">
+            {myStories.length > 0 && (
+              <div className="feed-section">
+                <h2 className="feed-section-title">Your Story</h2>
+                <div className="stories-list">
+                  {myStories.map((story) => (
+                    <div key={story.id.toString()} className="story-card">
+                      <div className="story-header">
+                        {story.posterPicture ? (
+                          <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                        ) : (
+                          <div className="story-avatar-placeholder" />
+                        )}
+                        <div className="story-meta">
+                          <span className="story-author">{story.posterName}</span>
+                          <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <p className="story-content">{story.content}</p>
+                      {story.mediaData && story.mediaData.length > 0 && (
+                        <img src={story.mediaData} alt="Story media" className="story-media" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {followedStories.length > 0 && (
+              <div className="feed-section">
+                <h2 className="feed-section-title">Following</h2>
+                <div className="stories-list">
+                  {followedStories.map((story) => (
+                    <div key={story.id.toString()} className="story-card">
+                      <div className="story-header">
+                        {story.posterPicture ? (
+                          <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                        ) : (
+                          <div className="story-avatar-placeholder" />
+                        )}
+                        <div className="story-meta">
+                          <span className="story-author">{story.posterName}</span>
+                          <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <p className="story-context">
+                        on <Link to={`/profile/${story.profileOwnerIdentity}`} className="profile-link-text">{story.profileOwnerName}</Link>
+                      </p>
+                      <p className="story-content">{story.content}</p>
+                      {story.mediaData && story.mediaData.length > 0 && (
+                        <img src={story.mediaData} alt="Story media" className="story-media" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <style>{`
@@ -201,6 +272,95 @@ function MainFeedPage() {
           text-decoration: none;
           border-radius: 8px;
           font-weight: 600;
+        }
+
+        .feed-section {
+          margin-bottom: 32px;
+        }
+
+        .feed-section-title {
+          font-size: 16px;
+          color: #666;
+          margin: 0 0 16px;
+          font-weight: 600;
+        }
+
+        .stories-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .story-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .story-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+
+        .story-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .story-avatar-placeholder {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .story-meta {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .story-author {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .story-date {
+          font-size: 12px;
+          color: #999;
+        }
+
+        .story-context {
+          margin: 0 0 8px;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .profile-link-text {
+          color: #667eea;
+          text-decoration: none;
+          font-weight: 600;
+        }
+
+        .profile-link-text:hover {
+          text-decoration: underline;
+        }
+
+        .story-content {
+          margin: 0;
+          color: #333;
+          line-height: 1.5;
+          white-space: pre-wrap;
+        }
+
+        .story-media {
+          margin-top: 12px;
+          max-width: 100%;
+          border-radius: 8px;
         }
 
         .loading-page {
