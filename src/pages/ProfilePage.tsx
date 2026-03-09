@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, getStoredCredentials, connectToSpacetimeDB, getDbConnection } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
@@ -25,6 +25,7 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   const isAuthenticated = auth.isAuthenticated;
+  const [isConnected, setIsConnected] = useState(false);
 
   const handleSignIn = () => {
     auth.signinRedirect();
@@ -32,19 +33,24 @@ function ProfilePage() {
 
   useEffect(() => {
     const tryAutoConnect = async () => {
-      if (isAuthenticated) return;
+      const db = getDbConnection();
+      if (db) {
+        setIsConnected(true);
+        return;
+      }
       
-      const creds = getStoredCredentials();
-      if (creds.token) {
+      const token = auth.user?.access_token || getStoredCredentials().token;
+      if (token) {
         try {
-          await connectToSpacetimeDB('', creds.token);
+          await connectToSpacetimeDB('', token);
+          setIsConnected(true);
         } catch (e) {
           console.log('Auto-connect failed:', e);
         }
       }
     };
     tryAutoConnect();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, auth.user]);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -99,7 +105,7 @@ function ProfilePage() {
     };
 
     loadProfile();
-  }, [profileIdentity, currentIdentityHex]);
+  }, [profileIdentity, currentIdentityHex, isConnected]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {

@@ -22,6 +22,7 @@ function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
+  const [isConnected, setIsConnected] = useState(false);
 
   const isAuthenticated = auth.isAuthenticated;
 
@@ -31,19 +32,24 @@ function SearchPage() {
 
   useEffect(() => {
     const tryAutoConnect = async () => {
-      if (isAuthenticated) return;
+      const db = getDbConnection();
+      if (db) {
+        setIsConnected(true);
+        return;
+      }
       
-      const creds = getStoredCredentials();
-      if (creds.token) {
+      const token = auth.user?.access_token || getStoredCredentials().token;
+      if (token) {
         try {
-          await connectToSpacetimeDB('', creds.token);
+          await connectToSpacetimeDB('', token);
+          setIsConnected(true);
         } catch (e) {
           console.log('Auto-connect failed:', e);
         }
       }
     };
     tryAutoConnect();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, auth.user]);
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -92,7 +98,7 @@ function SearchPage() {
     };
 
     searchQuery();
-  }, [query]);
+  }, [query, isConnected]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
