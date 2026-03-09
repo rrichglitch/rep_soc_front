@@ -54,7 +54,6 @@ function RegisterPage() {
       }
 
       if (!email) {
-        console.error('Email is not available. Context:', useApp());
         throw new Error('Email not available. Please log in again.');
       }
 

@@ -11,7 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB, getStoredCredentials } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
 
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -39,6 +39,7 @@ const AppContext = createContext<AppContextType>({
   createProfile: async () => {},
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext);
 
 interface AuthCallbackProps {
@@ -68,120 +69,71 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const credentials = getStoredCredentials();
-      const hasStoredToken = credentials.token && credentials.token.length > 0;
-      
-      // Handle both OIDC auth and stored token
-      if (auth.isAuthenticated && auth.user) {
-        console.log('Authenticated via OIDC:', auth.user);
-        
-        const idToken = auth.user?.id_token;
-        const accessToken = auth.user?.access_token;
-        
-        if (idToken && accessToken) {
+      if (!auth.isAuthenticated || !auth.user) {
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Authenticated via OIDC:', auth.user);
+
+      const idToken = auth.user?.id_token;
+      const accessToken = auth.user?.access_token;
+
+      if (idToken && accessToken) {
+        try {
+          const payload = JSON.parse(atob(idToken.split('.')[1]));
+          const sub = payload.sub;
+          const userEmail = payload.email;
+
+          console.log('Identity from token:', sub);
+          console.log('Email from token:', userEmail);
+
+          if (!userEmail) {
+            console.error('No email in token. Token payload:', payload);
+            setIsLoading(false);
+            return;
+          }
+
+          const userIdentity = { toHexString: () => sub } as unknown as Identity;
+          setIdentity(userIdentity);
+          setEmail(userEmail);
+
           try {
-            const payload = JSON.parse(atob(idToken.split('.')[1]));
-            const sub = payload.sub;
-            const userEmail = payload.email;
-            
-            console.log('Identity from token:', sub);
-            console.log('Email from token:', userEmail);
-            
-            if (!userEmail) {
-              console.error('No email in token. Token payload:', payload);
-              setIsLoading(false);
-              return;
-            }
-            
-            const userIdentity = { toHexString: () => sub } as unknown as Identity;
-            setIdentity(userIdentity);
-            setEmail(userEmail);
-            
-            // Connect to SpacetimeDB with email and token
-            try {
-              await connectToSpacetimeDB(userEmail, accessToken);
-              
-              // Wait for subscription to sync and check profile
+            await connectToSpacetimeDB(userEmail, accessToken);
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            let profileExists = await checkProfileExistsByEmail(userEmail);
+
+            if (!profileExists) {
+              console.log('Profile not found initially, retrying...');
               await new Promise(resolve => setTimeout(resolve, 1000));
-              
-              let profileExists = await checkProfileExistsByEmail(userEmail);
-              
-              // If not found, try one more time after another delay
-              if (!profileExists) {
-                console.log('Profile not found initially, retrying...');
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                profileExists = await checkProfileExistsByEmail(userEmail);
-              }
-              
-              console.log('Profile exists in DB:', profileExists);
-              setHasProfileState(profileExists);
-              
-              // If no profile exists, redirect to register
-              if (!profileExists && !window.location.pathname.includes('/register')) {
-                console.log('No profile found, redirecting to register');
-                setEmail(userEmail);
-                setIsLoading(false);
-                navigate('/register', { replace: true });
-                return;
-              }
-            } catch (e) {
-              console.error('Error connecting to SpacetimeDB:', e);
+              profileExists = await checkProfileExistsByEmail(userEmail);
+            }
+
+            console.log('Profile exists in DB:', profileExists);
+            setHasProfileState(profileExists);
+
+            if (!profileExists && !window.location.pathname.includes('/register')) {
+              console.log('No profile found, redirecting to register');
               setEmail(userEmail);
               setIsLoading(false);
               navigate('/register', { replace: true });
               return;
             }
           } catch (e) {
-            console.error('Failed to parse token:', e);
-            setIdentity(null as unknown as Identity);
-          }
-        } else {
-          setIdentity(null as unknown as Identity);
-        }
-      } else if (hasStoredToken) {
-        // Handle case where we have stored token but OIDC hasn't synced
-        console.log('Using stored credentials');
-        
-        // Get email from localStorage directly
-        const storedEmail = localStorage.getItem('stdb_email');
-        if (!storedEmail) {
-          console.error('No email in localStorage');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('Email from localStorage:', storedEmail);
-        setEmail(storedEmail);
-        
-        try {
-          await connectToSpacetimeDB(storedEmail, credentials.token!);
-          
-          // Wait for subscription to sync and check profile
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          let profileExists = await checkProfileExistsByEmail(storedEmail);
-          
-          if (!profileExists) {
-            console.log('Profile not found, retrying...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            profileExists = await checkProfileExistsByEmail(storedEmail);
-          }
-          
-          console.log('Profile exists in DB:', profileExists);
-          setHasProfileState(profileExists);
-          
-          if (!profileExists && !window.location.pathname.includes('/register')) {
-            console.log('No profile found, redirecting to register');
+            console.error('Error connecting to SpacetimeDB:', e);
+            setEmail(userEmail);
             setIsLoading(false);
             navigate('/register', { replace: true });
             return;
           }
         } catch (e) {
-          console.error('Error connecting to SpacetimeDB:', e);
-          setIsLoading(false);
-          navigate('/register', { replace: true });
-          return;
+          console.error('Failed to parse token:', e);
+          setIdentity(null as unknown as Identity);
         }
+      } else {
+        setIdentity(null as unknown as Identity);
       }
       
       const pendingFollow = localStorage.getItem('pending_follow');
@@ -194,27 +146,20 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
     initAuth();
 
-    // Cleanup on unmount only - don't disconnect on re-renders
     return () => {
-      // Only disconnect if auth is no longer valid
       if (!auth.isAuthenticated) {
         disconnectFromSpacetimeDB();
       }
     };
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, auth.user, navigate]);
 
   if (isLoading) {
     return <div className="loading">Loading...</div>;
   }
 
-  // Check both auth and stored token
-  const credentials = getStoredCredentials();
-  const hasStoredToken = credentials.token && credentials.token.length > 0;
-  const isAuth = auth.isAuthenticated || hasStoredToken;
-  
-  console.log('AuthCallback isAuth:', isAuth, 'hasStoredToken:', !!hasStoredToken);
-  
-  if (!isAuth) {
+  console.log('AuthCallback isAuth:', auth.isAuthenticated);
+
+  if (!auth.isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -227,36 +172,20 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
 function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
-  const credentials = getStoredCredentials();
-  
-  // Debug: log ALL localStorage keys to see what's there
-  console.log('localStorage keys:', Object.keys(localStorage));
-  
-  // Check for OIDC storage (react-oidc-context default is "oidc.user:{authority}:{clientId}")
-  const oidcStorageKey = `oidc.user:${AUTH_CONFIG.authority}:${AUTH_CONFIG.client_id}`;
-  const oidcUser = localStorage.getItem(oidcStorageKey);
-  const stdbToken = localStorage.getItem('stdb_token');
-  
+
   console.log('PrivateRoute check:', {
     isAuthenticated: auth.isAuthenticated,
     hasUser: !!auth.user,
-    hasStoredToken: !!credentials.token,
-    hasOidcStorage: !!oidcUser,
-    stdbToken: !!stdbToken,
-    storedTokenLength: credentials.token?.length
+    isLoading: auth.isLoading,
   });
 
   if (auth.isLoading) {
     return <div className="loading">Loading...</div>;
   }
 
-  // Allow access if OIDC says authenticated OR if we have a stored token OR if OIDC storage has user
-  const hasStoredToken = credentials.token && credentials.token.length > 0;
-  const isAuth = auth.isAuthenticated || auth.user || hasStoredToken || !!oidcUser || !!stdbToken;
+  console.log('isAuth:', auth.isAuthenticated);
   
-  console.log('isAuth:', isAuth);
-  
-  if (!isAuth) {
+  if (!auth.isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -274,7 +203,6 @@ function RedirectHandler() {
     const redirectPath = sessionStorage.getItem('auth_redirect_path');
     if (redirectPath) {
       sessionStorage.removeItem('auth_redirect_path');
-      // Extract the path and query from the stored URL
       const match = redirectPath.match(/\/rep_soc_front(\/[^?]*)?(\?.*)?/);
       if (match) {
         const path = match[1] || '/';

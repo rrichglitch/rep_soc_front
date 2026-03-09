@@ -19,13 +19,14 @@ function ProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadProfile();
-  }, [profileIdentity, currentIdentity]);
-
   const loadProfile = async () => {
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadProfile();
+  }, [profileIdentity, currentIdentity]);
 
   const handleFollowChange = (following: boolean) => {
     setIsFollowing(following);

@@ -10,12 +10,6 @@ function MainFeedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string>('');
 
-  useEffect(() => {
-    if (email) {
-      loadData();
-    }
-  }, [email]);
-
   const loadData = async () => {
     if (!email) {
       setIsLoading(false);
@@ -32,6 +26,13 @@ function MainFeedPage() {
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    if (email) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      loadData();
+    }
+  }, [email]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {

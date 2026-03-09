@@ -9,12 +9,6 @@ function FollowPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (ownerIdentity) {
-      handleFollow();
-    }
-  }, [ownerIdentity, identity]);
-
   const handleFollow = async () => {
     if (!identity) {
       localStorage.setItem('pending_follow', ownerIdentity!);
@@ -38,6 +32,13 @@ function FollowPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (ownerIdentity) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      handleFollow();
+    }
+  }, [ownerIdentity, identity]);
 
   if (isLoading) {
     return (

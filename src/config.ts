@@ -1,3 +1,5 @@
+import { WebStorageStateStore, User } from 'oidc-client-ts';
+
 export const APP_URL = 'https://reputable.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
@@ -25,6 +27,13 @@ export const AUTH_CONFIG = {
   automaticSilentRenew: true,
   filterProtocolClaims: true,
   loadUserInfo: false,
+  userStore: new WebStorageStateStore({
+    store: localStorage,
+  }),
+  onSigninCallback: (user: User | void) => {
+    console.log('User signed in:', user);
+    window.history.replaceState({}, document.title, window.location.pathname);
+  },
 };
 
 console.log('AUTH_CONFIG:', AUTH_CONFIG);
