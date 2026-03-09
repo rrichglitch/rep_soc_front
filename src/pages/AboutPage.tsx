@@ -12,6 +12,7 @@ function AboutPage() {
   const [profilePicture, setProfilePicture] = useState<string>('');
 
   const isAuthenticated = auth.isAuthenticated;
+  const hasReferrer = document.referrer.includes(window.location.host);
 
   const handleSignIn = () => {
     auth.signinRedirect();
@@ -55,7 +56,11 @@ function AboutPage() {
     <div className="about-page">
       <header className="header">
         <div className="header-left">
-          <span />
+          {hasReferrer ? (
+            <button onClick={() => navigate(-1)} className="back-button">← Back</button>
+          ) : (
+            <span />
+          )}
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
