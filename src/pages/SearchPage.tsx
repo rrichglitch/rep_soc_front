@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
-import { getDbConnection, connectToSpacetimeDB } from '../utils/spacetime';
+import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 
 interface SearchResult {
   identity: string;
@@ -25,10 +25,34 @@ function SearchPage() {
   const [isConnected, setIsConnected] = useState(false);
 
   const isAuthenticated = auth.isAuthenticated;
+  const [profilePicture, setProfilePicture] = useState<string>('');
 
   const handleSignIn = () => {
     auth.signinRedirect();
   };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      let userEmail = email;
+      
+      if (!userEmail && auth.user?.id_token) {
+        try {
+          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+          userEmail = payload.email;
+        } catch (e) {
+          console.error('Failed to parse token:', e);
+        }
+      }
+      
+      if (userEmail) {
+        const profile = await getProfileByEmail(userEmail);
+        if (profile) {
+          setProfilePicture(profile.profilePicture);
+        }
+      }
+    };
+    loadProfile();
+  }, [email, auth.user]);
 
   useEffect(() => {
     const tryAutoConnect = async () => {
@@ -40,19 +64,14 @@ function SearchPage() {
       }
       
       const token = auth.user?.access_token;
-      console.log('Token from OIDC:', token ? 'found' : 'not found');
       
-      if (token) {
-        try {
-          console.log('Attempting to connect to SpacetimeDB...');
-          await connectToSpacetimeDB('', token);
-          console.log('Connected to SpacetimeDB!');
-          setIsConnected(true);
-        } catch (e) {
-          console.error('Auto-connect failed:', e);
-        }
-      } else {
-        console.log('No token available from OIDC');
+      try {
+        console.log(token ? 'Connecting with token...' : 'Connecting anonymously...');
+        await connectToSpacetimeDB('', token);
+        console.log('Connected to SpacetimeDB!');
+        setIsConnected(true);
+      } catch (e) {
+        console.error('Auto-connect failed:', e);
       }
     };
     
@@ -92,7 +111,7 @@ function SearchPage() {
               identity: profile.identity?.toHexString() || '',
               email: profile.email,
               fullName: profile.fullName,
-              profilePicture: profile.profilePicture,
+              profilePicture: profile.profilePicture || '',
               city: profile.city,
               description: profile.description,
             });
@@ -128,7 +147,11 @@ function SearchPage() {
         <div className="header-right">
           {isAuthenticated ? (
             <Link to="/me" className="profile-link">
-              <div className="profile-placeholder" />
+              {profilePicture ? (
+                <img src={profilePicture} alt="My Profile" className="profile-image" />
+              ) : (
+                <div className="profile-placeholder" />
+              )}
             </Link>
           ) : (
             <button onClick={handleSignIn} className="signin-button">

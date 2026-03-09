@@ -5,20 +5,19 @@ import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
 
-export async function connectToSpacetimeDB(_email: string, token: string): Promise<DbConnection> {
+export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
   if (dbConnection && subscriptionPromise) {
     return dbConnection;
   }
 
   const uri = `wss://${SPACETIMEDB_HOST}`;
 
-  console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE);
+  console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE, token ? 'with token' : 'anonymous');
 
   try {
-    dbConnection = await DbConnection.builder()
+    const builder = DbConnection.builder()
       .withUri(uri)
       .withDatabaseName(SPACETIMEDB_MODULE)
-      .withToken(token)
       .onConnect((_conn, id) => {
         console.log('Connected to SpacetimeDB with identity:', id.toHexString());
       })
@@ -29,8 +28,13 @@ export async function connectToSpacetimeDB(_email: string, token: string): Promi
       })
       .onConnectError((_ctx, err) => {
         console.error('Error connecting to SpacetimeDB:', err);
-      })
-      .build();
+      });
+
+    if (token) {
+      builder.withToken(token);
+    }
+
+    dbConnection = await builder.build();
 
     subscriptionPromise = subscribeToTables();
     await subscriptionPromise;
