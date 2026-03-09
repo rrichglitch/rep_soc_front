@@ -77,6 +77,16 @@ function ProfilePage() {
     loadProfile();
   }, [profileIdentity, currentIdentityHex]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPictureModal(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const handleFollowChange = (following: boolean) => {
     setIsFollowing(following);
   };

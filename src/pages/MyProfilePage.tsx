@@ -60,6 +60,17 @@ function MyProfilePage() {
     }
   }, [editingField]);
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowPictureModal(false);
+        setShowQR(false);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, []);
+
   const loadProfile = async () => {
     if (!email) return;
     
