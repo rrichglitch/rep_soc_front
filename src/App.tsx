@@ -298,6 +298,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="/" element={<LandingPage />} />
+      <Route path="/about" element={<AboutPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route
         path="/profile/:identity"

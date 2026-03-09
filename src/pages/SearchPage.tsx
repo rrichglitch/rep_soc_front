@@ -34,21 +34,38 @@ function SearchPage() {
     const tryAutoConnect = async () => {
       const db = getDbConnection();
       if (db) {
+        console.log('DB already connected');
         setIsConnected(true);
         return;
       }
       
-      const token = auth.user?.access_token || getStoredCredentials().token;
+      // First try localStorage token (set by App component after auth)
+      let token = getStoredCredentials().token;
+      console.log('Token from localStorage:', token ? 'found' : 'not found');
+      
+      // If not found, try auth user token
+      if (!token && auth.user?.access_token) {
+        token = auth.user.access_token;
+        console.log('Token from auth user:', token ? 'found' : 'not found');
+      }
+      
       if (token) {
         try {
+          console.log('Attempting to connect to SpacetimeDB...');
           await connectToSpacetimeDB('', token);
+          console.log('Connected to SpacetimeDB!');
           setIsConnected(true);
         } catch (e) {
-          console.log('Auto-connect failed:', e);
+          console.error('Auto-connect failed:', e);
         }
+      } else {
+        console.log('No token available');
       }
     };
-    tryAutoConnect();
+    
+    // Small delay to ensure auth state is ready
+    const timer = setTimeout(tryAutoConnect, 500);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, auth.user]);
 
   useEffect(() => {

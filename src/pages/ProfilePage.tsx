@@ -35,21 +35,35 @@ function ProfilePage() {
     const tryAutoConnect = async () => {
       const db = getDbConnection();
       if (db) {
+        console.log('DB already connected');
         setIsConnected(true);
         return;
       }
       
-      const token = auth.user?.access_token || getStoredCredentials().token;
+      let token = getStoredCredentials().token;
+      console.log('Token from localStorage:', token ? 'found' : 'not found');
+      
+      if (!token && auth.user?.access_token) {
+        token = auth.user.access_token;
+        console.log('Token from auth user:', token ? 'found' : 'not found');
+      }
+      
       if (token) {
         try {
+          console.log('Attempting to connect to SpacetimeDB...');
           await connectToSpacetimeDB('', token);
+          console.log('Connected to SpacetimeDB!');
           setIsConnected(true);
         } catch (e) {
-          console.log('Auto-connect failed:', e);
+          console.error('Auto-connect failed:', e);
         }
+      } else {
+        console.log('No token available');
       }
     };
-    tryAutoConnect();
+    
+    const timer = setTimeout(tryAutoConnect, 500);
+    return () => clearTimeout(timer);
   }, [isAuthenticated, auth.user]);
   
   const [profile, setProfile] = useState<any>(null);
