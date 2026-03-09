@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { followUser, unfollowUser } from '../utils/spacetime';
 
 interface FollowButtonProps {
   targetIdentity: string;
@@ -13,15 +14,14 @@ function FollowButton({ targetIdentity, isFollowing, onFollowChange }: FollowBut
     setIsLoading(true);
     try {
       if (isFollowing) {
-        // Call unfollow reducer
-        console.log('Unfollowing:', targetIdentity);
+        await unfollowUser(targetIdentity);
       } else {
-        // Call follow reducer
-        console.log('Following:', targetIdentity);
+        await followUser(targetIdentity);
       }
       onFollowChange(!isFollowing);
     } catch (error) {
       console.error('Failed to update follow:', error);
+      alert(error instanceof Error ? error.message : 'Failed to update follow');
     }
     setIsLoading(false);
   };

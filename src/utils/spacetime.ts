@@ -51,9 +51,10 @@ async function subscribeToTables(): Promise<void> {
   console.log('Subscribing to tables...');
   dbConnection.subscriptionBuilder().subscribe([
     tables.user_profile,
+    tables.following,
+    tables.story_post,
   ]);
   
-  // Give some time for initial sync
   await new Promise(resolve => setTimeout(resolve, 1000));
   console.log('Subscription initiated');
 }
@@ -150,7 +151,7 @@ export async function updateProfile(
   description?: string
 ): Promise<void> {
   if (!dbConnection) {
-    throw new Error('Not connected to SpacetimeDB');
+    throw new Error('Not connected to SpaceTimeDB');
   }
 
   console.log('Updating profile:', { profilePicture, city, description });
@@ -160,4 +161,108 @@ export async function updateProfile(
     city,
     description,
   });
+}
+
+export async function getProfileByIdentity(identity: string) {
+  if (!dbConnection) {
+    return null;
+  }
+
+  try {
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      if (profile.identity.toHexString() === identity) {
+        return profile;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error('Error getting profile by identity:', e);
+    return null;
+  }
+}
+
+export async function checkIsFollowing(targetIdentity: string, currentIdentityHex: string): Promise<boolean> {
+  if (!dbConnection || !currentIdentityHex) {
+    return false;
+  }
+
+  try {
+    for (const f of dbConnection.db.following.iter()) {
+      if (f.followerIdentity.toHexString() === currentIdentityHex && 
+          f.followingIdentity.toHexString() === targetIdentity) {
+        return true;
+      }
+    }
+    return false;
+  } catch (e) {
+    console.error('Error checking follow status:', e);
+    return false;
+  }
+}
+
+export async function followUser(targetIdentity: string): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.follow({
+    targetIdentity: targetIdentity as any,
+  });
+}
+
+export async function unfollowUser(targetIdentity: string): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.unfollow({
+    targetIdentity: targetIdentity as any,
+  });
+}
+
+export async function createStoryPost(
+  profileOwnerIdentity: string,
+  content: string,
+  mediaData?: string,
+  mediaTypes?: string[]
+): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.createStoryPost({
+    profileOwnerIdentity: profileOwnerIdentity as any,
+    content,
+    mediaData,
+    mediaTypes: mediaTypes ? JSON.stringify(mediaTypes) : undefined,
+  });
+}
+
+export async function getStoriesForProfile(profileOwnerIdentity: string) {
+  if (!dbConnection) {
+    return [];
+  }
+
+  try {
+    const stories: any[] = [];
+    for (const post of dbConnection.db.story_post.iter()) {
+      if (post.profileOwnerIdentity.toHexString() === profileOwnerIdentity) {
+        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
+        stories.push({
+          id: post.id,
+          content: post.content,
+          mediaData: post.mediaData,
+          mediaTypes: post.mediaTypes,
+          createdAt: post.createdAt,
+          posterIdentity: post.posterIdentity.toHexString(),
+          posterName: poster?.fullName || 'Unknown',
+          posterPicture: poster?.profilePicture || '',
+        });
+      }
+    }
+    return stories.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+  } catch (e) {
+    console.error('Error getting stories:', e);
+    return [];
+  }
 }
