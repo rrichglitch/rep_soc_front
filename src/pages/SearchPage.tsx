@@ -81,11 +81,11 @@ function SearchPage() {
     <div className="search-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="back-link">
+          <button onClick={() => navigate(-1)} className="back-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m15 18-6-6 6-6" />
             </svg>
-          </Link>
+          </button>
           <h1 className="logo">Search</h1>
         </div>
       </header>
@@ -125,22 +125,25 @@ function SearchPage() {
         ) : (
           <div className="results">
             <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
-            {results.map((result) => (
-              <Link to={`/profile/${result.identity}`} key={result.identity} className="result-card">
-                {result.profilePicture ? (
-                  <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
-                ) : (
-                  <div className="result-avatar-placeholder" />
-                )}
-                <div className="result-info">
-                  <h3 className="result-name">{result.fullName}</h3>
-                  {result.city && <p className="result-city">{result.city}</p>}
-                  {result.email !== email && (
-                    <p className="result-email">{result.email}</p>
+            {results.map((result) => {
+              const isOwn = result.email === email;
+              return (
+                <Link to={isOwn ? '/me' : `/profile/${result.identity}`} key={result.identity} className="result-card">
+                  {result.profilePicture ? (
+                    <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
+                  ) : (
+                    <div className="result-avatar-placeholder" />
                   )}
-                </div>
-              </Link>
-            ))}
+                  <div className="result-info">
+                    <h3 className="result-name">{result.fullName}{isOwn && ' (You)'}</h3>
+                    {result.city && <p className="result-city">{result.city}</p>}
+                    {result.email !== email && (
+                      <p className="result-email">{result.email}</p>
+                    )}
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>
@@ -168,9 +171,12 @@ function SearchPage() {
           gap: 12px;
         }
 
-        .back-link {
+        .back-button {
+          background: none;
+          border: none;
           color: #667eea;
-          text-decoration: none;
+          cursor: pointer;
+          padding: 4px;
         }
 
         .logo {

@@ -147,7 +147,7 @@ function ProfilePage() {
     return (
       <div className="profile-page">
         <header className="header">
-          <Link to="/" className="back-link">← Back</Link>
+          <button onClick={() => navigate(-1)} className="back-button">← Back</button>
           <h1 className="logo">Reputable Social</h1>
           <div className="header-spacer"></div>
         </header>
@@ -164,7 +164,7 @@ function ProfilePage() {
   return (
     <div className="profile-page">
       <header className="header">
-        <Link to="/" className="back-link">← Back</Link>
+        <button onClick={() => navigate(-1)} className="back-button">← Back</button>
         <h1 className="logo">Reputable Social</h1>
         <div className="header-spacer"></div>
       </header>
@@ -266,10 +266,14 @@ function ProfilePage() {
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .back-link {
+        .back-button {
           color: #667eea;
-          text-decoration: none;
+          background: none;
+          border: none;
+          font-size: 16px;
           font-weight: 600;
+          cursor: pointer;
+          padding: 0;
         }
 
         .logo {
