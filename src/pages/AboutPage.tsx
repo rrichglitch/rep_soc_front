@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import { getProfileByEmail, connectToSpacetimeDB } from '../utils/spacetime';
@@ -7,12 +7,13 @@ import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useAuth();
   const { email } = useApp();
   const [profilePicture, setProfilePicture] = useState<string>('');
 
   const isAuthenticated = auth.isAuthenticated;
-  const hasReferrer = document.referrer.includes(window.location.host);
+  const showBack = location.state?.from !== undefined || (typeof document !== 'undefined' && document.referrer && document.referrer.includes(window.location.host));
 
   const handleSignIn = () => {
     auth.signinRedirect();
@@ -68,7 +69,7 @@ function AboutPage() {
     <div className="about-page">
       <header className="header">
         <div className="header-left">
-          {hasReferrer ? (
+          {showBack ? (
             <button onClick={() => navigate(-1)} className="back-button">← Back</button>
           ) : (
             <span />
@@ -241,9 +242,12 @@ function AboutPage() {
 
         .back-button {
           color: #667eea;
-          text-decoration: none;
+          background: none;
+          border: none;
           font-size: 16px;
           font-weight: 600;
+          cursor: pointer;
+          padding: 0;
         }
 
         .back-button:hover {
