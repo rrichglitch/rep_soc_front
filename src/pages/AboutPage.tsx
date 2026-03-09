@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
+import { useAuth } from 'react-oidc-context';
 import { getProfileByEmail } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
   const navigate = useNavigate();
+  const auth = useAuth();
   const { email } = useApp();
   const [profilePicture, setProfilePicture] = useState<string>('');
 
@@ -21,29 +23,41 @@ function AboutPage() {
     loadProfile();
   }, [email]);
 
+  const handleSignIn = () => {
+    auth.signinRedirect();
+  };
+
   const handleSearch = (query: string) => {
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query)}`);
     }
   };
 
+  const isAuthenticated = auth.isAuthenticated;
+
   return (
     <div className="about-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="back-button">← Back</Link>
+          <span />
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
         </div>
         <div className="header-right">
-          <Link to="/me" className="profile-link">
-            {profilePicture ? (
-              <img src={profilePicture} alt="My Profile" className="profile-image" />
-            ) : (
-              <div className="profile-placeholder" />
-            )}
-          </Link>
+          {isAuthenticated ? (
+            <Link to="/me" className="profile-link">
+              {profilePicture ? (
+                <img src={profilePicture} alt="My Profile" className="profile-image" />
+              ) : (
+                <div className="profile-placeholder" />
+              )}
+            </Link>
+          ) : (
+            <button onClick={handleSignIn} className="signin-button">
+              Sign In
+            </button>
+          )}
         </div>
       </header>
 
@@ -126,7 +140,11 @@ function AboutPage() {
             <strong> reputation is the antidote</strong>. Join us in building a social 
             network where character counts and trust is earned.
           </p>
-          <Link to="/" className="cta-button">Get Started</Link>
+          {isAuthenticated ? (
+            <Link to="/home" className="cta-button">Go to Feed</Link>
+          ) : (
+            <button onClick={handleSignIn} className="cta-button">Get Started</button>
+          )}
         </div>
       </main>
 
@@ -170,6 +188,22 @@ function AboutPage() {
           display: flex;
           align-items: center;
           justify-content: flex-end;
+        }
+
+        .signin-button {
+          padding: 8px 16px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .signin-button:hover {
+          background: #5a6fd6;
         }
 
         .back-button {

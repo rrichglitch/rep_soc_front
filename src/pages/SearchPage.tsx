@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
+import { useAuth } from 'react-oidc-context';
 import { getDbConnection } from '../utils/spacetime';
 
 interface SearchResult {
@@ -16,10 +17,17 @@ function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
+  const auth = useAuth();
   const { email } = useApp();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
+
+  const isAuthenticated = auth.isAuthenticated;
+
+  const handleSignIn = () => {
+    auth.signinRedirect();
+  };
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -81,12 +89,22 @@ function SearchPage() {
     <div className="search-page">
       <header className="header">
         <div className="header-left">
-          <button onClick={() => navigate(-1)} className="back-button">← Back</button>
+          <Link to="/" className="back-button">← Back</Link>
         </div>
         <div className="header-center">
           <h1 className="page-title">Find People</h1>
         </div>
-        <div className="header-right" />
+        <div className="header-right">
+          {isAuthenticated ? (
+            <Link to="/me" className="profile-link">
+              <div className="profile-placeholder" />
+            </Link>
+          ) : (
+            <button onClick={handleSignIn} className="signin-button">
+              Sign In
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="search-content">
@@ -187,6 +205,34 @@ function SearchPage() {
           font-weight: 600;
           cursor: pointer;
           padding: 0;
+          text-decoration: none;
+        }
+
+        .signin-button {
+          padding: 8px 16px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .signin-button:hover {
+          background: #5a6fd6;
+        }
+
+        .profile-link {
+          display: block;
+        }
+
+        .profile-placeholder {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: #e0e0e0;
         }
 
         .page-title {

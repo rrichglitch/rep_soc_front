@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
+import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
 import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
@@ -20,7 +21,14 @@ interface StoryPost {
 function ProfilePage() {
   const { identity: profileIdentity } = useParams<{ identity: string }>();
   const { identity: currentIdentity } = useApp();
+  const auth = useAuth();
   const navigate = useNavigate();
+
+  const isAuthenticated = auth.isAuthenticated;
+
+  const handleSignIn = () => {
+    auth.signinRedirect();
+  };
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -177,7 +185,17 @@ function ProfilePage() {
       <header className="header">
         <button onClick={() => navigate(-1)} className="back-button">← Back</button>
         <Link to="/" className="logo">Reputable Social</Link>
-        <div className="header-spacer"></div>
+        <div className="header-right">
+          {isAuthenticated ? (
+            <Link to="/me" className="profile-link">
+              <div className="profile-placeholder" />
+            </Link>
+          ) : (
+            <button onClick={handleSignIn} className="signin-button">
+              Sign In
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="main-content">
@@ -313,6 +331,40 @@ function ProfilePage() {
 
         .logo:hover {
           color: #5a6fd6;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          width: 60px;
+          justify-content: flex-end;
+        }
+
+        .signin-button {
+          padding: 8px 16px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .signin-button:hover {
+          background: #5a6fd6;
+        }
+
+        .profile-link {
+          display: block;
+        }
+
+        .profile-placeholder {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: #e0e0e0;
         }
 
         .header-spacer {

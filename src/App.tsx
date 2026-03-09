@@ -13,7 +13,6 @@ import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
 
-import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MainFeedPage from './pages/MainFeedPage';
 import ProfilePage from './pages/ProfilePage';
@@ -162,7 +161,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
   console.log('AuthCallback isAuth:', auth.isAuthenticated);
 
   if (!auth.isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" state={{ from: location }} replace />;
   }
 
   return (
@@ -188,7 +187,7 @@ function PrivateRoute({ children }: { children: ReactNode }) {
   console.log('isAuth:', auth.isAuthenticated);
   
   if (!auth.isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -217,14 +216,93 @@ function RedirectHandler() {
   return null;
 }
 
+function LandingPage() {
+  const auth = useAuth();
+  const [isChecking, setIsChecking] = useState(true);
+  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (!auth.isAuthenticated || !auth.user) {
+        setIsChecking(false);
+        setHasProfile(false);
+        return;
+      }
+
+      const idToken = auth.user?.id_token;
+      const accessToken = auth.user?.access_token;
+
+      if (idToken && accessToken) {
+        try {
+          const payload = JSON.parse(atob(idToken.split('.')[1]));
+          const userEmail = payload.email;
+
+          if (!userEmail) {
+            setIsChecking(false);
+            setHasProfile(false);
+            return;
+          }
+
+          try {
+            await connectToSpacetimeDB(userEmail, accessToken);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            let profileExists = await checkProfileExistsByEmail(userEmail);
+            if (!profileExists) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              profileExists = await checkProfileExistsByEmail(userEmail);
+            }
+
+            setHasProfile(profileExists);
+            setIsChecking(false);
+
+            if (profileExists) {
+              navigate('/home', { replace: true });
+            } else {
+              navigate('/register', { replace: true });
+            }
+          } catch (e) {
+            setIsChecking(false);
+            setHasProfile(false);
+          }
+        } catch (e) {
+          setIsChecking(false);
+          setHasProfile(false);
+        }
+      } else {
+        setIsChecking(false);
+        setHasProfile(false);
+      }
+    };
+
+    checkAuth();
+  }, [auth.isAuthenticated, auth.user, navigate]);
+
+  if (isChecking) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  if (hasProfile === false) {
+    return <AboutPage />;
+  }
+
+  return <AboutPage />;
+}
+
 function AppRoutes() {
   const location = useLocation();
   console.log('Current path:', location.pathname);
   
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
       <Route path="/callback" element={<CallbackPage />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/search" element={<SearchPage />} />
+      <Route
+        path="/profile/:identity"
+        element={<ProfilePage />}
+      />
       <Route
         path="/register"
         element={
@@ -234,7 +312,7 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/"
+        path="/home"
         element={
           <>
             <RedirectHandler />
@@ -242,30 +320,6 @@ function AppRoutes() {
               <MainFeedPage />
             </PrivateRoute>
           </>
-        }
-      />
-      <Route
-        path="/profile/:identity"
-        element={
-          <PrivateRoute>
-            <ProfilePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/search"
-        element={
-          <PrivateRoute>
-            <SearchPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/about"
-        element={
-          <PrivateRoute>
-            <AboutPage />
-          </PrivateRoute>
         }
       />
       <Route
@@ -284,9 +338,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-      <Route path="*" element={
-        <div className="loading">Unknown route - loading auth...</div>
-      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
