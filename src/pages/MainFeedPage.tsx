@@ -70,7 +70,6 @@ function MainFeedPage() {
 
       <main className="main-content">
         <div className="feed">
-          <h2>Your Feed</h2>
           <div className="empty-feed">
             <p>No posts yet. Follow some people to see their stories!</p>
             <Link to="/search" className="find-people-link">

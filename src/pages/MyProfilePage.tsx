@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { APP_URL } from '../config';
 import { getProfileByEmail } from '../utils/spacetime';
 import ProfileHeader from '../components/ProfileHeader';
 import EditProfileModal from '../components/EditProfileModal';
@@ -77,7 +76,7 @@ function MyProfilePage() {
     created_at: new Date(),
   };
 
-  const followUrl = `${APP_URL}/follow/${identity?.toHexString()}`;
+  const followUrl = `${window.location.origin}/follow/${identity?.toHexString()}`;
 
   return (
     <div className="my-profile-page">
