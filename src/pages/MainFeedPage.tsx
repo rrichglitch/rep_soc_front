@@ -224,8 +224,22 @@ function MainFeedPage() {
         }
 
         @media (max-width: 640px) {
+          .header {
+            padding: 10px 16px;
+          }
+
+          .header-left {
+            flex-shrink: 0;
+          }
+
           .header-center {
             display: none;
+          }
+
+          .header-right {
+            flex-shrink: 0;
+            margin-left: auto;
+            gap: 12px;
           }
 
           .search-toggle {
@@ -238,6 +252,7 @@ function MainFeedPage() {
 
           .logo {
             font-size: 16px;
+            white-space: nowrap;
           }
         }
       `}</style>
