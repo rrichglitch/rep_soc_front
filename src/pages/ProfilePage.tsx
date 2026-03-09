@@ -32,6 +32,7 @@ function ProfilePage() {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [showPictureModal, setShowPictureModal] = useState(false);
 
   const currentIdentityHex = currentIdentity?.toHexString();
   const isOwnProfile = currentIdentityHex === profileIdentity;
@@ -148,7 +149,7 @@ function ProfilePage() {
       <div className="profile-page">
         <header className="header">
           <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-          <h1 className="logo">Reputable Social</h1>
+          <Link to="/" className="logo">Reputable Social</Link>
           <div className="header-spacer"></div>
         </header>
         <main className="main-content">
@@ -165,7 +166,7 @@ function ProfilePage() {
     <div className="profile-page">
       <header className="header">
         <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-        <h1 className="logo">Reputable Social</h1>
+        <Link to="/" className="logo">Reputable Social</Link>
         <div className="header-spacer"></div>
       </header>
 
@@ -182,6 +183,7 @@ function ProfilePage() {
           isOwnProfile={isOwnProfile}
           isFollowing={isFollowing}
           onFollowChange={handleFollowChange}
+          onPictureClick={() => setShowPictureModal(true)}
         />
 
         {!isOwnProfile && (
@@ -249,6 +251,21 @@ function ProfilePage() {
         </div>
       </main>
 
+      {showPictureModal && profile && (
+        <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
+          <div className="picture-content" onClick={(e) => e.stopPropagation()}>
+            {profile.profilePicture ? (
+              <img src={profile.profilePicture} alt={profile.fullName} className="large-picture" />
+            ) : (
+              <div className="large-picture-placeholder" />
+            )}
+            <button onClick={() => setShowPictureModal(false)} className="close-picture-modal">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .profile-page {
           min-height: 100vh;
@@ -281,6 +298,11 @@ function ProfilePage() {
           font-size: 20px;
           font-weight: bold;
           color: #667eea;
+          text-decoration: none;
+        }
+
+        .logo:hover {
+          color: #5a6fd6;
         }
 
         .header-spacer {

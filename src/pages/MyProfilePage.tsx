@@ -35,6 +35,7 @@ function MyProfilePage() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,20 +177,18 @@ function MyProfilePage() {
           <div className="profile-header">
             <div className="profile-picture-container">
               {profile?.profile_picture ? (
-                <img src={profile.profile_picture} alt={profile.full_name} className="profile-picture" />
+                <img 
+                  src={profile.profile_picture} 
+                  alt={profile.full_name} 
+                  className="profile-picture clickable"
+                  onClick={() => setShowPictureModal(true)}
+                />
               ) : (
-                <div className="profile-picture-placeholder" />
+                <div 
+                  className="profile-picture-placeholder clickable"
+                  onClick={() => setShowPictureModal(true)}
+                />
               )}
-              <button 
-                className="edit-picture-btn" 
-                onClick={() => setShowPictureSelect(true)}
-                disabled={isSaving}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </button>
             </div>
             <div className="profile-info">
               <h2 className="profile-name">{profile?.full_name}</h2>
@@ -338,6 +337,26 @@ function MyProfilePage() {
         </div>
       )}
 
+      {showPictureModal && (
+        <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
+          <div className="picture-content" onClick={(e) => e.stopPropagation()}>
+            {profile?.profile_picture ? (
+              <img src={profile.profile_picture} alt={profile.full_name} className="large-picture" />
+            ) : (
+              <div className="large-picture-placeholder" />
+            )}
+            <div className="picture-modal-actions">
+              <button onClick={() => { setShowPictureModal(false); setShowPictureSelect(true); }} className="change-photo-btn">
+                Change Photo
+              </button>
+              <button onClick={() => setShowPictureModal(false)} className="close-button">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         .my-profile-page {
           min-height: 100vh;
@@ -410,6 +429,17 @@ function MyProfilePage() {
           object-fit: cover;
         }
 
+        .profile-picture.clickable,
+        .profile-picture-placeholder.clickable {
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .profile-picture.clickable:hover,
+        .profile-picture-placeholder.clickable:hover {
+          transform: scale(1.05);
+        }
+
         .profile-picture-placeholder {
           width: 100px;
           height: 100px;
@@ -418,23 +448,7 @@ function MyProfilePage() {
         }
 
         .edit-picture-btn {
-          position: absolute;
-          bottom: 0;
-          right: 0;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: #667eea;
-          border: 2px solid white;
-          color: white;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .edit-picture-btn:hover {
-          background: #5a6fd6;
+          display: none;
         }
 
         .profile-info {
@@ -718,6 +732,59 @@ function MyProfilePage() {
           margin: 0 0 8px;
           font-size: 14px;
           color: #666;
+        }
+
+        .picture-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+
+        .picture-content {
+          text-align: center;
+        }
+
+        .large-picture {
+          max-width: 80vw;
+          max-height: 70vh;
+          border-radius: 8px;
+          object-fit: contain;
+        }
+
+        .large-picture-placeholder {
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: #e0e0e0;
+          margin: 0 auto;
+        }
+
+        .picture-modal-actions {
+          margin-top: 16px;
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .change-photo-btn {
+          padding: 10px 24px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+
+        .change-photo-btn:hover {
+          background: #5a6fd6;
         }
 
         .close-button {

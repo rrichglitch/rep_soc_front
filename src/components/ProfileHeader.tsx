@@ -15,6 +15,7 @@ interface ProfileHeaderProps {
   isFollowing: boolean;
   onFollowChange: (following: boolean) => void;
   onEditClick?: () => void;
+  onPictureClick?: () => void;
 }
 
 function ProfileHeader({
@@ -23,15 +24,21 @@ function ProfileHeader({
   isFollowing,
   onFollowChange,
   onEditClick,
+  onPictureClick,
 }: ProfileHeaderProps) {
   return (
     <div className="profile-header">
       <div className="profile-picture-container">
-        <img
-          src={profile.profile_picture}
-          alt={profile.full_name}
-          className="profile-picture"
-        />
+        {profile.profile_picture ? (
+          <img
+            src={profile.profile_picture}
+            alt={profile.full_name}
+            className={`profile-picture ${onPictureClick ? 'clickable' : ''}`}
+            onClick={onPictureClick}
+          />
+        ) : (
+          <div className={`profile-picture-placeholder ${onPictureClick ? 'clickable' : ''}`} onClick={onPictureClick} />
+        )}
       </div>
 
       <div className="profile-info">
@@ -82,6 +89,26 @@ function ProfileHeader({
           object-fit: cover;
           border: 4px solid white;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-picture-placeholder {
+          width: 120px;
+          height: 120px;
+          border-radius: 50%;
+          background: #e0e0e0;
+          border: 4px solid white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-picture.clickable,
+        .profile-picture-placeholder.clickable {
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .profile-picture.clickable:hover,
+        .profile-picture-placeholder.clickable:hover {
+          transform: scale(1.05);
         }
 
         .profile-info {
