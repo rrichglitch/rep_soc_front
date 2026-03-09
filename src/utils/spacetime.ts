@@ -1,5 +1,5 @@
 import { DbConnection, tables } from '../module_bindings';
-import { Identity } from 'spacetimedb';
+import { Identity, Timestamp } from 'spacetimedb';
 import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 
 let dbConnection: DbConnection | null = null;
@@ -309,10 +309,43 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
   }
 }
 
-export async function getFollowedStories(currentIdentityHex: string) {
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+
+export async function getFeedPosition(currentIdentityHex: string): Promise<Date | null> {
+  if (!dbConnection) {
+    return null;
+  }
+
+  try {
+    const identity = Identity.fromString(currentIdentityHex);
+    const position = dbConnection.db.feed_position.identity.find(identity);
+    return position?.lastReadAt?.toDate() ?? null;
+  } catch (e) {
+    console.error('Error getting feed position:', e);
+    return null;
+  }
+}
+
+export async function setFeedPosition(_currentIdentityHex: string, lastReadAt: Date): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.updateFeedPosition({
+    lastReadAt: Timestamp.fromDate(lastReadAt),
+  });
+}
+
+export async function getFollowedStoriesWithOptions(
+  currentIdentityHex: string,
+  orderOldToNew: boolean,
+  startFromTimestamp?: Date
+) {
   if (!dbConnection) {
     return [];
   }
+
+  const cutoffDate = new Date(Date.now() - TWO_YEARS_MS);
 
   try {
     const followedIdentities: string[] = [];
@@ -330,8 +363,20 @@ export async function getFollowedStories(currentIdentityHex: string) {
     for (const post of dbConnection.db.story_post.iter()) {
       const profileOwnerHex = post.profileOwnerIdentity.toHexString();
       const posterHex = post.posterIdentity.toHexString();
+      const postDate = post.createdAt.toDate();
       
       if (followedIdentities.includes(profileOwnerHex) && posterHex !== profileOwnerHex) {
+        if (postDate < cutoffDate) {
+          continue;
+        }
+        if (startFromTimestamp) {
+          if (orderOldToNew && postDate < startFromTimestamp) {
+            continue;
+          }
+          if (!orderOldToNew && postDate > startFromTimestamp) {
+            continue;
+          }
+        }
         const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
         const profileOwner = dbConnection.db.user_profile.identity.find(post.profileOwnerIdentity);
         stories.push({
@@ -339,7 +384,7 @@ export async function getFollowedStories(currentIdentityHex: string) {
           content: post.content,
           mediaData: post.mediaData,
           mediaTypes: post.mediaTypes,
-          createdAt: post.createdAt.toDate(),
+          createdAt: postDate,
           posterIdentity: posterHex,
           posterName: poster?.fullName || 'Unknown',
           posterPicture: poster?.profilePicture || '',
@@ -349,13 +394,21 @@ export async function getFollowedStories(currentIdentityHex: string) {
         });
       }
     }
+
     return stories.sort((a, b) => {
       const aTime = a.createdAt as unknown as bigint;
       const bTime = b.createdAt as unknown as bigint;
+      if (orderOldToNew) {
+        return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
+      }
       return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
     });
   } catch (e) {
     console.error('Error getting followed stories:', e);
     return [];
   }
+}
+
+export async function getFollowedStories(currentIdentityHex: string) {
+  return getFollowedStoriesWithOptions(currentIdentityHex, false);
 }

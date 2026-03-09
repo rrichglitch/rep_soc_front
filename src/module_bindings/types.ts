@@ -10,6 +10,14 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const FeedPosition = __t.object("FeedPosition", {
+  identity: __t.identity(),
+  lastReadAt: __t.timestamp(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type FeedPosition = __Infer<typeof FeedPosition>;
+
 export const Following = __t.object("Following", {
   followerIdentity: __t.identity(),
   followingIdentity: __t.identity(),

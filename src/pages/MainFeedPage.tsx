@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, getFollowedStories } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getFollowedStoriesWithOptions, getFeedPosition, setFeedPosition } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
@@ -12,8 +12,13 @@ function MainFeedPage() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<any[]>([]);
+  const [orderOldToNew, setOrderOldToNew] = useState(true);
+  
+  const lastSaveTimeRef = useRef<number>(0);
+  const currentIdentityHexRef = useRef<string>('');
+  const feedContainerRef = useRef<HTMLDivElement>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!email) {
       setIsLoading(false);
       return;
@@ -23,27 +28,34 @@ function MainFeedPage() {
       const profile = await getProfileByEmail(email);
       if (profile) {
         const identityHex = profile.identity.toHexString();
+        currentIdentityHexRef.current = identityHex;
         setProfilePicture(profile.profilePicture);
 
-        const [myFeed, followedFeed] = await Promise.all([
+        const [myFeed, feedPosition] = await Promise.all([
           getMyStoryPosts(identityHex),
-          getFollowedStories(identityHex),
+          getFeedPosition(identityHex),
         ]);
         
         setMyStories(myFeed);
+
+        const followedFeed = await getFollowedStoriesWithOptions(
+          identityHex,
+          orderOldToNew,
+          feedPosition || undefined
+        );
         setFollowedStories(followedFeed);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
     }
     setIsLoading(false);
-  };
+  }, [email, orderOldToNew]);
 
   useEffect(() => {
     if (email) {
       loadData();
     }
-  }, [email]);
+  }, [email, loadData]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -54,6 +66,61 @@ function MainFeedPage() {
   const handleMobileSearchToggle = () => {
     setShowMobileSearch(!showMobileSearch);
   };
+
+  const handleToggleOrder = async () => {
+    const newOrder = !orderOldToNew;
+    setOrderOldToNew(newOrder);
+  };
+
+  const handleScroll = useCallback(async () => {
+    const identity = currentIdentityHexRef.current;
+    if (!identity) return;
+
+    const container = feedContainerRef.current;
+    if (!container) return;
+
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 100;
+    const isAtTop = scrollTop <= 100;
+
+    let timestampToSave: Date | null = null;
+
+    if (orderOldToNew) {
+      if (isAtBottom && followedStories.length > 0) {
+        const oldestStory = followedStories[followedStories.length - 1];
+        timestampToSave = new Date(oldestStory.createdAt);
+      }
+    } else {
+      if (isAtTop && followedStories.length > 0) {
+        const newestStory = followedStories[0];
+        timestampToSave = new Date(newestStory.createdAt);
+      }
+    }
+
+    if (timestampToSave) {
+      const now = Date.now();
+      if (now - lastSaveTimeRef.current > 30000) {
+        try {
+          await setFeedPosition(identity, timestampToSave);
+          lastSaveTimeRef.current = now;
+          console.log('Feed position saved:', timestampToSave);
+        } catch (e) {
+          console.error('Error saving feed position:', e);
+        }
+      }
+    }
+  }, [orderOldToNew, followedStories]);
+
+  useEffect(() => {
+    const container = feedContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   const hasContent = myStories.length > 0 || followedStories.length > 0;
 
@@ -100,7 +167,7 @@ function MainFeedPage() {
         </div>
       )}
 
-      <main className="main-content">
+      <main className="main-content" ref={feedContainerRef}>
         {!hasContent ? (
           <div className="empty-feed">
             <p>No posts yet. Follow some people to see their stories!</p>
@@ -110,6 +177,15 @@ function MainFeedPage() {
           </div>
         ) : (
           <div className="feed">
+            <div className="feed-controls">
+              <button 
+                className={`order-toggle ${orderOldToNew ? 'active' : ''}`}
+                onClick={handleToggleOrder}
+              >
+                {orderOldToNew ? '↓ Oldest First' : '↑ Newest First'}
+              </button>
+            </div>
+
             {myStories.length > 0 && (
               <div className="feed-section">
                 <h2 className="feed-section-title">Your Story</h2>
@@ -283,6 +359,35 @@ function MainFeedPage() {
           max-width: 600px;
           margin: 0 auto;
           padding: 24px;
+          height: calc(100vh - 60px);
+          overflow-y: auto;
+        }
+
+        .feed-controls {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 16px;
+        }
+
+        .order-toggle {
+          padding: 8px 16px;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 20px;
+          font-size: 14px;
+          cursor: pointer;
+          color: #666;
+          transition: all 0.2s;
+        }
+
+        .order-toggle:hover {
+          background: #f5f5f5;
+        }
+
+        .order-toggle.active {
+          background: #667eea;
+          color: white;
+          border-color: #667eea;
         }
 
         .empty-feed {
@@ -393,8 +498,6 @@ function MainFeedPage() {
           color: #667eea;
         }
 
-
-
         .story-people-row {
           display: flex;
           align-items: center;
@@ -457,9 +560,6 @@ function MainFeedPage() {
 
         .small-date {
           font-size: 11px;
-          color: #999;
-        }
-          font-size: 13px;
           color: #999;
         }
 

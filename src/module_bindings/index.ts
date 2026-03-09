@@ -41,12 +41,16 @@ import FollowReducer from "./follow_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
 import UnfollowReducer from "./unfollow_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
+import UpdateFeedPositionReducer from "./update_feed_position_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import FeedPositionRow from "./feed_position_table";
 import FollowingRow from "./following_table";
+import LastPostRow from "./last_post_table";
+import PushSubscriptionRow from "./push_subscription_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
 
@@ -54,6 +58,17 @@ import UserProfileRow from "./user_profile_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  feed_position: __table({
+    name: 'feed_position',
+    indexes: [
+      { name: 'identity', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'feed_position_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, FeedPositionRow),
   following: __table({
     name: 'following',
     indexes: [
@@ -61,6 +76,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, FollowingRow),
+  last_post: __table({
+    name: 'last_post',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, LastPostRow),
+  push_subscription: __table({
+    name: 'push_subscription',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PushSubscriptionRow),
   story_post: __table({
     name: 'story_post',
     indexes: [
@@ -98,6 +127,7 @@ const reducersSchema = __reducers(
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
   __reducerSchema("unfollow", UnfollowReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
+  __reducerSchema("update_feed_position", UpdateFeedPositionReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
 );
 

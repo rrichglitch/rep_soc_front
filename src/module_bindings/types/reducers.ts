@@ -10,17 +10,23 @@ import CreateProfileReducer from "../create_profile_reducer";
 import CreateStoryPostReducer from "../create_story_post_reducer";
 import DeleteStoryPostReducer from "../delete_story_post_reducer";
 import FollowReducer from "../follow_reducer";
+import OnConnectReducer from "../on_connect_reducer";
+import OnDisconnectReducer from "../on_disconnect_reducer";
 import RegisterPushSubscriptionReducer from "../register_push_subscription_reducer";
 import UnfollowReducer from "../unfollow_reducer";
 import UnregisterPushSubscriptionReducer from "../unregister_push_subscription_reducer";
+import UpdateFeedPositionReducer from "../update_feed_position_reducer";
 import UpdateProfileReducer from "../update_profile_reducer";
 
 export type CreateProfileParams = __Infer<typeof CreateProfileReducer>;
 export type CreateStoryPostParams = __Infer<typeof CreateStoryPostReducer>;
 export type DeleteStoryPostParams = __Infer<typeof DeleteStoryPostReducer>;
 export type FollowParams = __Infer<typeof FollowReducer>;
+export type OnConnectParams = __Infer<typeof OnConnectReducer>;
+export type OnDisconnectParams = __Infer<typeof OnDisconnectReducer>;
 export type RegisterPushSubscriptionParams = __Infer<typeof RegisterPushSubscriptionReducer>;
 export type UnfollowParams = __Infer<typeof UnfollowReducer>;
 export type UnregisterPushSubscriptionParams = __Infer<typeof UnregisterPushSubscriptionReducer>;
+export type UpdateFeedPositionParams = __Infer<typeof UpdateFeedPositionReducer>;
 export type UpdateProfileParams = __Infer<typeof UpdateProfileReducer>;
 
