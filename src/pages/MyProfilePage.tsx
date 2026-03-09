@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts } from '../utils/spacetime';
-import ProfileHeader from '../components/ProfileHeader';
-import EditProfileModal from '../components/EditProfileModal';
+import { getProfileByEmail, getMyStoryPosts, updateProfile } from '../utils/spacetime';
 
 interface UserProfile {
   identity: string;
@@ -31,15 +29,35 @@ function MyProfilePage() {
   const { identity, email } = useApp();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
+  
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPictureSelect, setShowPictureSelect] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (email) {
       loadProfile();
     }
   }, [email]);
+
+  useEffect(() => {
+    if (showPictureSelect) {
+      fileInputRef.current?.click();
+      setShowPictureSelect(false);
+    }
+  }, [showPictureSelect]);
+
+  useEffect(() => {
+    if (editingField === 'city' || editingField === 'description') {
+      setTimeout(() => editInputRef.current?.focus(), 0);
+    }
+  }, [editingField]);
 
   const loadProfile = async () => {
     if (!email) return;
@@ -70,9 +88,63 @@ function MyProfilePage() {
     }
   };
 
-  const handleProfileUpdate = (updatedProfile: UserProfile) => {
-    setProfile(updatedProfile);
-    setShowEditModal(false);
+  const handleEditClick = (field: string, currentValue: string) => {
+    setEditingField(field);
+    setEditValue(currentValue);
+  };
+
+  const handleSave = async () => {
+    if (!editingField || !identity) return;
+    
+    setIsSaving(true);
+    try {
+      if (editingField === 'city') {
+        await updateProfile(undefined, editValue, undefined);
+      } else if (editingField === 'description') {
+        await updateProfile(undefined, undefined, editValue);
+      }
+      await loadProfile();
+    } catch (e) {
+      console.error('Error updating profile:', e);
+    } finally {
+      setIsSaving(false);
+      setEditingField(null);
+      setEditValue('');
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSave();
+    } else if (e.key === 'Escape') {
+      handleCancel();
+    }
+  };
+
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
+      setIsSaving(true);
+      try {
+        await updateProfile(base64, undefined, undefined);
+        await loadProfile();
+      } catch (e) {
+        console.error('Error updating profile picture:', e);
+      } finally {
+        setIsSaving(false);
+        setShowPictureSelect(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   if (isLoading) {
@@ -83,15 +155,6 @@ function MyProfilePage() {
       </div>
     );
   }
-
-  const placeholderProfile: UserProfile = {
-    identity: identity?.toHexString() || '',
-    full_name: 'Loading...',
-    profile_picture: '',
-    city: '',
-    description: '',
-    created_at: new Date(),
-  };
 
   const basePath = import.meta.env.VITE_BASE_PATH || '';
   const followUrl = `${window.location.origin}${basePath}/follow/${identity?.toHexString()}`;
@@ -109,12 +172,112 @@ function MyProfilePage() {
       </header>
 
       <main className="main-content">
-        <ProfileHeader
-          profile={profile || placeholderProfile}
-          isOwnProfile={true}
-          isFollowing={false}
-          onFollowChange={() => {}}
-          onEditClick={() => setShowEditModal(true)}
+        <div className="profile-section">
+          <div className="profile-header">
+            <div className="profile-picture-container">
+              {profile?.profile_picture ? (
+                <img src={profile.profile_picture} alt={profile.full_name} className="profile-picture" />
+              ) : (
+                <div className="profile-picture-placeholder" />
+              )}
+              <button 
+                className="edit-picture-btn" 
+                onClick={() => setShowPictureSelect(true)}
+                disabled={isSaving}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </button>
+            </div>
+            <div className="profile-info">
+              <h2 className="profile-name">{profile?.full_name}</h2>
+              <div className="profile-field">
+                {editingField === 'city' ? (
+                  <div className="edit-inline">
+                    <input
+                      ref={editInputRef}
+                      type="text"
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="edit-input"
+                      placeholder="City"
+                    />
+                    <button onClick={handleSave} className="save-btn" disabled={isSaving}>
+                      ✓
+                    </button>
+                    <button onClick={handleCancel} className="cancel-btn">
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="field-display">
+                    <span className="field-value">{profile?.city || 'Add city'}</span>
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditClick('city', profile?.city || '')}
+                      disabled={isSaving}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="profile-field description-field">
+                {editingField === 'description' ? (
+                  <div className="edit-inline">
+                    <textarea
+                      ref={editInputRef as any}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className="edit-textarea"
+                      placeholder="Description"
+                      rows={3}
+                    />
+                    <div className="edit-actions">
+                      <button onClick={handleSave} className="save-btn" disabled={isSaving}>
+                        ✓
+                      </button>
+                      <button onClick={handleCancel} className="cancel-btn">
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="field-display">
+                    <span className="field-value">{profile?.description || 'Add description'}</span>
+                    <button 
+                      className="edit-btn" 
+                      onClick={() => handleEditClick('description', profile?.description || '')}
+                      disabled={isSaving}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="join-date">
+                Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          onChange={handlePictureChange}
+          style={{ display: 'none' }}
         />
 
         <div className="story-section">
@@ -131,17 +294,19 @@ function MyProfilePage() {
             <div className="stories-list">
               {stories.map((story) => (
                 <div key={story.id.toString()} className="story-card">
-                  <div className="story-header">
-                    {story.posterPicture ? (
-                      <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                    ) : (
-                      <div className="story-avatar-placeholder" />
-                    )}
-                    <div className="story-meta">
-                      <span className="story-author">{story.posterName}</span>
-                      <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                  <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                    <div className="story-header">
+                      {story.posterPicture ? (
+                        <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                      ) : (
+                        <div className="story-avatar-placeholder" />
+                      )}
+                      <div className="story-meta">
+                        <span className="story-author">{story.posterName}</span>
+                        <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                   <p className="story-content">{story.content}</p>
                   {story.mediaData && story.mediaData.length > 0 && (
                     <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -152,14 +317,6 @@ function MyProfilePage() {
           )}
         </div>
       </main>
-
-      {showEditModal && profile && (
-        <EditProfileModal
-          profile={profile}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleProfileUpdate}
-        />
-      )}
 
       {showQR && (
         <div className="qr-modal" onClick={() => setShowQR(false)}>
@@ -196,6 +353,7 @@ function MyProfilePage() {
           align-items: center;
           justify-content: space-between;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          z-index: 100;
         }
 
         .back-link {
@@ -207,6 +365,7 @@ function MyProfilePage() {
         .logo {
           margin: 0;
           font-size: 20px;
+          font-weight: bold;
           color: #667eea;
         }
 
@@ -226,32 +385,197 @@ function MyProfilePage() {
           padding: 24px;
         }
 
-        .story-section h2 {
-          margin: 0 0 16px;
-          font-size: 18px;
+        .profile-section {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          margin-bottom: 24px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-header {
+          display: flex;
+          gap: 20px;
+        }
+
+        .profile-picture-container {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .profile-picture {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .profile-picture-placeholder {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .edit-picture-btn {
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          background: #667eea;
+          border: 2px solid white;
+          color: white;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .edit-picture-btn:hover {
+          background: #5a6fd6;
+        }
+
+        .profile-info {
+          flex: 1;
+        }
+
+        .profile-name {
+          margin: 0 0 12px;
+          font-size: 22px;
           color: #333;
+        }
+
+        .profile-field {
+          margin-bottom: 8px;
+        }
+
+        .field-display {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .field-value {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .edit-btn {
+          background: none;
+          border: none;
+          color: #999;
+          cursor: pointer;
+          padding: 2px;
+          display: flex;
+          align-items: center;
+          opacity: 0;
+          transition: opacity 0.2s;
+        }
+
+        .profile-field:hover .edit-btn {
+          opacity: 1;
+        }
+
+        .edit-btn:hover {
+          color: #667eea;
+        }
+
+        .edit-inline {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .edit-input {
+          flex: 1;
+          padding: 6px 10px;
+          border: 1px solid #667eea;
+          border-radius: 4px;
+          font-size: 14px;
+          outline: none;
+        }
+
+        .edit-textarea {
+          flex: 1;
+          padding: 8px 10px;
+          border: 1px solid #667eea;
+          border-radius: 4px;
+          font-size: 14px;
+          font-family: inherit;
+          resize: vertical;
+          outline: none;
+        }
+
+        .save-btn {
+          padding: 4px 8px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
+        .save-btn:hover {
+          background: #5a6fd6;
+        }
+
+        .save-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .cancel-btn {
+          padding: 4px 8px;
+          background: #999;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 12px;
+        }
+
+        .cancel-btn:hover {
+          background: #777;
+        }
+
+        .edit-actions {
+          display: flex;
+          gap: 4px;
+        }
+
+        .description-field .field-value {
+          display: block;
+          white-space: pre-wrap;
+        }
+
+        .join-date {
+          margin: 12px 0 0;
+          font-size: 13px;
+          color: #999;
+        }
+
+        .story-section h2 {
+          font-size: 16px;
+          color: #666;
+          margin: 0 0 16px;
         }
 
         .no-post-own-story {
           background: white;
           border-radius: 12px;
-          padding: 20px;
-          margin-bottom: 24px;
+          padding: 16px;
           text-align: center;
-          border-left: 4px solid #f59e0b;
+          margin-bottom: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .no-post-own-story p {
           margin: 0;
           color: #666;
-        }
-
-        .empty-story {
-          text-align: center;
-          padding: 32px;
-          background: white;
-          border-radius: 12px;
-          color: #666;
+          font-size: 14px;
         }
 
         .stories-list {
@@ -267,11 +591,20 @@ function MyProfilePage() {
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
+        .story-header-link {
+          text-decoration: none;
+          display: block;
+          margin-bottom: 12px;
+        }
+
+        .story-header-link:hover .story-author {
+          color: #667eea;
+        }
+
         .story-header {
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-bottom: 12px;
         }
 
         .story-avatar {
@@ -316,55 +649,17 @@ function MyProfilePage() {
           border-radius: 8px;
         }
 
-        .qr-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-        }
-
-        .qr-content {
-          background: white;
-          border-radius: 16px;
-          padding: 32px;
-          text-align: center;
-          max-width: 320px;
-        }
-
-        .qr-content h3 {
-          margin: 0 0 20px;
-          color: #333;
-        }
-
-        .qr-code {
-          padding: 16px;
+        .empty-story {
           background: white;
           border-radius: 12px;
-          display: inline-block;
-          margin-bottom: 16px;
+          padding: 24px;
+          text-align: center;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .qr-instruction {
+        .empty-story p {
+          margin: 0;
           color: #666;
-          font-size: 14px;
-          margin: 0 0 8px;
-        }
-
-        .close-button {
-          margin-top: 16px;
-          padding: 10px 24px;
-          background: #667eea;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 600;
         }
 
         .loading-page {
@@ -387,6 +682,77 @@ function MyProfilePage() {
 
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        .qr-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+
+        .qr-content {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          text-align: center;
+          max-width: 90%;
+        }
+
+        .qr-content h3 {
+          margin: 0 0 16px;
+          color: #333;
+        }
+
+        .qr-code {
+          margin-bottom: 16px;
+        }
+
+        .qr-instruction {
+          margin: 0 0 8px;
+          font-size: 14px;
+          color: #666;
+        }
+
+        .close-button {
+          margin-top: 16px;
+          padding: 10px 24px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+
+        @media (max-width: 640px) {
+          .header {
+            padding: 10px 16px;
+          }
+
+          .main-content {
+            padding: 16px;
+          }
+
+          .profile-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+          }
+
+          .profile-field {
+            justify-content: center;
+          }
+
+          .field-display {
+            justify-content: center;
+          }
         }
       `}</style>
     </div>

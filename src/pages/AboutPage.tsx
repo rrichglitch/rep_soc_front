@@ -1,8 +1,25 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useApp } from '../App';
+import { getProfileByEmail } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
   const navigate = useNavigate();
+  const { email } = useApp();
+  const [profilePicture, setProfilePicture] = useState<string>('');
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (email) {
+        const profile = await getProfileByEmail(email);
+        if (profile) {
+          setProfilePicture(profile.profilePicture);
+        }
+      }
+    };
+    loadProfile();
+  }, [email]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -19,7 +36,15 @@ function AboutPage() {
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
         </div>
-        <div className="header-right" />
+        <div className="header-right">
+          <Link to="/me" className="profile-link">
+            {profilePicture ? (
+              <img src={profilePicture} alt="My Profile" className="profile-image" />
+            ) : (
+              <div className="profile-placeholder" />
+            )}
+          </Link>
+        </div>
       </header>
 
       <main className="about-content">
@@ -156,6 +181,24 @@ function AboutPage() {
 
         .back-button:hover {
           color: #5a6fd6;
+        }
+
+        .profile-link {
+          display: block;
+        }
+
+        .profile-placeholder {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .profile-image {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
         }
 
         .about-content {

@@ -228,6 +228,7 @@ function MainFeedPage() {
         .logo {
           margin: 0;
           font-size: 20px;
+          font-weight: bold;
           color: #667eea;
           text-decoration: none;
         }
