@@ -5,11 +5,7 @@ import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
 
-const TOKEN_KEY = 'stdb_token';
-
 export async function connectToSpacetimeDB(_email: string, token: string): Promise<DbConnection> {
-  localStorage.setItem(TOKEN_KEY, token);
-
   if (dbConnection && subscriptionPromise) {
     return dbConnection;
   }
@@ -71,16 +67,6 @@ export function disconnectFromSpacetimeDB() {
     dbConnection = null;
     subscriptionPromise = null;
   }
-}
-
-export function getStoredCredentials(): { token: string | null } {
-  return {
-    token: localStorage.getItem(TOKEN_KEY),
-  };
-}
-
-export function clearStoredCredentials() {
-  localStorage.removeItem(TOKEN_KEY);
 }
 
 export async function checkProfileExistsByEmail(email: string): Promise<boolean> {

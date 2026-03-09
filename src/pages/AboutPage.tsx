@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
-import { getProfileByEmail, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
+import { getProfileByEmail, connectToSpacetimeDB } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
@@ -33,17 +33,17 @@ function AboutPage() {
     const tryAutoConnect = async () => {
       if (isAuthenticated) return;
       
-      const creds = getStoredCredentials();
-      if (creds.token) {
+      const token = auth.user?.access_token;
+      if (token) {
         try {
-          await connectToSpacetimeDB('', creds.token);
+          await connectToSpacetimeDB('', token);
         } catch (e) {
           console.log('Auto-connect failed:', e);
         }
       }
     };
     tryAutoConnect();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, auth.user]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {

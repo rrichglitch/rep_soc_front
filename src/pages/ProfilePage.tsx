@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, getStoredCredentials, connectToSpacetimeDB, getDbConnection } from '../utils/spacetime';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getDbConnection } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
@@ -40,13 +40,8 @@ function ProfilePage() {
         return;
       }
       
-      let token = getStoredCredentials().token;
-      console.log('Token from localStorage:', token ? 'found' : 'not found');
-      
-      if (!token && auth.user?.access_token) {
-        token = auth.user.access_token;
-        console.log('Token from auth user:', token ? 'found' : 'not found');
-      }
+      const token = auth.user?.access_token;
+      console.log('Token from OIDC:', token ? 'found' : 'not found');
       
       if (token) {
         try {
@@ -58,7 +53,7 @@ function ProfilePage() {
           console.error('Auto-connect failed:', e);
         }
       } else {
-        console.log('No token available');
+        console.log('No token available from OIDC');
       }
     };
     

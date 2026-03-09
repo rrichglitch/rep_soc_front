@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
-import { getDbConnection, getStoredCredentials, connectToSpacetimeDB } from '../utils/spacetime';
+import { getDbConnection, connectToSpacetimeDB } from '../utils/spacetime';
 
 interface SearchResult {
   identity: string;
@@ -39,15 +39,8 @@ function SearchPage() {
         return;
       }
       
-      // First try localStorage token (set by App component after auth)
-      let token = getStoredCredentials().token;
-      console.log('Token from localStorage:', token ? 'found' : 'not found');
-      
-      // If not found, try auth user token
-      if (!token && auth.user?.access_token) {
-        token = auth.user.access_token;
-        console.log('Token from auth user:', token ? 'found' : 'not found');
-      }
+      const token = auth.user?.access_token;
+      console.log('Token from OIDC:', token ? 'found' : 'not found');
       
       if (token) {
         try {
@@ -59,11 +52,10 @@ function SearchPage() {
           console.error('Auto-connect failed:', e);
         }
       } else {
-        console.log('No token available');
+        console.log('No token available from OIDC');
       }
     };
     
-    // Small delay to ensure auth state is ready
     const timer = setTimeout(tryAutoConnect, 500);
     return () => clearTimeout(timer);
   }, [isAuthenticated, auth.user]);
