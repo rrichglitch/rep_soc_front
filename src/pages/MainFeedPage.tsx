@@ -163,8 +163,8 @@ function MainFeedPage() {
                           )}
                           <span className="owner-name">{story.profileOwnerName}</span>
                         </Link>
-                        <span className="story-date-inline">{new Date(story.createdAt).toLocaleDateString()}</span>
                       </div>
+                      <div className="story-date-row">{new Date(story.createdAt).toLocaleDateString()}</div>
                       <p className="story-content">{story.content}</p>
                       {story.mediaData && story.mediaData.length > 0 && (
                         <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -394,10 +394,9 @@ function MainFeedPage() {
         .story-people-inline {
           display: flex;
           align-items: center;
-          justify-content: space-between;
           gap: 8px;
-          margin-bottom: 12px;
-          padding-bottom: 12px;
+          margin-bottom: 4px;
+          padding-bottom: 8px;
           border-bottom: 1px solid #eee;
         }
 
@@ -442,10 +441,10 @@ function MainFeedPage() {
           font-size: 16px;
         }
 
-        .story-date-inline {
+        .story-date-row {
           font-size: 12px;
           color: #999;
-          white-space: nowrap;
+          margin-top: 4px;
         }
 
         .context-label {
