@@ -76,7 +76,8 @@ function MyProfilePage() {
     created_at: new Date(),
   };
 
-  const followUrl = `${window.location.origin}/follow/${identity?.toHexString()}`;
+  const basePath = import.meta.env.VITE_BASE_PATH || '/rep_soc_front';
+  const followUrl = `${window.location.origin}${basePath}/follow/${identity?.toHexString()}`;
 
   return (
     <div className="my-profile-page">
