@@ -257,7 +257,7 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
           content: post.content,
           mediaData: post.mediaData,
           mediaTypes: post.mediaTypes,
-          createdAt: post.createdAt,
+          createdAt: post.createdAt.toDate(),
           posterIdentity: post.posterIdentity.toHexString(),
           posterName: poster?.fullName || 'Unknown',
           posterPicture: poster?.profilePicture || '',
