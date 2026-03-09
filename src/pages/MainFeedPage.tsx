@@ -277,10 +277,10 @@ function MainFeedPage() {
                     </div>
                   ))}
                 </div>
-                {hasMore && (
-                  <button className="load-more-button" onClick={loadMore} disabled={isLoadingMore}>
-                    {isLoadingMore ? 'Loading...' : 'Load More'}
-                  </button>
+                {isLoadingMore && (
+                  <div className="loading-more-indicator">
+                    Loading more...
+                  </div>
                 )}
               </div>
             )}
@@ -418,26 +418,11 @@ function MainFeedPage() {
           border-color: #667eea;
         }
 
-        .load-more-button {
-          display: block;
-          width: 100%;
-          padding: 12px;
-          margin-top: 16px;
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 8px;
-          color: #667eea;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        .load-more-button:hover {
-          background: #f5f5f5;
-        }
-
-        .load-more-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
+        .loading-more-indicator {
+          text-align: center;
+          padding: 16px;
+          color: #666;
+          font-size: 14px;
         }
 
         .empty-feed {
