@@ -145,26 +145,28 @@ function MainFeedPage() {
                 <div className="stories-list">
                   {followedStories.map((story) => (
                     <div key={story.id.toString()} className="story-card">
-                      <div className="story-people-inline">
-                        <Link to={`/profile/${story.posterIdentity}`} className="story-poster-inline">
+                      <div className="story-people-row">
+                        <Link to={`/profile/${story.posterIdentity}`} className="story-person-col">
                           {story.posterPicture ? (
-                            <img src={story.posterPicture} alt={story.posterName} className="poster-avatar-small" />
+                            <img src={story.posterPicture} alt={story.posterName} className="person-avatar-lg" />
                           ) : (
-                            <div className="poster-avatar-placeholder-small" />
+                            <div className="person-avatar-placeholder-lg" />
                           )}
-                          <span className="poster-name">{story.posterName}</span>
+                          <span className="person-name-lg">{story.posterName}</span>
                         </Link>
-                        <span className="inline-arrow">→</span>
-                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="story-owner-inline">
+                        <div className="story-middle-col">
+                          <span className="small-arrow">→</span>
+                          <span className="small-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="story-person-col">
                           {story.profileOwnerPicture ? (
-                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="owner-avatar-small" />
+                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="person-avatar-lg" />
                           ) : (
-                            <div className="owner-avatar-placeholder-small" />
+                            <div className="person-avatar-placeholder-lg" />
                           )}
-                          <span className="owner-name">{story.profileOwnerName}</span>
+                          <span className="person-name-lg">{story.profileOwnerName}</span>
                         </Link>
                       </div>
-                      <div className="story-date-row">{new Date(story.createdAt).toLocaleDateString()}</div>
                       <p className="story-content">{story.content}</p>
                       {story.mediaData && story.mediaData.length > 0 && (
                         <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -391,63 +393,72 @@ function MainFeedPage() {
           color: #667eea;
         }
 
-        .story-people-inline {
+
+
+        .story-people-row {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 4px;
+          justify-content: space-between;
+          gap: 12px;
+          margin-bottom: 12px;
           padding-bottom: 8px;
           border-bottom: 1px solid #eee;
         }
 
-        .story-poster-inline,
-        .story-owner-inline {
+        .story-person-col {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           text-decoration: none;
+          min-width: 120px;
         }
 
-        .story-poster-inline:hover .poster-name,
-        .story-owner-inline:hover .owner-name {
+        .story-person-col:hover .person-name-lg {
           color: #667eea;
         }
 
-        .poster-avatar-small,
-        .owner-avatar-small {
-          width: 28px;
-          height: 28px;
+        .person-avatar-lg {
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           object-fit: cover;
+          flex-shrink: 0;
         }
 
-        .poster-avatar-placeholder-small,
-        .owner-avatar-placeholder-small {
-          width: 28px;
-          height: 28px;
+        .person-avatar-placeholder-lg {
+          width: 44px;
+          height: 44px;
           border-radius: 50%;
           background: #e0e0e0;
+          flex-shrink: 0;
         }
 
-        .poster-name,
-        .owner-name {
+        .person-name-lg {
           font-weight: 600;
           color: #333;
-          font-size: 14px;
+          font-size: 15px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
-        .inline-arrow {
+        .story-middle-col {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 2px;
+          flex-shrink: 0;
+        }
+
+        .small-arrow {
           color: #999;
           font-size: 16px;
         }
 
-        .story-date-row {
-          font-size: 12px;
+        .small-date {
+          font-size: 11px;
           color: #999;
-          margin-top: 4px;
         }
-
-        .context-label {
           font-size: 13px;
           color: #999;
         }
