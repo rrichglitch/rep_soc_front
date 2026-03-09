@@ -285,6 +285,13 @@ function SearchPage() {
           display: block;
         }
 
+        .profile-image {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
         .profile-placeholder {
           width: 36px;
           height: 36px;

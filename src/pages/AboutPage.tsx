@@ -65,6 +65,8 @@ function AboutPage() {
     }
   };
 
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+
   return (
     <div className="about-page">
       <header className="header">
@@ -79,6 +81,16 @@ function AboutPage() {
           <SearchBar onSearch={handleSearch} />
         </div>
         <div className="header-right">
+          <button 
+            className="search-toggle" 
+            onClick={() => setShowMobileSearch(!showMobileSearch)} 
+            aria-label="Search"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
           {isAuthenticated ? (
             <Link to="/me" className="profile-link">
               {profilePicture ? (
@@ -94,6 +106,15 @@ function AboutPage() {
           )}
         </div>
       </header>
+
+      {showMobileSearch && (
+        <div className="mobile-search-row">
+          <SearchBar onSearch={(query) => {
+            handleSearch(query);
+            setShowMobileSearch(false);
+          }} />
+        </div>
+      )}
 
       <main className="about-content">
         <h1 className="main-logo">Reputable Social</h1>
@@ -204,6 +225,7 @@ function AboutPage() {
           display: flex;
           align-items: center;
           justify-content: flex-start;
+          min-width: 0;
         }
 
         .header-center {
@@ -222,6 +244,7 @@ function AboutPage() {
           display: flex;
           align-items: center;
           justify-content: flex-end;
+          min-width: 0;
         }
 
         .signin-button {
@@ -349,13 +372,53 @@ function AboutPage() {
           background: #5a6fd6;
         }
 
+        .search-toggle {
+          display: none;
+          padding: 8px;
+          background: transparent;
+          border: none;
+          color: #666;
+          cursor: pointer;
+          border-radius: 8px;
+        }
+
+        .search-toggle:hover {
+          background: #f5f5f5;
+          color: #667eea;
+        }
+
+        .mobile-search-row {
+          display: none;
+          padding: 12px 24px;
+          background: white;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
         @media (max-width: 640px) {
           .header {
             padding: 10px 16px;
           }
 
+          .header-left {
+            flex-shrink: 0;
+          }
+
           .header-center {
             display: none;
+          }
+
+          .search-toggle {
+            display: block;
+          }
+
+          .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .mobile-search-row {
+            display: block;
           }
 
           .about-content {
