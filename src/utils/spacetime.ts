@@ -345,6 +345,7 @@ export async function getFollowedStories(currentIdentityHex: string) {
           posterPicture: poster?.profilePicture || '',
           profileOwnerIdentity: profileOwnerHex,
           profileOwnerName: profileOwner?.fullName || 'Unknown',
+          profileOwnerPicture: profileOwner?.profilePicture || '',
         });
       }
     }

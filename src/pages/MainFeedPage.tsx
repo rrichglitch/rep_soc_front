@@ -69,7 +69,7 @@ function MainFeedPage() {
     <div className="main-feed-page">
       <header className="header">
         <div className="header-left">
-          <h1 className="logo">Reputable Social</h1>
+          <Link to="/about" className="logo">Reputable Social</Link>
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
@@ -116,17 +116,19 @@ function MainFeedPage() {
                 <div className="stories-list">
                   {myStories.map((story) => (
                     <div key={story.id.toString()} className="story-card">
-                      <div className="story-header">
-                        {story.posterPicture ? (
-                          <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                        ) : (
-                          <div className="story-avatar-placeholder" />
-                        )}
-                        <div className="story-meta">
-                          <span className="story-author">{story.posterName}</span>
-                          <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                        <div className="story-header">
+                          {story.posterPicture ? (
+                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                          ) : (
+                            <div className="story-avatar-placeholder" />
+                          )}
+                          <div className="story-meta">
+                            <span className="story-author">{story.posterName}</span>
+                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
                       <p className="story-content">{story.content}</p>
                       {story.mediaData && story.mediaData.length > 0 && (
                         <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -143,20 +145,30 @@ function MainFeedPage() {
                 <div className="stories-list">
                   {followedStories.map((story) => (
                     <div key={story.id.toString()} className="story-card">
-                      <div className="story-header">
-                        {story.posterPicture ? (
-                          <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                        ) : (
-                          <div className="story-avatar-placeholder" />
-                        )}
-                        <div className="story-meta">
-                          <span className="story-author">{story.posterName}</span>
-                          <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
-                        </div>
+                      <div className="story-context-header">
+                        <span className="context-label">Post on </span>
+                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="profile-link-text">
+                          {story.profileOwnerPicture ? (
+                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="context-avatar" />
+                          ) : (
+                            <div className="context-avatar-placeholder" />
+                          )}
+                          <span className="context-name">{story.profileOwnerName}</span>
+                        </Link>
                       </div>
-                      <p className="story-context">
-                        on <Link to={`/profile/${story.profileOwnerIdentity}`} className="profile-link-text">{story.profileOwnerName}</Link>
-                      </p>
+                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                        <div className="story-header">
+                          {story.posterPicture ? (
+                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                          ) : (
+                            <div className="story-avatar-placeholder" />
+                          )}
+                          <div className="story-meta">
+                            <span className="story-author">{story.posterName}</span>
+                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </Link>
                       <p className="story-content">{story.content}</p>
                       {story.mediaData && story.mediaData.length > 0 && (
                         <img src={story.mediaData} alt="Story media" className="story-media" />
@@ -198,12 +210,12 @@ function MainFeedPage() {
           display: flex;
           justify-content: center;
           width: 100%;
-          max-width: 1000px;
+          max-width: 600px;
         }
 
         .header-center .search-bar {
           width: 100%;
-          max-width: 800px;
+          max-width: 500px;
         }
 
         .header-right {
@@ -217,6 +229,11 @@ function MainFeedPage() {
           margin: 0;
           font-size: 20px;
           color: #667eea;
+          text-decoration: none;
+        }
+
+        .logo:hover {
+          color: #5a6fd6;
         }
 
         .search-section {
@@ -365,6 +382,55 @@ function MainFeedPage() {
 
         .profile-link-text:hover {
           text-decoration: underline;
+        }
+
+        .story-header-link {
+          text-decoration: none;
+          display: block;
+          margin-bottom: 12px;
+        }
+
+        .story-header-link:hover .story-author {
+          color: #667eea;
+        }
+
+        .story-context-header {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-bottom: 12px;
+          padding-bottom: 12px;
+          border-bottom: 1px solid #eee;
+        }
+
+        .context-label {
+          font-size: 13px;
+          color: #999;
+        }
+
+        .story-context-header .profile-link-text {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .context-avatar {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .context-avatar-placeholder {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #e0e0e0;
+        }
+
+        .context-name {
+          font-weight: 600;
+          color: #667eea;
         }
 
         .story-content {
