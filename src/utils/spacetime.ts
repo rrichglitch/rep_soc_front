@@ -1,4 +1,5 @@
 import { DbConnection, tables } from '../module_bindings';
+import { Identity } from 'spacetimedb';
 import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 
 let dbConnection: DbConnection | null = null;
@@ -205,8 +206,9 @@ export async function followUser(targetIdentity: string): Promise<void> {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
+  const identity = Identity.fromString(targetIdentity);
   await dbConnection.reducers.follow({
-    targetIdentity: targetIdentity as any,
+    targetIdentity: identity,
   });
 }
 
@@ -215,8 +217,9 @@ export async function unfollowUser(targetIdentity: string): Promise<void> {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
+  const identity = Identity.fromString(targetIdentity);
   await dbConnection.reducers.unfollow({
-    targetIdentity: targetIdentity as any,
+    targetIdentity: identity,
   });
 }
 
@@ -230,8 +233,9 @@ export async function createStoryPost(
     throw new Error('Not connected to SpaceTimeDB');
   }
 
+  const identity = Identity.fromString(profileOwnerIdentity);
   await dbConnection.reducers.createStoryPost({
-    profileOwnerIdentity: profileOwnerIdentity as any,
+    profileOwnerIdentity: identity,
     content,
     mediaData,
     mediaTypes: mediaTypes ? JSON.stringify(mediaTypes) : undefined,
