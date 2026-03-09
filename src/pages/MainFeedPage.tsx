@@ -71,6 +71,9 @@ function MainFeedPage() {
         <div className="header-left">
           <h1 className="logo">Reputable Social</h1>
         </div>
+        <div className="header-center">
+          <SearchBar onSearch={handleSearch} />
+        </div>
         <div className="header-right">
           <button className="search-toggle" onClick={handleMobileSearchToggle} aria-label="Search">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -96,10 +99,6 @@ function MainFeedPage() {
           }} />
         </div>
       )}
-
-      <div className="search-section">
-        <SearchBar onSearch={handleSearch} />
-      </div>
 
       <main className="main-content">
         {!hasContent ? (
@@ -195,25 +194,22 @@ function MainFeedPage() {
           gap: 16px;
         }
 
-        .header-right {
-          margin-left: auto;
-        }
-
         .logo {
           margin: 0;
           font-size: 20px;
           color: #667eea;
         }
 
-        .search-section {
-          display: none;
-          padding: 24px;
-          background: white;
+        .header-center {
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          max-width: 500px;
+          margin: 0 24px;
         }
 
-        .search-section .search-bar-container {
-          max-width: 500px;
-          margin: 0 auto;
+        .search-section {
+          display: none;
         }
 
         .search-toggle {
@@ -394,8 +390,8 @@ function MainFeedPage() {
         }
 
         @media (min-width: 641px) {
-          .search-section {
-            display: block;
+          .header-center {
+            display: flex;
           }
         }
 
@@ -406,6 +402,10 @@ function MainFeedPage() {
 
           .header-left {
             flex-shrink: 0;
+          }
+
+          .header-center {
+            display: none;
           }
 
           .header-right {
