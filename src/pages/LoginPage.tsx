@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 
 function LoginPage() {
@@ -29,14 +29,6 @@ function LoginPage() {
           <button onClick={handleLogin} className="login-button primary">
             Sign In
           </button>
-
-          <div className="divider">
-            <span>or</span>
-          </div>
-
-          <Link to="/register" className="register-button">
-            Create Account
-          </Link>
         </div>
 
         <p className="terms">
