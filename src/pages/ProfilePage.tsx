@@ -262,7 +262,7 @@ function ProfilePage() {
       </main>
 
       {showPictureModal && profile && (
-        <div className="picture-modal" onClick={() => setShowPictureModal(false)} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
           <div className="picture-content" onClick={(e) => e.stopPropagation()}>
             {profile.profilePicture ? (
               <img src={profile.profilePicture} alt={profile.fullName} className="large-picture" />
@@ -537,6 +537,51 @@ function ProfilePage() {
           margin-top: 12px;
           max-width: 100%;
           border-radius: 8px;
+        }
+
+        .profile-page .picture-modal {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+
+        .profile-page .picture-content {
+          text-align: center;
+        }
+
+        .profile-page .large-picture {
+          max-width: 80vw;
+          max-height: 70vh;
+          border-radius: 8px;
+          object-fit: contain;
+        }
+
+        .profile-page .large-picture-placeholder {
+          width: 200px;
+          height: 200px;
+          border-radius: 50%;
+          background: #e0e0e0;
+          margin: 0 auto;
+        }
+
+        .profile-page .picture-modal .close-button {
+          display: block;
+          margin: 16px auto 0;
+          padding: 10px 24px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+
+        .profile-page .picture-modal .close-button:hover {
+          background: #5a6fd6;
         }
       `}</style>
     </div>
