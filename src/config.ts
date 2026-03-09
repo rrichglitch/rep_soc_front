@@ -62,4 +62,4 @@ export const ALLOWED_MEDIA_TYPES = [
   'video/webm',
 ] as const;
 
-export const RATE_LIMIT_HOURS = 16;
+export const RATE_LIMIT_HOURS = 0;
