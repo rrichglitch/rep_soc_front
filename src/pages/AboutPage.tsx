@@ -20,15 +20,27 @@ function AboutPage() {
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (email) {
-        const profile = await getProfileByEmail(email);
+      let userEmail = email;
+      
+      // If no email from App context, try to get from OIDC token
+      if (!userEmail && auth.user?.id_token) {
+        try {
+          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+          userEmail = payload.email;
+        } catch (e) {
+          console.error('Failed to parse token:', e);
+        }
+      }
+      
+      if (userEmail) {
+        const profile = await getProfileByEmail(userEmail);
         if (profile) {
           setProfilePicture(profile.profilePicture);
         }
       }
     };
     loadProfile();
-  }, [email]);
+  }, [email, auth.user]);
 
   useEffect(() => {
     const tryAutoConnect = async () => {
