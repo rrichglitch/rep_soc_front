@@ -9,6 +9,7 @@ function MainFeedPage() {
   const { email } = useApp();
   const [isLoading, setIsLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string>('');
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const loadData = async () => {
     if (!email) {
@@ -40,6 +41,10 @@ function MainFeedPage() {
     }
   };
 
+  const handleMobileSearchToggle = () => {
+    setShowMobileSearch(!showMobileSearch);
+  };
+
   if (isLoading) {
     return (
       <div className="loading-page">
@@ -58,6 +63,12 @@ function MainFeedPage() {
           <SearchBar onSearch={handleSearch} />
         </div>
         <div className="header-right">
+          <button className="search-toggle" onClick={handleMobileSearchToggle} aria-label="Search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
           <Link to="/me" className="profile-link">
             {profilePicture ? (
               <img src={profilePicture} alt="My Profile" className="profile-image" />
@@ -67,6 +78,15 @@ function MainFeedPage() {
           </Link>
         </div>
       </header>
+
+      {showMobileSearch && (
+        <div className="mobile-search-row">
+          <SearchBar onSearch={(query) => {
+            handleSearch(query);
+            setShowMobileSearch(false);
+          }} />
+        </div>
+      )}
 
       <main className="main-content">
         <div className="feed">
@@ -115,6 +135,21 @@ function MainFeedPage() {
           margin: 0 24px;
         }
 
+        .search-toggle {
+          display: none;
+          padding: 8px;
+          background: transparent;
+          border: none;
+          color: #666;
+          cursor: pointer;
+          border-radius: 8px;
+        }
+
+        .search-toggle:hover {
+          background: #f5f5f5;
+          color: #667eea;
+        }
+
         .profile-link {
           display: block;
         }
@@ -133,16 +168,17 @@ function MainFeedPage() {
           object-fit: cover;
         }
 
+        .mobile-search-row {
+          display: none;
+          padding: 12px 24px;
+          background: white;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
         .main-content {
           max-width: 600px;
           margin: 0 auto;
           padding: 24px;
-        }
-
-        .feed h2 {
-          margin: 0 0 20px;
-          font-size: 18px;
-          color: #333;
         }
 
         .empty-feed {
@@ -185,6 +221,24 @@ function MainFeedPage() {
 
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 640px) {
+          .header-center {
+            display: none;
+          }
+
+          .search-toggle {
+            display: block;
+          }
+
+          .mobile-search-row {
+            display: block;
+          }
+
+          .logo {
+            font-size: 16px;
+          }
         }
       `}</style>
     </div>

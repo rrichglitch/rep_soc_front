@@ -20,6 +20,7 @@ import ProfilePage from './pages/ProfilePage';
 import MyProfilePage from './pages/MyProfilePage';
 import FollowPage from './pages/FollowPage';
 import CallbackPage from './pages/CallbackPage';
+import SearchPage from './pages/SearchPage';
 
 interface AppContextType {
   identity: Identity | null;
@@ -247,6 +248,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <ProfilePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/search"
+        element={
+          <PrivateRoute>
+            <SearchPage />
           </PrivateRoute>
         }
       />
