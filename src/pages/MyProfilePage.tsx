@@ -166,7 +166,7 @@ function MyProfilePage() {
         <Link to="/" className="back-link">
           ← Back
         </Link>
-        <h1 className="logo">Reputable Social</h1>
+        <Link to="/" className="logo">Reputable Social</Link>
         <button onClick={() => setShowQR(true)} className="qr-button">
           Share
         </button>
@@ -386,6 +386,11 @@ function MyProfilePage() {
           font-size: 20px;
           font-weight: bold;
           color: #667eea;
+          text-decoration: none;
+        }
+
+        .logo:hover {
+          color: #5a6fd6;
         }
 
         .qr-button {
@@ -788,7 +793,7 @@ function MyProfilePage() {
         }
 
         .close-button {
-          margin-top: 16px;
+          margin: 0;
           padding: 10px 24px;
           background: #667eea;
           color: white;
