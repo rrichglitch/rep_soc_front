@@ -181,16 +181,35 @@ function MainFeedPage() {
           top: 0;
           background: white;
           padding: 12px 24px;
-          display: flex;
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
           align-items: center;
-          justify-content: space-between;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           z-index: 100;
         }
 
-        .header-left, .header-right {
+        .header-left {
           display: flex;
           align-items: center;
+          justify-content: flex-start;
+        }
+
+        .header-center {
+          display: flex;
+          justify-content: center;
+          width: 100%;
+          max-width: 600px;
+        }
+
+        .header-center .search-bar {
+          width: 100%;
+          max-width: 500px;
+        }
+
+        .header-right {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
           gap: 16px;
         }
 
@@ -198,14 +217,6 @@ function MainFeedPage() {
           margin: 0;
           font-size: 20px;
           color: #667eea;
-        }
-
-        .header-center {
-          flex: 1;
-          display: flex;
-          justify-content: center;
-          max-width: 500px;
-          margin: 0 24px;
         }
 
         .search-section {
