@@ -38,10 +38,11 @@ import CreateProfileReducer from "./create_profile_reducer";
 import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import FollowReducer from "./follow_reducer";
+import RefreshFeedReducer from "./refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
 import UnfollowReducer from "./unfollow_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
-import UpdateFeedPositionReducer from "./update_feed_position_reducer";
+import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
 
 // Import all procedure arg schemas
@@ -50,6 +51,7 @@ import UpdateProfileReducer from "./update_profile_reducer";
 import FeedPositionRow from "./feed_position_table";
 import FollowingRow from "./following_table";
 import LastPostRow from "./last_post_table";
+import MyFeedRow from "./my_feed_table";
 import PushSubscriptionRow from "./push_subscription_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
@@ -93,6 +95,9 @@ const tablesSchema = __schema({
   story_post: __table({
     name: 'story_post',
     indexes: [
+      { name: 'created_at', algorithm: 'btree', columns: [
+        'createdAt',
+      ] },
       { name: 'id', algorithm: 'btree', columns: [
         'id',
       ] },
@@ -116,6 +121,13 @@ const tablesSchema = __schema({
       { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, UserProfileRow),
+  my_feed: __table({
+    name: 'my_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyFeedRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -124,10 +136,11 @@ const reducersSchema = __reducers(
   __reducerSchema("create_story_post", CreateStoryPostReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("follow", FollowReducer),
+  __reducerSchema("refresh_feed", RefreshFeedReducer),
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
   __reducerSchema("unfollow", UnfollowReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
-  __reducerSchema("update_feed_position", UpdateFeedPositionReducer),
+  __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
 );
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, getFollowedStoriesWithOptions, getFeedPosition, setFeedPosition } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
@@ -11,14 +11,18 @@ function MainFeedPage() {
   const [profilePicture, setProfilePicture] = useState<string>('');
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [myStories, setMyStories] = useState<any[]>([]);
-  const [followedStories, setFollowedStories] = useState<any[]>([]);
+  const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
   const [orderOldToNew, setOrderOldToNew] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   
   const lastSaveTimeRef = useRef<number>(0);
   const currentIdentityHexRef = useRef<string>('');
   const feedContainerRef = useRef<HTMLDivElement>(null);
+  const allStoriesRef = useRef<FeedStory[]>([]);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (refresh: boolean = true) => {
     if (!email) {
       setIsLoading(false);
       return;
@@ -31,19 +35,18 @@ function MainFeedPage() {
         currentIdentityHexRef.current = identityHex;
         setProfilePicture(profile.profilePicture);
 
-        const [myFeed, feedPosition] = await Promise.all([
-          getMyStoryPosts(identityHex),
-          getFeedPosition(identityHex),
-        ]);
-        
+        const myFeed = await getMyStoryPosts(identityHex);
         setMyStories(myFeed);
 
-        const followedFeed = await getFollowedStoriesWithOptions(
-          identityHex,
-          orderOldToNew,
-          feedPosition || undefined
-        );
-        setFollowedStories(followedFeed);
+        if (refresh) {
+          await refreshFeed();
+        }
+        
+        const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, 0);
+        allStoriesRef.current = stories;
+        setFollowedStories(stories);
+        setHasMore(more);
+        setCurrentPage(0);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -53,9 +56,23 @@ function MainFeedPage() {
 
   useEffect(() => {
     if (email) {
-      loadData();
+      loadData(true);
     }
   }, [email, loadData]);
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, nextPage);
+    
+    allStoriesRef.current = [...allStoriesRef.current, ...stories];
+    setFollowedStories(allStoriesRef.current);
+    setHasMore(more);
+    setCurrentPage(nextPage);
+    setIsLoadingMore(false);
+  }, [currentPage, hasMore, isLoadingMore, orderOldToNew]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -70,6 +87,12 @@ function MainFeedPage() {
   const handleToggleOrder = async () => {
     const newOrder = !orderOldToNew;
     setOrderOldToNew(newOrder);
+    allStoriesRef.current = [];
+    const { stories, hasMore: more } = getPaginatedFeedStories(newOrder, 0);
+    allStoriesRef.current = stories;
+    setFollowedStories(stories);
+    setHasMore(more);
+    setCurrentPage(0);
   };
 
   const handleScroll = useCallback(async () => {
@@ -85,6 +108,10 @@ function MainFeedPage() {
 
     const isAtBottom = scrollTop + clientHeight >= scrollHeight - 100;
     const isAtTop = scrollTop <= 100;
+
+    if (isAtBottom && hasMore && !isLoadingMore) {
+      loadMore();
+    }
 
     let timestampToSave: Date | null = null;
 
@@ -104,15 +131,15 @@ function MainFeedPage() {
       const now = Date.now();
       if (now - lastSaveTimeRef.current > 30000) {
         try {
-          await setFeedPosition(identity, timestampToSave);
+          await updateFeedScrollPosition(timestampToSave);
           lastSaveTimeRef.current = now;
-          console.log('Feed position saved:', timestampToSave);
+          console.log('Feed scroll position saved:', timestampToSave);
         } catch (e) {
           console.error('Error saving feed position:', e);
         }
       }
     }
-  }, [orderOldToNew, followedStories]);
+  }, [orderOldToNew, followedStories, hasMore, isLoadingMore, loadMore]);
 
   useEffect(() => {
     const container = feedContainerRef.current;
@@ -222,7 +249,7 @@ function MainFeedPage() {
                   {followedStories.map((story) => (
                     <div key={story.id.toString()} className="story-card">
                       <div className="story-people-row">
-                        <Link to={`/profile/${story.posterIdentity}`} className="story-person-col">
+                        <Link to={`/profile/${story.posterIdentity.toHexString()}`} className="story-person-col">
                           {story.posterPicture ? (
                             <img src={story.posterPicture} alt={story.posterName} className="person-avatar-lg" />
                           ) : (
@@ -234,7 +261,7 @@ function MainFeedPage() {
                           <span className="small-arrow">→</span>
                           <span className="small-date">{new Date(story.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <Link to={`/profile/${story.profileOwnerIdentity}`} className="story-person-col">
+                        <Link to={`/profile/${story.profileOwnerIdentityHex}`} className="story-person-col">
                           {story.profileOwnerPicture ? (
                             <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="person-avatar-lg" />
                           ) : (
@@ -250,6 +277,11 @@ function MainFeedPage() {
                     </div>
                   ))}
                 </div>
+                {hasMore && (
+                  <button className="load-more-button" onClick={loadMore} disabled={isLoadingMore}>
+                    {isLoadingMore ? 'Loading...' : 'Load More'}
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -309,10 +341,6 @@ function MainFeedPage() {
 
         .logo:hover {
           color: #5a6fd6;
-        }
-
-        .search-section {
-          display: none;
         }
 
         .search-toggle {
@@ -388,6 +416,28 @@ function MainFeedPage() {
           background: #667eea;
           color: white;
           border-color: #667eea;
+        }
+
+        .load-more-button {
+          display: block;
+          width: 100%;
+          padding: 12px;
+          margin-top: 16px;
+          background: white;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          color: #667eea;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .load-more-button:hover {
+          background: #f5f5f5;
+        }
+
+        .load-more-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .empty-feed {
@@ -472,22 +522,6 @@ function MainFeedPage() {
           color: #999;
         }
 
-        .story-context {
-          margin: 0 0 8px;
-          font-size: 14px;
-          color: #666;
-        }
-
-        .profile-link-text {
-          color: #667eea;
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .profile-link-text:hover {
-          text-decoration: underline;
-        }
-
         .story-header-link {
           text-decoration: none;
           display: block;
@@ -561,31 +595,6 @@ function MainFeedPage() {
         .small-date {
           font-size: 11px;
           color: #999;
-        }
-
-        .story-context-header .profile-link-text {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .context-avatar {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .context-avatar-placeholder {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #e0e0e0;
-        }
-
-        .context-name {
-          font-weight: 600;
-          color: #667eea;
         }
 
         .story-content {

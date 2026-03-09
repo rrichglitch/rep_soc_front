@@ -10,10 +10,4 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  identity: __t.identity().primaryKey(),
-  lastReadAt: __t.timestamp().name("last_read_at"),
-  lastFeedLoadAt: __t.timestamp().name("last_feed_load_at"),
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-});
+export default {};

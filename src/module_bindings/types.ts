@@ -13,10 +13,26 @@ import {
 export const FeedPosition = __t.object("FeedPosition", {
   identity: __t.identity(),
   lastReadAt: __t.timestamp(),
+  lastFeedLoadAt: __t.timestamp(),
   createdAt: __t.timestamp(),
   updatedAt: __t.timestamp(),
 });
 export type FeedPosition = __Infer<typeof FeedPosition>;
+
+export const FeedStory = __t.object("FeedStory", {
+  id: __t.u64(),
+  profileOwnerIdentity: __t.identity(),
+  posterIdentity: __t.identity(),
+  content: __t.string(),
+  mediaData: __t.string(),
+  mediaTypes: __t.string(),
+  createdAt: __t.timestamp(),
+  posterName: __t.string(),
+  posterPicture: __t.string(),
+  profileOwnerName: __t.string(),
+  profileOwnerPicture: __t.string(),
+});
+export type FeedStory = __Infer<typeof FeedStory>;
 
 export const Following = __t.object("Following", {
   followerIdentity: __t.identity(),
@@ -31,6 +47,9 @@ export const LastPost = __t.object("LastPost", {
   lastPostedAt: __t.timestamp(),
 });
 export type LastPost = __Infer<typeof LastPost>;
+
+export const MyFeed = __t.object("MyFeed", {});
+export type MyFeed = __Infer<typeof MyFeed>;
 
 export const PushSubscription = __t.object("PushSubscription", {
   identity: __t.identity(),

@@ -54,6 +54,7 @@ async function subscribeToTables(): Promise<void> {
     tables.user_profile,
     tables.following,
     tables.story_post,
+    tables.my_feed,
   ]);
   
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -311,6 +312,93 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
 
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
+const PAGE_SIZE = 20;
+
+export interface FeedStory {
+  id: bigint;
+  profileOwnerIdentity: any;
+  posterIdentity: any;
+  content: string;
+  mediaData: string;
+  mediaTypes: string;
+  createdAt: Date;
+  posterName: string;
+  posterPicture: string;
+  profileOwnerIdentityHex: string;
+  profileOwnerName: string;
+  profileOwnerPicture: string;
+}
+
+export async function refreshFeed(): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.refreshFeed({});
+}
+
+export async function updateFeedScrollPosition(lastReadAt: Date): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.updateFeedScrollPosition({
+    lastReadAt: Timestamp.fromDate(lastReadAt),
+  });
+}
+
+export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
+  if (!dbConnection) {
+    return [];
+  }
+
+  try {
+    const stories: FeedStory[] = [];
+    for (const row of dbConnection.db.my_feed.iter()) {
+      stories.push({
+        id: row.id,
+        profileOwnerIdentity: row.profileOwnerIdentity,
+        posterIdentity: row.posterIdentity,
+        content: row.content,
+        mediaData: row.mediaData,
+        mediaTypes: row.mediaTypes,
+        createdAt: row.createdAt.toDate(),
+        posterName: row.posterName,
+        posterPicture: row.posterPicture,
+        profileOwnerIdentityHex: row.profileOwnerIdentity.toHexString(),
+        profileOwnerName: row.profileOwnerName,
+        profileOwnerPicture: row.profileOwnerPicture,
+      });
+    }
+
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt.getTime();
+      const bTime = b.createdAt.getTime();
+      if (orderOldToNew) {
+        return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
+      }
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting feed stories:', e);
+    return [];
+  }
+}
+
+export function getPaginatedFeedStories(
+  orderOldToNew: boolean = true,
+  page: number = 0,
+  perPage: number = PAGE_SIZE
+): { stories: FeedStory[]; hasMore: boolean } {
+  const allStories = getMyFeedStories(orderOldToNew);
+  const start = page * perPage;
+  const end = start + perPage;
+  return {
+    stories: allStories.slice(start, end),
+    hasMore: end < allStories.length,
+  };
+}
+
 export async function getFeedPosition(currentIdentityHex: string): Promise<Date | null> {
   if (!dbConnection) {
     return null;
@@ -331,7 +419,7 @@ export async function setFeedPosition(_currentIdentityHex: string, lastReadAt: D
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  await dbConnection.reducers.updateFeedPosition({
+  await dbConnection.reducers.updateFeedScrollPosition({
     lastReadAt: Timestamp.fromDate(lastReadAt),
   });
 }
