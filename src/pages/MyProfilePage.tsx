@@ -76,7 +76,7 @@ function MyProfilePage() {
     created_at: new Date(),
   };
 
-  const basePath = import.meta.env.VITE_BASE_PATH || '/rep_soc_front';
+  const basePath = import.meta.env.VITE_BASE_PATH || '';
   const followUrl = `${window.location.origin}${basePath}/follow/${identity?.toHexString()}`;
 
   return (
