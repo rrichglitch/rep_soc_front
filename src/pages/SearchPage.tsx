@@ -86,8 +86,11 @@ function SearchPage() {
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
-          <h1 className="logo">Search</h1>
         </div>
+        <div className="header-center">
+          <h1 className="page-title">Find People</h1>
+        </div>
+        <div className="header-right" />
       </header>
 
       <main className="search-content">
@@ -169,6 +172,16 @@ function SearchPage() {
           display: flex;
           align-items: center;
           gap: 12px;
+          width: 60px;
+        }
+
+        .header-center {
+          flex: 1;
+          text-align: center;
+        }
+
+        .header-right {
+          width: 60px;
         }
 
         .back-button {
@@ -177,6 +190,12 @@ function SearchPage() {
           color: #667eea;
           cursor: pointer;
           padding: 4px;
+        }
+
+        .page-title {
+          margin: 0;
+          font-size: 18px;
+          color: #333;
         }
 
         .logo {
