@@ -260,7 +260,11 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
         });
       }
     }
-    return stories.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt as unknown as bigint;
+      const bTime = b.createdAt as unknown as bigint;
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
   } catch (e) {
     console.error('Error getting stories:', e);
     return [];

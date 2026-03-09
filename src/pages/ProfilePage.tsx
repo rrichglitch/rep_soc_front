@@ -38,13 +38,18 @@ function ProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
+      // Wait for identity to be available
+      if (!currentIdentity) {
+        return;
+      }
+
       if (!profileIdentity) {
         setIsLoading(false);
         return;
       }
 
       // Redirect to own profile if viewing own profile
-      if (currentIdentityHex && profileIdentity === currentIdentityHex) {
+      if (profileIdentity === currentIdentityHex) {
         navigate('/me', { replace: true });
         return;
       }
@@ -67,7 +72,7 @@ function ProfilePage() {
     };
 
     loadProfile();
-  }, [profileIdentity, currentIdentityHex, navigate]);
+  }, [profileIdentity, currentIdentity, currentIdentityHex, navigate]);
 
   const handleFollowChange = (following: boolean) => {
     setIsFollowing(following);
