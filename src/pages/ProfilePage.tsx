@@ -252,14 +252,14 @@ function ProfilePage() {
       </main>
 
       {showPictureModal && profile && (
-        <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
+        <div className="picture-modal" onClick={() => setShowPictureModal(false)} style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <div className="picture-content" onClick={(e) => e.stopPropagation()}>
             {profile.profilePicture ? (
               <img src={profile.profilePicture} alt={profile.fullName} className="large-picture" />
             ) : (
               <div className="large-picture-placeholder" />
             )}
-            <button onClick={() => setShowPictureModal(false)} className="close-picture-modal">
+            <button onClick={() => setShowPictureModal(false)} className="close-button">
               Close
             </button>
           </div>
