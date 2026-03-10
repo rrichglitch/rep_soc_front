@@ -39,7 +39,7 @@ function CallbackPage() {
       clearTimeout(timeoutId);
       hasRedirected.current = true;
       const pendingProfile = localStorage.getItem('pending_profile');
-      navigate(pendingProfile ? '/me' : '/', { replace: true });
+      navigate(pendingProfile ? '/me' : '/', { replace: true, state: { from: '/callback' } });
       return;
     }
 

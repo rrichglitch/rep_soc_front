@@ -219,14 +219,16 @@ function RedirectHandler() {
 function LandingPage() {
   const auth = useAuth();
   const [isChecking, setIsChecking] = useState(true);
-  const [hasProfile, setHasProfile] = useState<boolean | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Check if coming back from OIDC callback (has state from navigation)
+  const fromCallback = location.state?.from === '/callback' || document.referrer?.includes('/callback');
 
   useEffect(() => {
     const checkAuth = async () => {
       if (!auth.isAuthenticated || !auth.user) {
         setIsChecking(false);
-        setHasProfile(false);
         
         // Pre-connect anonymously for faster search
         try {
@@ -247,7 +249,6 @@ function LandingPage() {
 
           if (!userEmail) {
             setIsChecking(false);
-            setHasProfile(false);
             return;
           }
 
@@ -262,38 +263,32 @@ function LandingPage() {
               await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            setHasProfile(profileExists);
-            setIsChecking(false);
-
             if (profileExists) {
               navigate('/home', { replace: true });
-            } else {
+            } else if (fromCallback) {
+              // Only redirect to register if coming back from login
               navigate('/register', { replace: true });
             }
           } catch (e) {
             console.error('Connection error:', e);
-            setIsChecking(false);
-            setHasProfile(false);
+            
           }
         } catch (e) {
-          setIsChecking(false);
-          setHasProfile(false);
+          console.error('Token parse error:', e);
+          
         }
       } else {
-        setIsChecking(false);
-        setHasProfile(false);
+        
       }
+      
+      setIsChecking(false);
     };
 
     checkAuth();
-  }, [auth.isAuthenticated, auth.user, navigate]);
+  }, [auth.isAuthenticated, auth.user, navigate, fromCallback]);
 
   if (isChecking) {
     return <div className="loading">Loading...</div>;
-  }
-
-  if (hasProfile === false) {
-    return <AboutPage />;
   }
 
   return <AboutPage />;
