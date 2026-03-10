@@ -254,15 +254,12 @@ function LandingPage() {
           try {
             await connectToSpacetimeDB(userEmail, accessToken);
 
-            // Wait briefly for subscription to sync
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            let profileExists = await checkProfileExistsByEmail(userEmail);
-            
-            // Retry once if not found (subscription might still be syncing)
-            if (!profileExists) {
-              await new Promise(resolve => setTimeout(resolve, 300));
+            // Poll for profile up to 1 second
+            let profileExists = false;
+            for (let i = 0; i < 10; i++) {
               profileExists = await checkProfileExistsByEmail(userEmail);
+              if (profileExists) break;
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             setHasProfile(profileExists);
