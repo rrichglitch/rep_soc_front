@@ -63,7 +63,7 @@ function SearchPage() {
         return;
       }
       
-      const token = auth.user?.access_token;
+      const token = isAuthenticated ? auth.user?.access_token : undefined;
       
       try {
         console.log(token ? 'Connecting with token...' : 'Connecting anonymously...');
