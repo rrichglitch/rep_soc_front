@@ -11,8 +11,9 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
   }
 
   const uri = `wss://${SPACETIMEDB_HOST}`;
+  const isAnonymous = !token;
 
-  console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE, token ? 'with token' : 'anonymous');
+  console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE, isAnonymous ? 'anonymous' : 'with token');
 
   try {
     const builder = DbConnection.builder()
@@ -36,13 +37,35 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
 
     dbConnection = await builder.build();
 
-    subscriptionPromise = subscribeToTables();
+    if (isAnonymous) {
+      subscriptionPromise = subscribeAnonymous();
+    } else {
+      subscriptionPromise = subscribeToTables();
+    }
     await subscriptionPromise;
 
     return dbConnection;
   } catch (e) {
     console.error('Failed to connect to SpacetimeDB:', e);
+    dbConnection = null;
+    subscriptionPromise = null;
     throw e;
+  }
+}
+
+async function subscribeAnonymous(): Promise<void> {
+  if (!dbConnection) return;
+  
+  console.log('Subscribing anonymously...');
+  try {
+    dbConnection.subscriptionBuilder().subscribe([
+      tables.user_profile,
+    ]);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Anonymous subscription initiated');
+  } catch (e) {
+    console.error('Anonymous subscription error:', e);
   }
 }
 
