@@ -18,6 +18,15 @@ function CallbackPage() {
   useEffect(() => {
     if (hasRedirected.current) return;
 
+    // Timeout fallback - redirect to about page after 1 second
+    const timeoutId = setTimeout(() => {
+      if (!hasRedirected.current) {
+        console.log('Callback timeout, redirecting to about');
+        hasRedirected.current = true;
+        navigate('/', { replace: true });
+      }
+    }, 1000);
+
     console.log('Callback checking auth:', {
       isAuthenticated: auth.isAuthenticated,
       isLoading: auth.isLoading,
@@ -27,26 +36,31 @@ function CallbackPage() {
     // If authenticated, redirect immediately
     if (auth.isAuthenticated) {
       console.log('User authenticated, redirecting');
+      clearTimeout(timeoutId);
       hasRedirected.current = true;
       const pendingProfile = localStorage.getItem('pending_profile');
       navigate(pendingProfile ? '/me' : '/', { replace: true });
       return;
     }
 
-    // If there's an error, redirect to login
+    // If there's an error, redirect to about page
     if (auth.error) {
       console.error('Auth error:', auth.error);
+      clearTimeout(timeoutId);
       hasRedirected.current = true;
-      navigate('/login', { replace: true });
+      navigate('/', { replace: true });
       return;
     }
 
-    // If not loading and not authenticated, something went wrong
+    // If not loading and not authenticated, redirect to about page
     if (!auth.isLoading && !auth.isAuthenticated) {
       console.log('Auth failed - not loading and not authenticated');
+      clearTimeout(timeoutId);
       hasRedirected.current = true;
-      navigate('/login', { replace: true });
+      navigate('/', { replace: true });
     }
+
+    return () => clearTimeout(timeoutId);
   }, [auth.isAuthenticated, auth.isLoading, auth.error, navigate]);
 
   return (
