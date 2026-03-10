@@ -254,7 +254,16 @@ function LandingPage() {
           try {
             await connectToSpacetimeDB(userEmail, accessToken);
 
-            const profileExists = await checkProfileExistsByEmail(userEmail);
+            // Wait briefly for subscription to sync
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            let profileExists = await checkProfileExistsByEmail(userEmail);
+            
+            // Retry once if not found (subscription might still be syncing)
+            if (!profileExists) {
+              await new Promise(resolve => setTimeout(resolve, 300));
+              profileExists = await checkProfileExistsByEmail(userEmail);
+            }
 
             setHasProfile(profileExists);
             setIsChecking(false);
@@ -265,6 +274,7 @@ function LandingPage() {
               navigate('/register', { replace: true });
             }
           } catch (e) {
+            console.error('Connection error:', e);
             setIsChecking(false);
             setHasProfile(false);
           }
