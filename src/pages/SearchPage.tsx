@@ -75,8 +75,7 @@ function SearchPage() {
       }
     };
     
-    const timer = setTimeout(tryAutoConnect, 500);
-    return () => clearTimeout(timer);
+    tryAutoConnect();
   }, [isAuthenticated, auth.user]);
 
   useEffect(() => {

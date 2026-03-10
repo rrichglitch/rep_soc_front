@@ -227,6 +227,13 @@ function LandingPage() {
       if (!auth.isAuthenticated || !auth.user) {
         setIsChecking(false);
         setHasProfile(false);
+        
+        // Pre-connect anonymously for faster search
+        try {
+          await connectToSpacetimeDB('', undefined);
+        } catch (e) {
+          console.log('Anonymous pre-connect failed:', e);
+        }
         return;
       }
 
@@ -246,13 +253,8 @@ function LandingPage() {
 
           try {
             await connectToSpacetimeDB(userEmail, accessToken);
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            let profileExists = await checkProfileExistsByEmail(userEmail);
-            if (!profileExists) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              profileExists = await checkProfileExistsByEmail(userEmail);
-            }
+            const profileExists = await checkProfileExistsByEmail(userEmail);
 
             setHasProfile(profileExists);
             setIsChecking(false);

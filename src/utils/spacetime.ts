@@ -62,7 +62,7 @@ async function subscribeAnonymous(): Promise<void> {
       tables.user_profile,
     ]);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 100));
     console.log('Anonymous subscription initiated');
   } catch (e) {
     console.error('Anonymous subscription error:', e);
@@ -81,7 +81,7 @@ async function subscribeToTables(): Promise<void> {
       tables.my_feed,
     ]);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 100));
     console.log('Subscription initiated');
   } catch (e) {
     console.error('Subscription error:', e);

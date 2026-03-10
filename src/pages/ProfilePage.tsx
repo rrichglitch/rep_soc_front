@@ -40,25 +40,19 @@ function ProfilePage() {
         return;
       }
       
-      const token = auth.user?.access_token;
-      console.log('Token from OIDC:', token ? 'found' : 'not found');
+      const token = isAuthenticated ? auth.user?.access_token : undefined;
       
-      if (token) {
-        try {
-          console.log('Attempting to connect to SpacetimeDB...');
-          await connectToSpacetimeDB('', token);
-          console.log('Connected to SpacetimeDB!');
-          setIsConnected(true);
-        } catch (e) {
-          console.error('Auto-connect failed:', e);
-        }
-      } else {
-        console.log('No token available from OIDC');
+      try {
+        console.log(token ? 'Connecting with token...' : 'Connecting anonymously...');
+        await connectToSpacetimeDB('', token);
+        console.log('Connected to SpacetimeDB!');
+        setIsConnected(true);
+      } catch (e) {
+        console.error('Auto-connect failed:', e);
       }
     };
     
-    const timer = setTimeout(tryAutoConnect, 500);
-    return () => clearTimeout(timer);
+    tryAutoConnect();
   }, [isAuthenticated, auth.user]);
   
   const [profile, setProfile] = useState<any>(null);
