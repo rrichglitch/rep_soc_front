@@ -50,15 +50,19 @@ async function subscribeToTables(): Promise<void> {
   if (!dbConnection) return;
   
   console.log('Subscribing to tables...');
-  dbConnection.subscriptionBuilder().subscribe([
-    tables.user_profile,
-    tables.following,
-    tables.story_post,
-    tables.my_feed,
-  ]);
-  
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  console.log('Subscription initiated');
+  try {
+    dbConnection.subscriptionBuilder().subscribe([
+      tables.user_profile,
+      tables.following,
+      tables.story_post,
+      tables.my_feed,
+    ]);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    console.log('Subscription initiated');
+  } catch (e) {
+    console.error('Subscription error:', e);
+  }
 }
 
 export function getDbConnection(): DbConnection | null {
