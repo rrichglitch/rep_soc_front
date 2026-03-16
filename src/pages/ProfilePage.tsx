@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getDbConnection } from '../utils/spacetime';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
@@ -20,40 +20,70 @@ interface StoryPost {
 
 function ProfilePage() {
   const { identity: profileIdentity } = useParams<{ identity: string }>();
-  const { identity: currentIdentity } = useApp();
+  const { identity: currentIdentity, email } = useApp();
   const auth = useAuth();
   const navigate = useNavigate();
 
   const isAuthenticated = auth.isAuthenticated;
-  const [isConnected, setIsConnected] = useState(false);
+  const [profilePicture, setProfilePicture] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
 
   const handleSignIn = () => {
     auth.signinRedirect();
   };
 
+  // Background: try to connect and check for profile
   useEffect(() => {
-    const tryAutoConnect = async () => {
-      const db = getDbConnection();
-      if (db) {
-        console.log('DB already connected');
-        setIsConnected(true);
+    const initAuth = async () => {
+      // Try anonymous connection first
+      if (!isAuthenticated) {
+        try {
+          await connectToSpacetimeDB('', undefined);
+        } catch (e) {
+          console.log('Anonymous connect failed:', e);
+        }
         return;
       }
-      
-      const token = isAuthenticated ? auth.user?.access_token : undefined;
-      
+
+      // If authenticated, try to connect with token
+      const token = auth.user?.access_token;
+      if (!token) return;
+
       try {
-        console.log(token ? 'Connecting with token...' : 'Connecting anonymously...');
         await connectToSpacetimeDB('', token);
-        console.log('Connected to SpacetimeDB!');
-        setIsConnected(true);
+
+        // Get email from token
+        let userEmail = email;
+        if (!userEmail && auth.user?.id_token) {
+          try {
+            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+            userEmail = payload.email;
+          } catch (e) {
+            console.error('Failed to parse token:', e);
+          }
+        }
+
+        if (userEmail) {
+          // Poll for profile
+          for (let i = 0; i < 10; i++) {
+            const profile = await getProfileByEmail(userEmail);
+            if (profile) {
+              setProfilePicture(profile.profilePicture);
+              setCurrentUserIdentity(profile.identity.toHexString());
+              setIsLoggedIn(true);
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
       } catch (e) {
-        console.error('Auto-connect failed:', e);
+        console.error('Auth connect failed:', e);
       }
     };
-    
-    tryAutoConnect();
-  }, [isAuthenticated, auth.user]);
+
+    initAuth();
+  }, [isAuthenticated, auth.user, email]);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -67,8 +97,9 @@ function ProfilePage() {
   const [postError, setPostError] = useState<string | null>(null);
   const [showPictureModal, setShowPictureModal] = useState(false);
 
-  const currentIdentityHex = currentIdentity?.toHexString();
+  const currentIdentityHex = currentUserIdentity || currentIdentity?.toHexString();
   const isOwnProfile = currentIdentityHex === profileIdentity;
+  const canPost = isLoggedIn && !isOwnProfile && currentIdentityHex !== profileIdentity;
 
   // Separate effect for redirect - runs when identity is available
   useEffect(() => {
@@ -108,7 +139,7 @@ function ProfilePage() {
     };
 
     loadProfile();
-  }, [profileIdentity, currentIdentityHex, isConnected]);
+  }, [profileIdentity, currentIdentityHex, isLoggedIn]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -212,8 +243,12 @@ function ProfilePage() {
         <Link to="/" className="logo">Reputable Social</Link>
         <div className="header-right">
           {isAuthenticated ? (
-            <Link to="/me" className="profile-link">
-              <div className="profile-placeholder" />
+            <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
+              {profilePicture ? (
+                <img src={profilePicture} alt="My Profile" className="profile-image" />
+              ) : (
+                <div className="profile-placeholder" />
+              )}
             </Link>
           ) : (
             <button onClick={handleSignIn} className="signin-button">
@@ -239,7 +274,7 @@ function ProfilePage() {
           onPictureClick={() => setShowPictureModal(true)}
         />
 
-        {!isOwnProfile && (
+        {canPost && (
           <form onSubmit={handleSubmitStory} className="story-form">
             <textarea
               value={storyContent}
@@ -390,6 +425,13 @@ function ProfilePage() {
           height: 36px;
           border-radius: 50%;
           background: #e0e0e0;
+        }
+
+        .profile-image {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
         }
 
         .header-spacer {
