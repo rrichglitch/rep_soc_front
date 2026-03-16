@@ -22,8 +22,16 @@ function AboutPage() {
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
-    const maxRetries = 30;
+    let timerEnded = false;
+    const maxRetries = 70; // 7 seconds
     const retryDelay = 100;
+
+    const endTimer = () => {
+      if (!timerEnded) {
+        timerEnded = true;
+        try { console.timeEnd('auto-login'); } catch (e) { /* ignore */ }
+      }
+    };
 
     const initAuth = async () => {
       console.time('auto-login');
@@ -83,7 +91,7 @@ function AboutPage() {
             console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
             setProfilePicture(profile.profilePicture);
             setIsLoggedIn(true);
-            console.timeEnd('auto-login');
+            endTimer();
             return;
           }
         } catch (e) {
@@ -104,6 +112,7 @@ function AboutPage() {
 
     return () => {
       isMounted = false;
+      endTimer();
     };
   }, [auth.isAuthenticated, auth.user, email]);
 
