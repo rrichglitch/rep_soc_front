@@ -4,10 +4,19 @@ import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
 
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
+let currentToken: string | undefined = undefined;
 
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
+  // If we have a connection with the same token type, reuse it
   if (dbConnection && subscriptionPromise) {
-    return dbConnection;
+    // If we already have a token connection, don't reconnect for anonymous
+    if (currentToken && !token) {
+      return dbConnection;
+    }
+    // If we have a token connection already, return it
+    if (currentToken === token) {
+      return dbConnection;
+    }
   }
 
   const uri = `wss://${SPACETIMEDB_HOST}`;
@@ -26,6 +35,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
         console.log('Disconnected from SpacetimeDB');
         dbConnection = null;
         subscriptionPromise = null;
+        currentToken = undefined;
       })
       .onConnectError((_ctx, err) => {
         console.error('Error connecting to SpacetimeDB:', err);
@@ -33,6 +43,9 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
 
     if (token) {
       builder.withToken(token);
+      currentToken = token;
+    } else {
+      currentToken = undefined;
     }
 
     dbConnection = await builder.build();

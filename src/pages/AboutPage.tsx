@@ -23,41 +23,22 @@ function AboutPage() {
     let isMounted = true;
     let retryCount = 0;
     const maxRetries = 30;
-    const retryDelay = 300;
+    const retryDelay = 100;
 
     const initAuth = async () => {
-      // Wait for OIDC library to load user from storage
-      // The library should read the stored token automatically on mount
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.time('auto-login');
 
-      if (!isMounted) return;
-
-      // Check if OIDC library has loaded the user
-      const hasUser = auth.isAuthenticated && auth.user;
       const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
       const stored = localStorage.getItem(storedKey);
-      const hasStoredToken = !!stored;
-
-      if (!hasUser && !hasStoredToken) {
-        // No token at all, do anonymous connection for search
-        try {
-          await connectToSpacetimeDB('', undefined);
-        } catch (e) {
-          console.log('Anonymous connect failed:', e);
-        }
-        return;
-      }
-
-      // Get token from OIDC library or try silent refresh
+      
+      // Get token and email immediately without waiting
       let token = auth.user?.access_token;
       let userEmail = email;
 
-      if (!token && hasStoredToken) {
-        // Try to get token from storage directly
+      if (!token && stored) {
         try {
           const storedUser = JSON.parse(stored);
           token = storedUser.access_token;
-          // Try to get email from stored token
           if (storedUser.id_token) {
             const payload = JSON.parse(atob(storedUser.id_token.split('.')[1]));
             userEmail = payload.email;
@@ -77,25 +58,36 @@ function AboutPage() {
       }
 
       if (!token || !userEmail) {
-        console.log('No token or email available');
+        // No token, do anonymous connection for search
+        try {
+          await connectToSpacetimeDB('', undefined);
+        } catch (e) {
+          console.log('Anonymous connect failed:', e);
+        }
+        console.timeEnd('auto-login');
         return;
       }
+
+      console.log('Auto-login: have token and email:', userEmail);
 
       // Loop and retry until we find profile or max retries
       while (retryCount < maxRetries && isMounted) {
         try {
           if (!isMounted) break;
+          const start = Date.now();
           await connectToSpacetimeDB('', token);
+          console.log('Connected in', Date.now() - start, 'ms');
           
           const profile = await getProfileByEmail(userEmail);
           if (profile && isMounted) {
-            console.log('Found profile for:', userEmail);
+            console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
             setProfilePicture(profile.profilePicture);
             setIsLoggedIn(true);
+            console.timeEnd('auto-login');
             return;
           }
         } catch (e) {
-          console.log('Connect or profile check failed, retry', retryCount + 1, e);
+          console.log('Connect or profile check failed, retry', retryCount + 1);
         }
 
         retryCount++;
@@ -105,6 +97,7 @@ function AboutPage() {
       }
       
       console.log('Profile not found after', maxRetries, 'retries');
+      console.timeEnd('auto-login');
     };
 
     initAuth();
