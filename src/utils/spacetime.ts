@@ -267,16 +267,30 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
 
   try {
     const stories: any[] = [];
+    const posterIdentities = new Set<string>();
+    
     for (const post of dbConnection.db.story_post.iter()) {
       if (post.profileOwnerIdentity.toHexString() === profileOwnerIdentity) {
-        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
+        posterIdentities.add(post.posterIdentity.toHexString());
+      }
+    }
+    
+    const profileCache = new Map<string, any>();
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      profileCache.set(profile.identity.toHexString(), profile);
+    }
+    
+    for (const post of dbConnection.db.story_post.iter()) {
+      if (post.profileOwnerIdentity.toHexString() === profileOwnerIdentity) {
+        const posterHex = post.posterIdentity.toHexString();
+        const poster = profileCache.get(posterHex);
         stories.push({
           id: post.id,
           content: post.content,
           mediaData: post.mediaData,
           mediaTypes: post.mediaTypes,
           createdAt: post.createdAt.toDate(),
-          posterIdentity: post.posterIdentity.toHexString(),
+          posterIdentity: posterHex,
           posterName: poster?.fullName || 'Unknown',
           posterPicture: poster?.profilePicture || '',
         });
@@ -300,16 +314,23 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
 
   try {
     const stories: any[] = [];
+    
+    const profileCache = new Map<string, any>();
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      profileCache.set(profile.identity.toHexString(), profile);
+    }
+    
     for (const post of dbConnection.db.story_post.iter()) {
       if (post.profileOwnerIdentity.toHexString() === currentIdentityHex) {
-        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
+        const posterHex = post.posterIdentity.toHexString();
+        const poster = profileCache.get(posterHex);
         stories.push({
           id: post.id,
           content: post.content,
           mediaData: post.mediaData,
           mediaTypes: post.mediaTypes,
           createdAt: post.createdAt.toDate(),
-          posterIdentity: post.posterIdentity.toHexString(),
+          posterIdentity: posterHex,
           posterName: poster?.fullName || 'Unknown',
           posterPicture: poster?.profilePicture || '',
           profileOwnerIdentity: currentIdentityHex,
@@ -422,9 +443,12 @@ export async function getFeedPosition(currentIdentityHex: string): Promise<Date 
   }
 
   try {
-    const identity = Identity.fromString(currentIdentityHex);
-    const position = dbConnection.db.feed_position.identity.find(identity);
-    return position?.lastReadAt?.toDate() ?? null;
+    for (const position of dbConnection.db.feed_position.iter()) {
+      if (position.identity.toHexString() === currentIdentityHex) {
+        return position.lastReadAt?.toDate() ?? null;
+      }
+    }
+    return null;
   } catch (e) {
     console.error('Error getting feed position:', e);
     return null;
@@ -464,6 +488,11 @@ export async function getFollowedStoriesWithOptions(
       return [];
     }
 
+    const profileCache = new Map<string, any>();
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      profileCache.set(profile.identity.toHexString(), profile);
+    }
+
     const stories: any[] = [];
     for (const post of dbConnection.db.story_post.iter()) {
       const profileOwnerHex = post.profileOwnerIdentity.toHexString();
@@ -482,8 +511,8 @@ export async function getFollowedStoriesWithOptions(
             continue;
           }
         }
-        const poster = dbConnection.db.user_profile.identity.find(post.posterIdentity);
-        const profileOwner = dbConnection.db.user_profile.identity.find(post.profileOwnerIdentity);
+        const poster = profileCache.get(posterHex);
+        const profileOwner = profileCache.get(profileOwnerHex);
         stories.push({
           id: post.id,
           content: post.content,
