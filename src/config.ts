@@ -25,6 +25,7 @@ export const AUTH_CONFIG = {
   authority: authAuthority,
   client_id: authClientId,
   redirect_uri: `${origin}/callback`,
+  silent_redirect_uri: `${origin}/silent`,
   post_logout_redirect_uri: origin,
   scope: 'openid profile email',
   response_type: 'code',
