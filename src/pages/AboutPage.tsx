@@ -20,39 +20,26 @@ function AboutPage() {
     auth.signinRedirect();
   };
 
-  // Background: try to connect and check for profile - loop with retry
+  // Background: try to connect and check for profile - rely on OIDC library
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
-    const maxRetries = 20;
-    const retryDelay = 500;
+    const maxRetries = 30;
+    const retryDelay = 300;
 
     const initAuth = async () => {
-      // First, try to refresh if token is expired
-      const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
-      const stored = localStorage.getItem(storedKey);
-      
-      if (!auth.user && stored) {
-        try {
-          const storedUser = JSON.parse(stored);
-          if (storedUser.expires_at * 1000 < Date.now()) {
-            console.log('Token expired, attempting silent refresh...');
-            await auth.signinSilent();
-          }
-        } catch (e) {
-          console.log('Silent refresh failed, will try with stored token');
-        }
-      }
-
-      // Wait for auth state to potentially update
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for OIDC library to load user from storage
+      // The library should read the stored token automatically on mount
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       if (!isMounted) return;
 
-      // If we have a user or a stored token, try to get profile
+      // Check if OIDC library has loaded the user
       const hasUser = auth.isAuthenticated && auth.user;
+      const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
+      const stored = localStorage.getItem(storedKey);
       const hasStoredToken = !!stored;
-      
+
       if (!hasUser && !hasStoredToken) {
         // No token at all, do anonymous connection for search
         try {
@@ -63,11 +50,12 @@ function AboutPage() {
         return;
       }
 
-      // Get token - prefer auth user token, fall back to stored
+      // Get token from OIDC library or try silent refresh
       let token = auth.user?.access_token;
       let userEmail = email;
 
-      if (!token && stored) {
+      if (!token && hasStoredToken) {
+        // Try to get token from storage directly
         try {
           const storedUser = JSON.parse(stored);
           token = storedUser.access_token;
@@ -81,11 +69,6 @@ function AboutPage() {
         }
       }
 
-      if (!token) {
-        console.log('No token available');
-        return;
-      }
-
       if (!userEmail && auth.user?.id_token) {
         try {
           const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
@@ -95,8 +78,8 @@ function AboutPage() {
         }
       }
 
-      if (!userEmail) {
-        console.log('No email found');
+      if (!token || !userEmail) {
+        console.log('No token or email available');
         return;
       }
 
@@ -111,7 +94,7 @@ function AboutPage() {
             console.log('Found profile for:', userEmail);
             setProfilePicture(profile.profilePicture);
             setIsLoggedIn(true);
-            return; // Success, stop retrying
+            return;
           }
         } catch (e) {
           console.log('Connect or profile check failed, retry', retryCount + 1, e);
