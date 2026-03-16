@@ -177,7 +177,7 @@ function MyProfilePage() {
         <Link to="/" className="back-link">
           ← Back
         </Link>
-        <Link to="/" className="logo">Reputable Social</Link>
+        <Link to="/home" className="logo">Reputable Social</Link>
         <button onClick={() => setShowQR(true)} className="qr-button">
           Share
         </button>

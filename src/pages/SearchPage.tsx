@@ -144,10 +144,10 @@ function SearchPage() {
     <div className="search-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="back-button">← Back</Link>
+          <Link to="/" className="logo">Reputable Social</Link>
         </div>
         <div className="header-center">
-          <h1 className="page-title">Find People</h1>
+          <span />
         </div>
         <div className="header-right">
           {isAuthenticated ? (
@@ -166,7 +166,8 @@ function SearchPage() {
         </div>
       </header>
 
-      <main className="search-content">
+      <div className="search-sticky">
+        <h1 className="page-title">Find People</h1>
         <form onSubmit={handleSearch} className="search-form">
           <input
             type="text"
@@ -183,6 +184,9 @@ function SearchPage() {
             </svg>
           </button>
         </form>
+      </div>
+
+      <main className="search-content">
 
         {isLoading ? (
           <div className="loading">
@@ -308,6 +312,14 @@ function SearchPage() {
           margin: 0;
           font-size: 20px;
           color: #667eea;
+        }
+
+        .search-sticky {
+          position: sticky;
+          top: 60px;
+          background: #f5f5f5;
+          padding: 16px 24px;
+          z-index: 50;
         }
 
         .search-content {
