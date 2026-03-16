@@ -144,7 +144,7 @@ function SearchPage() {
     <div className="search-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/" className="logo">Reputable Social</Link>
+          <Link to="/home" className="logo">Reputable Social</Link>
         </div>
         <div className="header-center">
           <h1 className="page-title">Find People</h1>
