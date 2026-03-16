@@ -14,7 +14,7 @@ function AboutPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const isAuthenticated = auth.isAuthenticated;
-  const showBack = location.state?.from !== undefined || (typeof document !== 'undefined' && document.referrer && document.referrer.includes(window.location.host));
+  const showBack = location.state?.from !== undefined || (typeof document !== 'undefined' && document.referrer && document.referrer.includes(window.location.host) && document.referrer !== window.location.href);
 
   const handleSignIn = () => {
     auth.signinRedirect();
