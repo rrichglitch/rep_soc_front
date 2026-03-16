@@ -69,35 +69,53 @@ async function subscribeAnonymous(): Promise<void> {
   if (!dbConnection) return;
   
   console.log('Subscribing anonymously...');
-  try {
-    dbConnection.subscriptionBuilder().subscribe([
-      tables.user_profile,
-    ]);
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('Anonymous subscription initiated');
-  } catch (e) {
-    console.error('Anonymous subscription error:', e);
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      dbConnection!.subscriptionBuilder()
+        .onApplied(() => {
+          console.log('Anonymous subscription applied');
+          resolve();
+        })
+        .onError((ctx) => {
+          console.error('Anonymous subscription error:', ctx.event);
+          reject(new Error('Subscription failed'));
+        })
+        .subscribe([
+          tables.user_profile,
+        ]);
+    } catch (e) {
+      console.error('Anonymous subscription error:', e);
+      reject(e);
+    }
+  });
 }
 
 async function subscribeToTables(): Promise<void> {
   if (!dbConnection) return;
   
   console.log('Subscribing to tables...');
-  try {
-    dbConnection.subscriptionBuilder().subscribe([
-      tables.user_profile,
-      tables.following,
-      tables.story_post,
-      tables.my_feed,
-    ]);
-    
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('Subscription initiated');
-  } catch (e) {
-    console.error('Subscription error:', e);
-  }
+  return new Promise((resolve, reject) => {
+    try {
+      dbConnection!.subscriptionBuilder()
+        .onApplied(() => {
+          console.log('Subscription applied');
+          resolve();
+        })
+        .onError((ctx) => {
+          console.error('Subscription error:', ctx.event);
+          reject(new Error('Subscription failed'));
+        })
+        .subscribe([
+          tables.user_profile,
+          tables.following,
+          tables.story_post,
+          tables.my_feed,
+        ]);
+    } catch (e) {
+      console.error('Subscription error:', e);
+      reject(e);
+    }
+  });
 }
 
 export function getDbConnection(): DbConnection | null {

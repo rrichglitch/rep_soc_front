@@ -25,8 +25,7 @@ function AboutPage() {
     let isMounted = true;
     let isRunning = false;
     let retryCount = 0;
-    const maxRetries = 30;
-    const retryDelay = 50;
+    const maxRetries = 100;
 
     const initAuth = async () => {
       if (isRunning) return;
@@ -103,23 +102,34 @@ function AboutPage() {
         return;
       }
 
+      // With onApplied callback, subscription should be ready now
+      // Try once first (most cases should succeed)
+      const profile = await getProfileByEmail(userEmail);
+      if (profile && isMounted) {
+        console.log('Found profile on first try');
+        setProfilePicture(profile.profilePicture);
+        setIsLoggedIn(true);
+        console.timeEnd('auto-login');
+        isRunning = false;
+        return;
+      }
+
+      // Fallback: quick retry loop if subscription applied but profile not visible yet
       while (retryCount < maxRetries && isMounted) {
-        const profile = await getProfileByEmail(userEmail);
-        if (profile && isMounted) {
-          console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
-          setProfilePicture(profile.profilePicture);
+        const profile2 = await getProfileByEmail(userEmail);
+        if (profile2 && isMounted) {
+          console.log('Found profile after', retryCount + 1, 'retries');
+          setProfilePicture(profile2.profilePicture);
           setIsLoggedIn(true);
           console.timeEnd('auto-login');
           isRunning = false;
           return;
         }
         retryCount++;
-        if (isMounted && retryCount < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-        }
+        await new Promise(resolve => setTimeout(resolve, 20));
       }
       
-      console.log('Profile not found after', maxRetries, 'retries');
+      console.log('Profile not found');
       console.timeEnd('auto-login');
       isRunning = false;
     };
