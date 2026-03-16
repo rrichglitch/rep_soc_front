@@ -20,41 +20,41 @@ function AboutPage() {
     auth.signinRedirect();
   };
 
-  // Background: try to connect and check for profile
+  // Background: try to connect and check for profile - loop with retry
   useEffect(() => {
+    let isMounted = true;
+    let retryCount = 0;
+    const maxRetries = 20;
+    const retryDelay = 500;
+
     const initAuth = async () => {
-      // Check if there's a stored user token, even if not yet loaded by auth
+      // First, try to refresh if token is expired
       const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
       const stored = localStorage.getItem(storedKey);
       
-      // If no user yet but there's a stored token that's expired, try to refresh
       if (!auth.user && stored) {
         try {
           const storedUser = JSON.parse(stored);
           if (storedUser.expires_at * 1000 < Date.now()) {
-            console.log('Stored token expired, attempting silent refresh...');
+            console.log('Token expired, attempting silent refresh...');
             await auth.signinSilent();
-            // Check if refresh actually worked
-            const newStored = localStorage.getItem(storedKey);
-            if (newStored) {
-              const newUser = JSON.parse(newStored);
-              if (newUser.expires_at * 1000 > Date.now()) {
-                console.log('Token successfully refreshed');
-              } else {
-                console.log('Silent refresh completed but token still expired');
-              }
-            }
           }
         } catch (e) {
-          console.log('Silent refresh failed:', e);
+          console.log('Silent refresh failed, will try with stored token');
         }
       }
 
-      // Wait a moment for auth state to update after refresh attempt
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for auth state to potentially update
+      await new Promise(resolve => setTimeout(resolve, 200));
 
-      // Try anonymous connection first for fast search
-      if (!auth.isAuthenticated) {
+      if (!isMounted) return;
+
+      // If we have a user or a stored token, try to get profile
+      const hasUser = auth.isAuthenticated && auth.user;
+      const hasStoredToken = !!stored;
+      
+      if (!hasUser && !hasStoredToken) {
+        // No token at all, do anonymous connection for search
         try {
           await connectToSpacetimeDB('', undefined);
         } catch (e) {
@@ -63,48 +63,75 @@ function AboutPage() {
         return;
       }
 
-      // If authenticated, try to connect with token and check profile
-      const token = auth.user?.access_token;
-      if (!token) return;
+      // Get token - prefer auth user token, fall back to stored
+      let token = auth.user?.access_token;
+      let userEmail = email;
 
-      try {
-        await connectToSpacetimeDB('', token);
-
-        // Get email from token
-        let userEmail = email;
-        if (!userEmail && auth.user?.id_token) {
-          try {
-            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+      if (!token && stored) {
+        try {
+          const storedUser = JSON.parse(stored);
+          token = storedUser.access_token;
+          // Try to get email from stored token
+          if (storedUser.id_token) {
+            const payload = JSON.parse(atob(storedUser.id_token.split('.')[1]));
             userEmail = payload.email;
-          } catch (e) {
-            console.error('Failed to parse token:', e);
           }
+        } catch (e) {
+          console.log('Failed to parse stored token:', e);
+        }
+      }
+
+      if (!token) {
+        console.log('No token available');
+        return;
+      }
+
+      if (!userEmail && auth.user?.id_token) {
+        try {
+          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+          userEmail = payload.email;
+        } catch (e) {
+          console.error('Failed to parse token:', e);
+        }
+      }
+
+      if (!userEmail) {
+        console.log('No email found');
+        return;
+      }
+
+      // Loop and retry until we find profile or max retries
+      while (retryCount < maxRetries && isMounted) {
+        try {
+          if (!isMounted) break;
+          await connectToSpacetimeDB('', token);
+          
+          const profile = await getProfileByEmail(userEmail);
+          if (profile && isMounted) {
+            console.log('Found profile for:', userEmail);
+            setProfilePicture(profile.profilePicture);
+            setIsLoggedIn(true);
+            return; // Success, stop retrying
+          }
+        } catch (e) {
+          console.log('Connect or profile check failed, retry', retryCount + 1, e);
         }
 
-        if (userEmail) {
-          // Poll for profile up to 1 second
-          let profileExists = false;
-          for (let i = 0; i < 10; i++) {
-            const profile = await getProfileByEmail(userEmail);
-            if (profile) {
-              setProfilePicture(profile.profilePicture);
-              profileExists = true;
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-          
-          if (profileExists) {
-            setIsLoggedIn(true);
-          }
+        retryCount++;
+        if (isMounted && retryCount < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
-      } catch (e) {
-        console.error('Auth connect failed:', e);
       }
+      
+      console.log('Profile not found after', maxRetries, 'retries');
     };
 
     initAuth();
-  }, [isAuthenticated, auth.user, email]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [auth.isAuthenticated, auth.user, email]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -138,7 +165,7 @@ function AboutPage() {
               <path d="m21 21-4.35-4.35" />
             </svg>
           </button>
-          {isAuthenticated ? (
+          {profilePicture || isLoggedIn ? (
             <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
               {profilePicture ? (
                 <img src={profilePicture} alt="My Profile" className="profile-image" />
