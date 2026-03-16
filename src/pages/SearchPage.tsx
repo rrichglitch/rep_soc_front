@@ -240,6 +240,7 @@ function SearchPage() {
           padding: 12px 24px;
           display: flex;
           align-items: center;
+          justify-content: space-between;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           z-index: 100;
         }
@@ -247,11 +248,11 @@ function SearchPage() {
         .header-left {
           display: flex;
           align-items: center;
-          width: 60px;
+          flex: 1;
         }
 
         .header-center {
-          flex: 1;
+          flex: 0 0 auto;
           text-align: center;
         }
 
@@ -259,7 +260,7 @@ function SearchPage() {
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          min-width: 80px;
+          flex: 1;
         }
 
         .back-button {
@@ -319,10 +320,24 @@ function SearchPage() {
           font-weight: bold;
           color: #667eea;
           text-decoration: none;
+          white-space: nowrap;
         }
 
         .logo:hover {
           color: #5a6fd6;
+        }
+
+        .header-left {
+          flex: 1;
+          display: flex;
+          justify-content: flex-start;
+          min-width: 0;
+        }
+
+        .header-center {
+          flex: 0 0 auto;
+          display: flex;
+          justify-content: center;
         }
 
         .search-sticky {
