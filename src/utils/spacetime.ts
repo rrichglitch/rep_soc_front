@@ -7,16 +7,15 @@ let subscriptionPromise: Promise<void> | null = null;
 let currentToken: string | undefined = undefined;
 
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
-  // If we have a connection with the same token type, reuse it
-  if (dbConnection && subscriptionPromise) {
-    // If we already have a token connection, don't reconnect for anonymous
-    if (currentToken && !token) {
-      return dbConnection;
-    }
-    // If we have a token connection already, return it
-    if (currentToken === token) {
-      return dbConnection;
-    }
+  // If we have a connection with the same token, reuse it
+  if (dbConnection && currentToken === token && subscriptionPromise) {
+    await subscriptionPromise;
+    return dbConnection;
+  }
+
+  // If we have a token connection but want anonymous, don't downgrade
+  if (dbConnection && currentToken && !token) {
+    return dbConnection;
   }
 
   const uri = `wss://${SPACETIMEDB_HOST}`;

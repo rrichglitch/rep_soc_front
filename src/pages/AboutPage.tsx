@@ -23,30 +23,29 @@ function AboutPage() {
     if (isLoggedIn && profilePicture) return;
     
     let isMounted = true;
+    let isRunning = false;
     let retryCount = 0;
-    const maxRetries = 70; // 7 seconds
-    const retryDelay = 100;
+    const maxRetries = 30;
+    const retryDelay = 50;
 
     const initAuth = async () => {
+      if (isRunning) return;
+      isRunning = true;
       console.time('auto-login');
 
       const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
       const stored = localStorage.getItem(storedKey);
       
-      // Get token and email immediately without waiting
       let token = auth.user?.access_token;
       let userEmail = email;
 
       if (!token && stored) {
         try {
           const storedUser = JSON.parse(stored);
-          // Check if token is expired
           if (storedUser.expires_at * 1000 < Date.now()) {
-            console.log('Token expired, attempting silent refresh...');
             try {
               await auth.signinSilent();
-              // Wait a bit for the refresh to complete
-              await new Promise(resolve => setTimeout(resolve, 500));
+              await new Promise(resolve => setTimeout(resolve, 300));
               token = auth.user?.access_token;
               if (token) {
                 const newStored = localStorage.getItem(storedKey);
@@ -83,58 +82,37 @@ function AboutPage() {
       }
 
       if (!token || !userEmail) {
-        // No token, do anonymous connection for search
         try {
           await connectToSpacetimeDB('', undefined);
         } catch (e) {
           console.log('Anonymous connect failed:', e);
         }
         console.timeEnd('auto-login');
+        isRunning = false;
         return;
       }
 
       console.log('Auto-login: have token and email:', userEmail);
 
-      // First connection - give subscription time to sync
       try {
         await connectToSpacetimeDB('', token);
-        console.log('Initial connection done, waiting for subscription...');
-        // Wait for subscription data to arrive
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        // Check if profile exists now
-        const initialProfile = await getProfileByEmail(userEmail);
-        if (initialProfile && isMounted) {
-          console.log('Found profile on first try!');
-          setProfilePicture(initialProfile.profilePicture);
-          setIsLoggedIn(true);
-          console.timeEnd('auto-login');
-          return;
-        }
       } catch (e) {
-        console.log('Initial connection failed:', e);
+        console.log('Connection failed:', e);
+        isRunning = false;
+        console.timeEnd('auto-login');
+        return;
       }
 
-      // Loop and retry until we find profile or max retries
       while (retryCount < maxRetries && isMounted) {
-        try {
-          if (!isMounted) break;
-          const start = Date.now();
-          await connectToSpacetimeDB('', token);
-          console.log('Connected in', Date.now() - start, 'ms');
-          
-          const profile = await getProfileByEmail(userEmail);
-          if (profile && isMounted) {
-            console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
-            setProfilePicture(profile.profilePicture);
-            setIsLoggedIn(true);
-            console.timeEnd('auto-login');
-            return;
-          }
-        } catch (e) {
-          console.log('Connect or profile check failed, retry', retryCount + 1);
+        const profile = await getProfileByEmail(userEmail);
+        if (profile && isMounted) {
+          console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
+          setProfilePicture(profile.profilePicture);
+          setIsLoggedIn(true);
+          console.timeEnd('auto-login');
+          isRunning = false;
+          return;
         }
-
         retryCount++;
         if (isMounted && retryCount < maxRetries) {
           await new Promise(resolve => setTimeout(resolve, retryDelay));
@@ -143,13 +121,13 @@ function AboutPage() {
       
       console.log('Profile not found after', maxRetries, 'retries');
       console.timeEnd('auto-login');
+      isRunning = false;
     };
 
     initAuth();
 
     return () => {
       isMounted = false;
-      
     };
   }, [auth.isAuthenticated, auth.user, email, isLoggedIn, profilePicture]);
 
