@@ -76,8 +76,8 @@ function RegisterPage() {
       // Mark that user has a profile
       setHasProfile(true);
 
-      // Navigate to home
-      navigate('/', { replace: true });
+      // Navigate to feed
+      navigate('/home', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsLoading(false);

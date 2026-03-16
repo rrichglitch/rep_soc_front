@@ -16,10 +16,14 @@ const getOrigin = () => {
 
 const origin = getOrigin();
 
+// Environment variable overrides for local development
+const authAuthority = import.meta.env.VITE_AUTH_AUTHORITY || 'https://auth.spacetimedb.com/oidc';
+const authClientId = import.meta.env.VITE_AUTH_CLIENT_ID || 'client_032dcrU7dNeqH21pwTabNC';
+
 // SpacetimeAuth configuration
 export const AUTH_CONFIG = {
-  authority: 'https://auth.spacetimedb.com/oidc',
-  client_id: 'client_032dcrU7dNeqH21pwTabNC',
+  authority: authAuthority,
+  client_id: authClientId,
   redirect_uri: `${origin}/callback`,
   post_logout_redirect_uri: origin,
   scope: 'openid profile email',
