@@ -313,20 +313,20 @@ function ProfilePage() {
             <div className="empty-story">
               <p>No stories yet. Be the first to share a story!</p>
             </div>
-          ) : (
+            ) : (
             <div className="stories-list">
               {stories.map((story) => (
                 <div key={story.id.toString()} className="story-card">
                   <div className="story-header">
-                    {story.posterPicture ? (
-                      <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                    ) : (
-                      <div className="story-avatar-placeholder" />
-                    )}
-                    <div className="story-meta">
+                    <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                      {story.posterPicture ? (
+                        <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                      ) : (
+                        <div className="story-avatar-placeholder" />
+                      )}
                       <span className="story-author">{story.posterName}</span>
-                      <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
-                    </div>
+                    </Link>
+                    <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
                   </div>
                   <p className="story-content">{story.content}</p>
                   {story.mediaData && story.mediaData.length > 0 && (
