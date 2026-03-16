@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
@@ -26,6 +26,7 @@ interface StoryPost {
 }
 
 function MyProfilePage() {
+  const navigate = useNavigate();
   const { identity, email } = useApp();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -174,9 +175,9 @@ function MyProfilePage() {
   return (
     <div className="my-profile-page">
       <header className="header">
-        <Link to="/" className="back-link">
+        <button onClick={() => navigate(-1)} className="back-link">
           ← Back
-        </Link>
+        </button>
         <Link to="/home" className="logo">Reputable Social</Link>
         <button onClick={() => setShowQR(true)} className="qr-button">
           Share
