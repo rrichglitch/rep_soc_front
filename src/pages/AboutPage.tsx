@@ -23,8 +23,38 @@ function AboutPage() {
   // Background: try to connect and check for profile
   useEffect(() => {
     const initAuth = async () => {
+      // Check if there's a stored user token, even if not yet loaded by auth
+      const storedKey = 'oidc.user:https://auth.spacetimedb.com/oidc:client_032dcrU7dNeqH21pwTabNC';
+      const stored = localStorage.getItem(storedKey);
+      
+      // If no user yet but there's a stored token that's expired, try to refresh
+      if (!auth.user && stored) {
+        try {
+          const storedUser = JSON.parse(stored);
+          if (storedUser.expires_at * 1000 < Date.now()) {
+            console.log('Stored token expired, attempting silent refresh...');
+            await auth.signinSilent();
+            // Check if refresh actually worked
+            const newStored = localStorage.getItem(storedKey);
+            if (newStored) {
+              const newUser = JSON.parse(newStored);
+              if (newUser.expires_at * 1000 > Date.now()) {
+                console.log('Token successfully refreshed');
+              } else {
+                console.log('Silent refresh completed but token still expired');
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Silent refresh failed:', e);
+        }
+      }
+
+      // Wait a moment for auth state to update after refresh attempt
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Try anonymous connection first for fast search
-      if (!isAuthenticated) {
+      if (!auth.isAuthenticated) {
         try {
           await connectToSpacetimeDB('', undefined);
         } catch (e) {
