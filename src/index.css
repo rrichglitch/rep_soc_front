@@ -20,6 +20,15 @@ body {
   min-height: 100vh;
 }
 
+/* Hide scrollbars */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
 a {
   color: #667eea;
   text-decoration: none;
