@@ -33,13 +33,12 @@ function CallbackPage() {
       error: auth.error
     });
 
-    // If authenticated, redirect immediately
+    // If authenticated, redirect to about page
     if (auth.isAuthenticated) {
       console.log('User authenticated, redirecting');
       clearTimeout(timeoutId);
       hasRedirected.current = true;
-      const pendingProfile = localStorage.getItem('pending_profile');
-      navigate(pendingProfile ? '/me' : '/', { replace: true, state: { from: '/callback' } });
+      navigate('/', { replace: true });
       return;
     }
 

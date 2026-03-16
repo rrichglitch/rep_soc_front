@@ -26,57 +26,63 @@ function SearchPage() {
 
   const isAuthenticated = auth.isAuthenticated;
   const [profilePicture, setProfilePicture] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSignIn = () => {
     auth.signinRedirect();
   };
 
+  // Background: try to connect and check for profile
   useEffect(() => {
-    const loadProfile = async () => {
-      let userEmail = email;
-      
-      if (!userEmail && auth.user?.id_token) {
+    const initAuth = async () => {
+      // Try anonymous connection first
+      if (!isAuthenticated) {
         try {
-          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-          userEmail = payload.email;
+          await connectToSpacetimeDB('', undefined);
         } catch (e) {
-          console.error('Failed to parse token:', e);
+          console.log('Anonymous connect failed:', e);
         }
-      }
-      
-      if (userEmail) {
-        const profile = await getProfileByEmail(userEmail);
-        if (profile) {
-          setProfilePicture(profile.profilePicture);
-        }
-      }
-    };
-    loadProfile();
-  }, [email, auth.user]);
-
-  useEffect(() => {
-    const tryAutoConnect = async () => {
-      const db = getDbConnection();
-      if (db) {
-        console.log('DB already connected');
-        setIsConnected(true);
         return;
       }
-      
-      const token = isAuthenticated ? auth.user?.access_token : undefined;
-      
+
+      // If authenticated, try to connect with token
+      const token = auth.user?.access_token;
+      if (!token) return;
+
       try {
-        console.log(token ? 'Connecting with token...' : 'Connecting anonymously...');
         await connectToSpacetimeDB('', token);
-        console.log('Connected to SpacetimeDB!');
         setIsConnected(true);
+
+        // Get email from token
+        let userEmail = email;
+        if (!userEmail && auth.user?.id_token) {
+          try {
+            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+            userEmail = payload.email;
+          } catch (e) {
+            console.error('Failed to parse token:', e);
+          }
+        }
+
+        if (userEmail) {
+          // Poll for profile
+          for (let i = 0; i < 10; i++) {
+            const profile = await getProfileByEmail(userEmail);
+            if (profile) {
+              setProfilePicture(profile.profilePicture);
+              setIsLoggedIn(true);
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
       } catch (e) {
-        console.error('Auto-connect failed:', e);
+        console.error('Auth connect failed:', e);
       }
     };
-    
-    tryAutoConnect();
-  }, [isAuthenticated, auth.user]);
+
+    initAuth();
+  }, [isAuthenticated, auth.user, email]);
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -145,7 +151,7 @@ function SearchPage() {
         </div>
         <div className="header-right">
           {isAuthenticated ? (
-            <Link to="/me" className="profile-link">
+            <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
               {profilePicture ? (
                 <img src={profilePicture} alt="My Profile" className="profile-image" />
               ) : (

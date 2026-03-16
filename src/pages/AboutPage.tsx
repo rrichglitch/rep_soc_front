@@ -11,6 +11,7 @@ function AboutPage() {
   const auth = useAuth();
   const { email } = useApp();
   const [profilePicture, setProfilePicture] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const isAuthenticated = auth.isAuthenticated;
   const showBack = location.state?.from !== undefined || (typeof document !== 'undefined' && document.referrer && document.referrer.includes(window.location.host));
@@ -19,45 +20,61 @@ function AboutPage() {
     auth.signinRedirect();
   };
 
+  // Background: try to connect and check for profile
   useEffect(() => {
-    const loadProfile = async () => {
-      let userEmail = email;
-      
-      // If no email from App context, try to get from OIDC token
-      if (!userEmail && auth.user?.id_token) {
+    const initAuth = async () => {
+      // Try anonymous connection first for fast search
+      if (!isAuthenticated) {
         try {
-          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-          userEmail = payload.email;
+          await connectToSpacetimeDB('', undefined);
         } catch (e) {
-          console.error('Failed to parse token:', e);
+          console.log('Anonymous connect failed:', e);
         }
+        return;
       }
-      
-      if (userEmail) {
-        const profile = await getProfileByEmail(userEmail);
-        if (profile) {
-          setProfilePicture(profile.profilePicture);
-        }
-      }
-    };
-    loadProfile();
-  }, [email, auth.user]);
 
-  useEffect(() => {
-    const tryAutoConnect = async () => {
-      if (isAuthenticated) return;
-      
+      // If authenticated, try to connect with token and check profile
       const token = auth.user?.access_token;
-      if (token) {
-        try {
-          await connectToSpacetimeDB('', token);
-        } catch (e) {
-          console.log('Auto-connect failed:', e);
+      if (!token) return;
+
+      try {
+        await connectToSpacetimeDB('', token);
+
+        // Get email from token
+        let userEmail = email;
+        if (!userEmail && auth.user?.id_token) {
+          try {
+            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+            userEmail = payload.email;
+          } catch (e) {
+            console.error('Failed to parse token:', e);
+          }
         }
+
+        if (userEmail) {
+          // Poll for profile up to 1 second
+          let profileExists = false;
+          for (let i = 0; i < 10; i++) {
+            const profile = await getProfileByEmail(userEmail);
+            if (profile) {
+              setProfilePicture(profile.profilePicture);
+              profileExists = true;
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
+          if (profileExists) {
+            setIsLoggedIn(true);
+          }
+        }
+      } catch (e) {
+        console.error('Auth connect failed:', e);
       }
     };
-    tryAutoConnect();
-  }, [isAuthenticated, auth.user]);
+
+    initAuth();
+  }, [isAuthenticated, auth.user, email]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -92,7 +109,7 @@ function AboutPage() {
             </svg>
           </button>
           {isAuthenticated ? (
-            <Link to="/me" className="profile-link">
+            <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
               {profilePicture ? (
                 <img src={profilePicture} alt="My Profile" className="profile-image" />
               ) : (
