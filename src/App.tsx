@@ -102,14 +102,12 @@ function AuthCallback({ children }: AuthCallbackProps) {
           try {
             await connectToSpacetimeDB(userEmail, accessToken);
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            let profileExists = await checkProfileExistsByEmail(userEmail);
-
-            if (!profileExists) {
-              console.log('Profile not found initially, retrying...');
-              await new Promise(resolve => setTimeout(resolve, 1000));
+            // Poll for profile up to 1 second
+            let profileExists = false;
+            for (let i = 0; i < 10; i++) {
               profileExists = await checkProfileExistsByEmail(userEmail);
+              if (profileExists) break;
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             console.log('Profile exists in DB:', profileExists);
@@ -180,12 +178,6 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     isLoading: auth.isLoading,
   });
 
-  if (auth.isLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  console.log('isAuth:', auth.isAuthenticated);
-  
   if (!auth.isAuthenticated) {
     return <Navigate to="/" replace />;
   }
