@@ -387,8 +387,6 @@ function MainFeedPage() {
           max-width: 600px;
           margin: 0 auto;
           padding: 24px;
-          height: calc(100vh - 60px);
-          overflow-y: auto;
         }
 
         .feed-controls {
