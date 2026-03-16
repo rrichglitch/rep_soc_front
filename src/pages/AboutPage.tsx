@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import { getProfileByEmail, connectToSpacetimeDB } from '../utils/spacetime';
@@ -7,14 +7,12 @@ import SearchBar from '../components/SearchBar';
 
 function AboutPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   const auth = useAuth();
   const { email } = useApp();
   const [profilePicture, setProfilePicture] = useState<string>('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const isAuthenticated = auth.isAuthenticated;
-  const showBack = location.state?.from !== undefined || (typeof document !== 'undefined' && document.referrer && document.referrer.includes(window.location.host) && document.referrer !== window.location.href);
 
   const handleSignIn = () => {
     auth.signinRedirect();
@@ -128,11 +126,7 @@ function AboutPage() {
     <div className="about-page">
       <header className="header">
         <div className="header-left">
-          {showBack ? (
-            <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-          ) : (
-            <span />
-          )}
+          <span />
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />

@@ -147,7 +147,7 @@ function SearchPage() {
           <Link to="/" className="logo">Reputable Social</Link>
         </div>
         <div className="header-center">
-          <span />
+          <h1 className="page-title">Find People</h1>
         </div>
         <div className="header-right">
           {isAuthenticated ? (
@@ -167,7 +167,6 @@ function SearchPage() {
       </header>
 
       <div className="search-sticky">
-        <h1 className="page-title">Find People</h1>
         <form onSubmit={handleSearch} className="search-form">
           <input
             type="text"
@@ -314,6 +313,18 @@ function SearchPage() {
           color: #667eea;
         }
 
+        .logo {
+          margin: 0;
+          font-size: 20px;
+          font-weight: bold;
+          color: #667eea;
+          text-decoration: none;
+        }
+
+        .logo:hover {
+          color: #5a6fd6;
+        }
+
         .search-sticky {
           position: sticky;
           top: 60px;
@@ -336,6 +347,9 @@ function SearchPage() {
           overflow: hidden;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           margin-bottom: 24px;
+          max-width: 500px;
+          margin-left: auto;
+          margin-right: auto;
         }
 
         .search-input {
