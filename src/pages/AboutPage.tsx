@@ -18,20 +18,14 @@ function AboutPage() {
     auth.signinRedirect();
   };
 
-  // Background: try to connect and check for profile - rely on OIDC library
+  // Background: try to connect and check for profile
   useEffect(() => {
+    if (isLoggedIn && profilePicture) return;
+    
     let isMounted = true;
     let retryCount = 0;
-    let timerEnded = false;
     const maxRetries = 70; // 7 seconds
     const retryDelay = 100;
-
-    const endTimer = () => {
-      if (!timerEnded) {
-        timerEnded = true;
-        try { console.timeEnd('auto-login'); } catch (e) { /* ignore */ }
-      }
-    };
 
     const initAuth = async () => {
       console.time('auto-login');
@@ -46,10 +40,33 @@ function AboutPage() {
       if (!token && stored) {
         try {
           const storedUser = JSON.parse(stored);
-          token = storedUser.access_token;
-          if (storedUser.id_token) {
-            const payload = JSON.parse(atob(storedUser.id_token.split('.')[1]));
-            userEmail = payload.email;
+          // Check if token is expired
+          if (storedUser.expires_at * 1000 < Date.now()) {
+            console.log('Token expired, attempting silent refresh...');
+            try {
+              await auth.signinSilent();
+              // Wait a bit for the refresh to complete
+              await new Promise(resolve => setTimeout(resolve, 500));
+              token = auth.user?.access_token;
+              if (token) {
+                const newStored = localStorage.getItem(storedKey);
+                if (newStored) {
+                  const newUser = JSON.parse(newStored);
+                  if (newUser.id_token) {
+                    const payload = JSON.parse(atob(newUser.id_token.split('.')[1]));
+                    userEmail = payload.email;
+                  }
+                }
+              }
+            } catch (refreshErr) {
+              console.log('Silent refresh failed:', refreshErr);
+            }
+          } else {
+            token = storedUser.access_token;
+            if (storedUser.id_token) {
+              const payload = JSON.parse(atob(storedUser.id_token.split('.')[1]));
+              userEmail = payload.email;
+            }
           }
         } catch (e) {
           console.log('Failed to parse stored token:', e);
@@ -78,6 +95,26 @@ function AboutPage() {
 
       console.log('Auto-login: have token and email:', userEmail);
 
+      // First connection - give subscription time to sync
+      try {
+        await connectToSpacetimeDB('', token);
+        console.log('Initial connection done, waiting for subscription...');
+        // Wait for subscription data to arrive
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+        // Check if profile exists now
+        const initialProfile = await getProfileByEmail(userEmail);
+        if (initialProfile && isMounted) {
+          console.log('Found profile on first try!');
+          setProfilePicture(initialProfile.profilePicture);
+          setIsLoggedIn(true);
+          console.timeEnd('auto-login');
+          return;
+        }
+      } catch (e) {
+        console.log('Initial connection failed:', e);
+      }
+
       // Loop and retry until we find profile or max retries
       while (retryCount < maxRetries && isMounted) {
         try {
@@ -91,7 +128,7 @@ function AboutPage() {
             console.log('Found profile for:', userEmail, 'in', retryCount + 1, 'tries');
             setProfilePicture(profile.profilePicture);
             setIsLoggedIn(true);
-            endTimer();
+            console.timeEnd('auto-login');
             return;
           }
         } catch (e) {
@@ -112,9 +149,9 @@ function AboutPage() {
 
     return () => {
       isMounted = false;
-      endTimer();
+      
     };
-  }, [auth.isAuthenticated, auth.user, email]);
+  }, [auth.isAuthenticated, auth.user, email, isLoggedIn, profilePicture]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
