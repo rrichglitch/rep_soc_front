@@ -462,6 +462,7 @@ function MainFeedPage() {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          overflow: hidden;
         }
 
         .story-card {
