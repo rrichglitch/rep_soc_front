@@ -3,21 +3,25 @@ import { useNavigate, Link } from 'react-router-dom';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeFullName, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
+import { sendVerificationCode, verifyPhoneCode } from '../utils/spacetime';
 
 function RegisterPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { email, createProfile, setHasProfile } = useApp();
+  const { email, setHasProfile } = useApp();
 
+  const [step, setStep] = useState<'form' | 'verify'>('form');
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
-  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storedPictureBase64, setStoredPictureBase64] = useState<string | null>(null);
 
-  const handlePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!isFileTypeValid(file, [...ALLOWED_MEDIA_TYPES])) {
@@ -28,28 +32,31 @@ function RegisterPage() {
         setError('File is too large. Maximum size is 5MB.');
         return;
       }
-      setProfilePicture(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPicturePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+      
+      // Convert to base64 for storage
+      const base64 = await fileToBase64(file);
+      setStoredPictureBase64(base64);
       setError(null);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSendVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
       // Validate inputs
-      validateAndSanitizeFullName(fullName);
-      validateAndSanitizeCity(city);
-      validateAndSanitizeDescription(description);
+      const sanitizedFullName = validateAndSanitizeFullName(fullName);
+      const sanitizedCity = validateAndSanitizeCity(city);
+      const sanitizedDescription = validateAndSanitizeDescription(description);
 
-      if (!profilePicture) {
+      if (!storedPictureBase64) {
         throw new Error('Profile picture is required');
       }
 
@@ -57,17 +64,57 @@ function RegisterPage() {
         throw new Error('Email not available. Please log in again.');
       }
 
-      console.log('Creating profile for email:', email);
+      // Validate phone number format (basic E.164 check)
+      const phone = phoneNumber.trim();
+      if (!phone.startsWith('+') || phone.length < 10) {
+        throw new Error('Please enter a valid phone number with country code (e.g., +14155551234)');
+      }
 
-      // Convert picture to base64
-      const pictureBase64 = await fileToBase64(profilePicture);
+      // Send verification code via Twilio (backend procedure validates all fields first)
+      await sendVerificationCode(
+        email,
+        sanitizedFullName,
+        storedPictureBase64,
+        sanitizedCity,
+        sanitizedDescription,
+        phone
+      );
+      
+      setStep('verify');
+      setIsLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsLoading(false);
+    }
+  };
 
-      // Call the createProfile reducer to store in SpaceTimeDB
-      await createProfile(
-        validateAndSanitizeFullName(fullName),
-        pictureBase64,
-        validateAndSanitizeCity(city),
-        validateAndSanitizeDescription(description)
+  const handleVerifyAndCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      if (!email) {
+        throw new Error('Email not available. Please log in again.');
+      }
+
+      if (!storedPictureBase64) {
+        throw new Error('Profile picture is required');
+      }
+
+      const sanitizedFullName = validateAndSanitizeFullName(fullName);
+      const sanitizedCity = validateAndSanitizeCity(city);
+      const sanitizedDescription = validateAndSanitizeDescription(description);
+
+      // Verify the code via Twilio (backend creates profile after verification)
+      await verifyPhoneCode(
+        email,
+        sanitizedFullName,
+        storedPictureBase64,
+        sanitizedCity,
+        sanitizedDescription,
+        phoneNumber.trim(),
+        verificationCode.trim()
       );
 
       // Wait for subscription to sync
@@ -84,79 +131,124 @@ function RegisterPage() {
     }
   };
 
+  const handleBack = () => {
+    setStep('form');
+    setVerificationCode('');
+  };
+
   return (
     <div className="register-page">
       <div className="register-container">
-        <h1>Create Account</h1>
-        <p className="subtitle">Join Reputable Social today</p>
+        <h1>{step === 'form' ? 'Create Account' : 'Verify Phone'}</h1>
+        <p className="subtitle">{step === 'form' ? 'Join Reputable Social today' : `Enter the code sent to ${phoneNumber}`}</p>
 
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="register-form">
-          <div className="form-group">
-            <label htmlFor="fullName">Full Name *</label>
-            <input
-              type="text"
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              maxLength={CHAR_LIMITS.fullName}
-              required
-              placeholder="Enter your full name"
-            />
-            <span className="char-count">{fullName.length}/{CHAR_LIMITS.fullName}</span>
-          </div>
-
-          <div className="form-group">
-            <label>Profile Picture *</label>
-            <div className="picture-upload" onClick={() => fileInputRef.current?.click()}>
-              {picturePreview ? (
-                <img src={picturePreview} alt="Profile preview" className="preview" />
-              ) : (
-                <div className="upload-placeholder">
-                  <span>Click to upload photo</span>
-                </div>
-              )}
+        {step === 'form' ? (
+          <form onSubmit={handleSendVerification} className="register-form">
+            <div className="form-group">
+              <label htmlFor="fullName">Full Name *</label>
               <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handlePictureChange}
-                style={{ display: 'none' }}
+                type="text"
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                maxLength={CHAR_LIMITS.fullName}
+                required
+                placeholder="Enter your full name"
               />
+              <span className="char-count">{fullName.length}/{CHAR_LIMITS.fullName}</span>
             </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="city">City</label>
-            <input
-              type="text"
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              maxLength={CHAR_LIMITS.city}
-              placeholder="Enter your city"
-            />
-            <span className="char-count">{city.length}/{CHAR_LIMITS.city}</span>
-          </div>
+            <div className="form-group">
+              <label>Profile Picture *</label>
+              <div className="picture-upload" onClick={() => fileInputRef.current?.click()}>
+                {picturePreview ? (
+                  <img src={picturePreview} alt="Profile preview" className="preview" />
+                ) : (
+                  <div className="upload-placeholder">
+                    <span>Click to upload photo</span>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePictureChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="description">About You</label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={CHAR_LIMITS.description}
-              placeholder="Brief description or status"
-              rows={3}
-            />
-            <span className="char-count">{description.length}/{CHAR_LIMITS.description}</span>
-          </div>
+            <div className="form-group">
+              <label htmlFor="city">City</label>
+              <input
+                type="text"
+                id="city"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                maxLength={CHAR_LIMITS.city}
+                placeholder="Enter your city"
+              />
+              <span className="char-count">{city.length}/{CHAR_LIMITS.city}</span>
+            </div>
 
-          <button type="submit" className="submit-button" disabled={isLoading}>
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
+            <div className="form-group">
+              <label htmlFor="phoneNumber">Phone Number *</label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                required
+                placeholder="+14155551234"
+              />
+              <span className="hint">Include country code (e.g., +1 for US)</span>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description">About You</label>
+              <textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                maxLength={CHAR_LIMITS.description}
+                placeholder="Brief description or status"
+                rows={3}
+              />
+              <span className="char-count">{description.length}/{CHAR_LIMITS.description}</span>
+            </div>
+
+            <button type="submit" className="submit-button" disabled={isLoading}>
+              {isLoading ? 'Sending Code...' : 'Send Verification Code'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyAndCreate} className="register-form">
+            <div className="form-group">
+              <label htmlFor="verificationCode">Verification Code *</label>
+              <input
+                type="text"
+                id="verificationCode"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                maxLength={6}
+                required
+                placeholder="Enter 6-digit code"
+                className="verification-input"
+              />
+              <span className="hint">Check your phone for a 6-digit code</span>
+            </div>
+
+            <button type="submit" className="submit-button" disabled={isLoading}>
+              {isLoading ? 'Verifying...' : 'Verify & Create Account'}
+            </button>
+
+            <button type="button" onClick={handleBack} className="back-button">
+              Back
+            </button>
+          </form>
+        )}
 
         <p className="login-link">
           Already have an account? <Link to="/login">Sign In</Link>
@@ -234,10 +326,14 @@ function RegisterPage() {
           border-color: #667eea;
         }
 
-        .char-count {
+        .char-count, .hint {
           font-size: 12px;
           color: #999;
           text-align: right;
+        }
+
+        .hint {
+          text-align: left;
         }
 
         .picture-upload {
@@ -268,6 +364,12 @@ function RegisterPage() {
           text-align: center;
         }
 
+        .verification-input {
+          text-align: center;
+          font-size: 24px;
+          letter-spacing: 4px;
+        }
+
         .submit-button {
           padding: 14px;
           background: #667eea;
@@ -287,6 +389,21 @@ function RegisterPage() {
         .submit-button:disabled {
           background: #ccc;
           cursor: not-allowed;
+        }
+
+        .back-button {
+          padding: 12px;
+          background: transparent;
+          color: #666;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+
+        .back-button:hover {
+          background: #f5f5f5;
         }
 
         .login-link {

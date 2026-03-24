@@ -40,10 +40,12 @@ import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import FollowReducer from "./follow_reducer";
 import RefreshFeedReducer from "./refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
+import SendVerificationCodeReducer from "./send_verification_code_reducer";
 import UnfollowReducer from "./unfollow_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
 import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
+import VerifyPhoneCodeReducer from "./verify_phone_code_reducer";
 
 // Import all procedure arg schemas
 
@@ -138,10 +140,12 @@ const reducersSchema = __reducers(
   __reducerSchema("follow", FollowReducer),
   __reducerSchema("refresh_feed", RefreshFeedReducer),
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
+  __reducerSchema("send_verification_code", SendVerificationCodeReducer),
   __reducerSchema("unfollow", UnfollowReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
   __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
+  __reducerSchema("verify_phone_code", VerifyPhoneCodeReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

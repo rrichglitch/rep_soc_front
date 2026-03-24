@@ -212,6 +212,56 @@ export async function updateProfile(
   });
 }
 
+export async function sendVerificationCode(
+  email: string,
+  fullName: string,
+  profilePicture: string,
+  city: string,
+  description: string,
+  phoneNumber: string
+): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  console.log('Sending verification code to:', phoneNumber);
+  
+  await dbConnection.reducers.sendVerificationCode({
+    email,
+    fullName,
+    profilePicture,
+    city,
+    description,
+    phoneNumber,
+  });
+}
+
+export async function verifyPhoneCode(
+  email: string,
+  fullName: string,
+  profilePicture: string,
+  city: string,
+  description: string,
+  phoneNumber: string,
+  code: string
+): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  console.log('Verifying phone:', phoneNumber, 'with code:', code);
+  
+  await dbConnection.reducers.verifyPhoneCode({
+    email,
+    fullName,
+    profilePicture,
+    city,
+    description,
+    phoneNumber,
+    code,
+  });
+}
+
 export async function getProfileByIdentity(identity: string) {
   if (!dbConnection) {
     return null;
