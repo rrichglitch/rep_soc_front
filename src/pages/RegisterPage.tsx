@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeFullName, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { sendVerificationCode, verifyPhoneCode } from '../utils/spacetime';
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -20,6 +22,20 @@ function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [storedPictureBase64, setStoredPictureBase64] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [storedPhone, setStoredPhone] = useState('');
+
+  // Countdown timer for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) return 0;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -71,6 +87,7 @@ function RegisterPage() {
       }
 
       // Send verification code via Twilio (backend procedure validates all fields first)
+      console.log('Calling sendVerificationCode with phone:', phone);
       await sendVerificationCode(
         email,
         sanitizedFullName,
@@ -79,10 +96,46 @@ function RegisterPage() {
         sanitizedDescription,
         phone
       );
+      console.log('sendVerificationCode completed, moving to verify step');
       
       setStep('verify');
+      setStoredPhone(phone);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setIsLoading(false);
     } catch (err) {
+      console.error('sendVerificationCode error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || !email || !storedPictureBase64) return;
+    
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      console.log('Resending verification code to:', storedPhone);
+      const sanitizedFullName = validateAndSanitizeFullName(fullName);
+      const sanitizedCity = validateAndSanitizeCity(city);
+      const sanitizedDescription = validateAndSanitizeDescription(description);
+
+      await sendVerificationCode(
+        email,
+        sanitizedFullName,
+        storedPictureBase64,
+        sanitizedCity,
+        sanitizedDescription,
+        storedPhone
+      );
+      console.log('Resend successful');
+      
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setVerificationCode('');
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Resend error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsLoading(false);
     }
@@ -134,6 +187,7 @@ function RegisterPage() {
   const handleBack = () => {
     setStep('form');
     setVerificationCode('');
+    setResendCooldown(0);
   };
 
   return (
@@ -243,6 +297,17 @@ function RegisterPage() {
             <button type="submit" className="submit-button" disabled={isLoading}>
               {isLoading ? 'Verifying...' : 'Verify & Create Account'}
             </button>
+
+            <div className="resend-section">
+              <span className="hint">Didn't receive a code?</span>
+              {resendCooldown > 0 ? (
+                <span className="cooldown-text">Resend in {resendCooldown}s</span>
+              ) : (
+                <button type="button" onClick={handleResendCode} className="resend-button" disabled={isLoading}>
+                  Resend Code
+                </button>
+              )}
+            </div>
 
             <button type="button" onClick={handleBack} className="back-button">
               Back
@@ -404,6 +469,36 @@ function RegisterPage() {
 
         .back-button:hover {
           background: #f5f5f5;
+        }
+
+        .resend-section {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .cooldown-text {
+          font-size: 14px;
+          color: #999;
+        }
+
+        .resend-button {
+          background: transparent;
+          border: none;
+          color: #667eea;
+          font-size: 14px;
+          cursor: pointer;
+          padding: 8px;
+        }
+
+        .resend-button:hover:not(:disabled) {
+          text-decoration: underline;
+        }
+
+        .resend-button:disabled {
+          color: #ccc;
+          cursor: not-allowed;
         }
 
         .login-link {
