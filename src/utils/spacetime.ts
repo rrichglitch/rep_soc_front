@@ -224,16 +224,22 @@ export async function sendVerificationCode(
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  console.log('Sending verification code to:', phoneNumber);
-  
-  await dbConnection.reducers.sendVerificationCode({
+  console.log('Calling sendVerificationCode procedure for:', phoneNumber);
+
+  const result = await dbConnection.procedures.sendVerificationCode({
     email,
-    fullName,
-    profilePicture,
+    full_name: fullName,
+    profile_picture: profilePicture,
     city,
     description,
-    phoneNumber,
+    phone_number: phoneNumber,
   });
+
+  console.log('sendVerificationCode result:', result);
+
+  if (!result.success) {
+    throw new Error(result.error ?? 'Failed to send verification code');
+  }
 }
 
 export async function verifyPhoneCode(
@@ -249,17 +255,23 @@ export async function verifyPhoneCode(
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  console.log('Verifying phone:', phoneNumber, 'with code:', code);
-  
-  await dbConnection.reducers.verifyPhoneCode({
+  console.log('Calling verifyPhoneCode procedure for:', phoneNumber, 'with code:', code);
+
+  const result = await dbConnection.procedures.verifyPhoneCode({
     email,
-    fullName,
-    profilePicture,
+    full_name: fullName,
+    profile_picture: profilePicture,
     city,
     description,
-    phoneNumber,
+    phone_number: phoneNumber,
     code,
   });
+
+  console.log('verifyPhoneCode result:', result);
+
+  if (!result.success) {
+    throw new Error(result.error ?? 'Failed to verify phone');
+  }
 }
 
 export async function getProfileByIdentity(identity: string) {

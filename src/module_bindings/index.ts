@@ -40,12 +40,12 @@ import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import FollowReducer from "./follow_reducer";
 import RefreshFeedReducer from "./refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
-import SendVerificationCodeReducer from "./send_verification_code_reducer";
+import SendVerificationCodeProcedure from "./send_verification_code_procedure";
 import UnfollowReducer from "./unfollow_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
 import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
-import VerifyPhoneCodeReducer from "./verify_phone_code_reducer";
+import VerifyPhoneCodeProcedure from "./verify_phone_code_procedure";
 
 // Import all procedure arg schemas
 
@@ -132,7 +132,7 @@ const tablesSchema = __schema({
   }, MyFeedRow),
 });
 
-/** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
+/** The schema information for all reducers in this module. */
 const reducersSchema = __reducers(
   __reducerSchema("create_profile", CreateProfileReducer),
   __reducerSchema("create_story_post", CreateStoryPostReducer),
@@ -140,16 +140,16 @@ const reducersSchema = __reducers(
   __reducerSchema("follow", FollowReducer),
   __reducerSchema("refresh_feed", RefreshFeedReducer),
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
-  __reducerSchema("send_verification_code", SendVerificationCodeReducer),
   __reducerSchema("unfollow", UnfollowReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
   __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
-  __reducerSchema("verify_phone_code", VerifyPhoneCodeReducer),
 );
 
-/** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */
+/** The schema information for all procedures in this module. */
 const proceduresSchema = __procedures(
+  __procedureSchema("send_verification_code", SendVerificationCodeProcedure.args, SendVerificationCodeProcedure.result),
+  __procedureSchema("verify_phone_code", VerifyPhoneCodeProcedure.args, VerifyPhoneCodeProcedure.result),
 );
 
 /** The remote SpacetimeDB module schema, both runtime and type information. */
@@ -171,6 +171,9 @@ export const tables: __QueryBuilder<typeof tablesSchema.schemaType> = __makeQuer
 
 /** The reducers available in this remote SpacetimeDB module. */
 export const reducers = __convertToAccessorMap(reducersSchema.reducersType.reducers);
+
+/** The procedures available in this remote SpacetimeDB module. */
+export const procedures = __convertToAccessorMap(proceduresSchema.procedures);
 
 /** The context type returned in callbacks for all possible events. */
 export type EventContext = __EventContextInterface<typeof REMOTE_MODULE>;
