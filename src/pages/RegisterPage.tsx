@@ -147,26 +147,8 @@ function RegisterPage() {
     setIsLoading(true);
 
     try {
-      if (!email) {
-        throw new Error('Email not available. Please log in again.');
-      }
-
-      if (!storedPictureBase64) {
-        throw new Error('Profile picture is required');
-      }
-
-      const sanitizedFullName = validateAndSanitizeFullName(fullName);
-      const sanitizedCity = validateAndSanitizeCity(city);
-      const sanitizedDescription = validateAndSanitizeDescription(description);
-
-      // Verify the code via Twilio (backend creates profile after verification)
       await verifyPhoneCode(
-        email,
-        sanitizedFullName,
-        storedPictureBase64,
-        sanitizedCity,
-        sanitizedDescription,
-        phoneNumber.trim(),
+        storedPhone,
         verificationCode.trim()
       );
 

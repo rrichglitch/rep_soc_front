@@ -243,11 +243,6 @@ export async function sendVerificationCode(
 }
 
 export async function verifyPhoneCode(
-  email: string,
-  fullName: string,
-  profilePicture: string,
-  city: string,
-  description: string,
   phoneNumber: string,
   code: string
 ): Promise<void> {
@@ -258,11 +253,6 @@ export async function verifyPhoneCode(
   console.log('Calling verifyPhoneCode procedure for:', phoneNumber, 'with code:', code);
 
   const result = await dbConnection.procedures.verifyPhoneCode({
-    email,
-    full_name: fullName,
-    profile_picture: profilePicture,
-    city,
-    description,
     phone_number: phoneNumber,
     code,
   });

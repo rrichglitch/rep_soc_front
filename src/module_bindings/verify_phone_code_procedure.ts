@@ -7,11 +7,6 @@ import {
 
 // Input arguments for verify_phone_code procedure
 const verify_phone_code_args = {
-  email: __t.string(),
-  full_name: __t.string(),
-  profile_picture: __t.string(),
-  city: __t.string(),
-  description: __t.string(),
   phone_number: __t.string(),
   code: __t.string(),
 };
