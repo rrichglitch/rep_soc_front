@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from '../utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail } from '../utils/spacetime';
 
 function CallbackPage() {
   const auth = useAuth();
@@ -60,8 +60,6 @@ function CallbackPage() {
       } catch (e) {
         console.error('Error during callback:', e);
         navigate('/', { replace: true });
-      } finally {
-        disconnectFromSpacetimeDB();
       }
     };
 
