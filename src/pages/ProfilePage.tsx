@@ -223,7 +223,7 @@ function ProfilePage() {
       <div className="profile-page">
         <header className="header">
           <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-          <Link to="/home" className="logo">Reputable Social</Link>
+          <Link to="/home" className="logo">Veri Social</Link>
           <div className="header-spacer"></div>
         </header>
         <main className="main-content">
@@ -240,7 +240,7 @@ function ProfilePage() {
     <div className="profile-page">
       <header className="header">
         <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-        <Link to="/" className="logo">Reputable Social</Link>
+        <Link to="/" className="logo">Veri Social</Link>
         <div className="header-right">
           {isAuthenticated ? (
             <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">

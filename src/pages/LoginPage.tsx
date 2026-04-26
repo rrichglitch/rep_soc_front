@@ -22,7 +22,7 @@ function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h1>Reputable Social</h1>
+        <h1>Veri Social</h1>
         <p className="tagline">What others say about you matters</p>
 
         <div className="login-form">

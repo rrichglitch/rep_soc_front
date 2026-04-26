@@ -176,7 +176,7 @@ function RegisterPage() {
     <div className="register-page">
       <div className="register-container">
         <h1>{step === 'form' ? 'Create Account' : 'Verify Phone'}</h1>
-        <p className="subtitle">{step === 'form' ? 'Join Reputable Social today' : `Enter the code sent to ${phoneNumber}`}</p>
+        <p className="subtitle">{step === 'form' ? 'Join Veri Social today' : `Enter the code sent to ${phoneNumber}`}</p>
 
         {error && <div className="error-message">{error}</div>}
 

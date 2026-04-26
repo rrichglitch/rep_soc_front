@@ -196,12 +196,7 @@ function RedirectHandler() {
     const redirectPath = sessionStorage.getItem('auth_redirect_path');
     if (redirectPath) {
       sessionStorage.removeItem('auth_redirect_path');
-      const match = redirectPath.match(/\/rep_soc_front(\/[^?]*)?(\?.*)?/);
-      if (match) {
-        const path = match[1] || '/';
-        const query = match[2] || '';
-        navigate(path + query, { replace: true });
-      }
+      navigate(redirectPath, { replace: true });
     }
   }, [navigate]);
   
@@ -269,7 +264,7 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider {...AUTH_CONFIG}>
-      <BrowserRouter basename="/rep_soc_front">
+      <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

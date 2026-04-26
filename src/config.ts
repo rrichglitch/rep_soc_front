@@ -1,6 +1,6 @@
 import { WebStorageStateStore, User } from 'oidc-client-ts';
 
-export const APP_URL = 'https://reputable.social';
+export const APP_URL = 'https://veri.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
 export const SPACETIMEDB_MODULE = 'repsoc';
@@ -11,7 +11,7 @@ const getOrigin = () => {
     console.log('Auth origin:', origin);
     return origin;
   }
-  return 'https://rrichglitch.github.io/rep_soc_front';
+  return 'https://veri.social';
 };
 
 const origin = getOrigin();

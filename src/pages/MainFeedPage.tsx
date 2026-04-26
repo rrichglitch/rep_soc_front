@@ -163,7 +163,7 @@ function MainFeedPage() {
     <div className="main-feed-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/about" className="logo">Reputable Social</Link>
+          <Link to="/about" className="logo">Veri Social</Link>
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
