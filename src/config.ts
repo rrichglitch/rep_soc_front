@@ -7,7 +7,7 @@ export const SPACETIMEDB_MODULE = 'repsoc';
 
 const getOrigin = () => {
   if (typeof window !== 'undefined') {
-    const origin = window.location.origin + (import.meta.env.VITE_BASE_PATH || '');
+    const origin = window.location.origin;
     console.log('Auth origin:', origin);
     return origin;
   }
