@@ -1,17 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
+import SearchBar from '../components/SearchBar';
 import { connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 
 function PrivacyPolicyPage() {
+  const navigate = useNavigate();
   const auth = useAuth();
-  const isAuthenticated = auth.isAuthenticated;
   const [profilePicture, setProfilePicture] = useState<string>('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSignIn = () => {
     auth.signinRedirect();
+  };
+
+  const handleSearch = (query: string) => {
+    if (query.trim()) {
+      navigate(`/search?q=${encodeURIComponent(query)}`);
+    }
   };
 
   // Scroll to top on mount
@@ -22,7 +29,7 @@ function PrivacyPolicyPage() {
   // Load auth profile picture (same pattern as SearchPage)
   useEffect(() => {
     const initAuth = async () => {
-      if (!isAuthenticated) {
+      if (!auth.isAuthenticated) {
         try {
           await connectToSpacetimeDB('', undefined);
         } catch (e) {
@@ -64,16 +71,16 @@ function PrivacyPolicyPage() {
     };
 
     initAuth();
-  }, [isAuthenticated, auth.user]);
+  }, [auth.isAuthenticated, auth.user]);
 
   return (
     <div className="privacy-policy-page">
       <TopBar
-        left={<Link to="/home" className="topbar-logo">Veri Social</Link>}
-        center={<h1 className="page-title">Privacy Policy</h1>}
+        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo">Veri Social</Link>}
+        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
         right={
-          isAuthenticated ? (
-            <Link to={isLoggedIn ? "/home" : "/me"} className="topbar-profile-link">
+          isLoggedIn ? (
+            <Link to="/home" className="topbar-profile-link">
               {profilePicture ? (
                 <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
               ) : (
@@ -89,6 +96,7 @@ function PrivacyPolicyPage() {
       />
 
       <main className="privacy-content">
+        <h1 className="privacy-main-title">Privacy Policy</h1>
         <p className="effective-date">
           <strong>Effective Date:</strong> April 26, 2026 &nbsp;|&nbsp; <strong>Last Updated:</strong> April 26, 2026
         </p>
@@ -314,10 +322,20 @@ function PrivacyPolicyPage() {
         .privacy-content a:hover {
           text-decoration: underline;
         }
+        .privacy-main-title {
+          text-align: center;
+          font-size: 32px;
+          color: #667eea;
+          margin: 0 0 8px;
+        }
         .effective-date {
           color: #666;
           font-size: 14px;
           margin-bottom: 32px;
+        }
+        .topbar-search-wrap {
+          width: 100%;
+          max-width: 400px;
         }
         @media (max-width: 600px) {
           .privacy-content {

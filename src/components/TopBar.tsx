@@ -34,8 +34,12 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
           min-width: 0;
         }
         .topbar-center {
-          flex: 0 0 auto;
+          flex: 1 1 auto;
           text-align: center;
+          display: flex;
+          justify-content: center;
+          padding: 0 16px;
+          min-width: 0;
         }
         .topbar-right {
           display: flex;
