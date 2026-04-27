@@ -208,11 +208,21 @@ function LandingPage() {
   return <AboutPage />;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
+
 function AppRoutes() {
   const location = useLocation();
   console.log('Current path:', location.pathname);
-  
+
   return (
+    <>
+      <ScrollToTop />
     <Routes>
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="/" element={<LandingPage />} />
@@ -260,6 +270,7 @@ function AppRoutes() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }
 

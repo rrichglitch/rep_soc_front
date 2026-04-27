@@ -1,25 +1,106 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from 'react-oidc-context';
+import TopBar from '../components/TopBar';
+import { connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 
 function PrivacyPolicyPage() {
+  const auth = useAuth();
+  const isAuthenticated = auth.isAuthenticated;
+  const [profilePicture, setProfilePicture] = useState<string>('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const handleSignIn = () => {
+    auth.signinRedirect();
+  };
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Load auth profile picture (same pattern as SearchPage)
+  useEffect(() => {
+    const initAuth = async () => {
+      if (!isAuthenticated) {
+        try {
+          await connectToSpacetimeDB('', undefined);
+        } catch (e) {
+          console.log('Anonymous connect failed:', e);
+        }
+        return;
+      }
+
+      const token = auth.user?.access_token;
+      if (!token) return;
+
+      try {
+        await connectToSpacetimeDB('', token);
+
+        let userEmail: string | undefined;
+        if (auth.user?.id_token) {
+          try {
+            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+            userEmail = payload.email;
+          } catch (e) {
+            console.error('Failed to parse token:', e);
+          }
+        }
+
+        if (userEmail) {
+          for (let i = 0; i < 10; i++) {
+            const profile = await getProfileByEmail(userEmail);
+            if (profile) {
+              setProfilePicture(profile.profilePicture);
+              setIsLoggedIn(true);
+              break;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+        }
+      } catch (e) {
+        console.error('Auth connect failed:', e);
+      }
+    };
+
+    initAuth();
+  }, [isAuthenticated, auth.user]);
+
   return (
     <div className="privacy-policy-page">
-      <header className="privacy-header">
-        <Link to="/" className="logo">Veri Social</Link>
-      </header>
+      <TopBar
+        left={<Link to="/home" className="topbar-logo">Veri Social</Link>}
+        center={<h1 className="page-title">Privacy Policy</h1>}
+        right={
+          isAuthenticated ? (
+            <Link to={isLoggedIn ? "/home" : "/me"} className="topbar-profile-link">
+              {profilePicture ? (
+                <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
+              ) : (
+                <div className="topbar-profile-placeholder" />
+              )}
+            </Link>
+          ) : (
+            <button onClick={handleSignIn} className="topbar-signin">
+              Sign In
+            </button>
+          )
+        }
+      />
+
       <main className="privacy-content">
-        <h1>Privacy Policy for Veri Social</h1>
         <p className="effective-date">
           <strong>Effective Date:</strong> April 26, 2026 &nbsp;|&nbsp; <strong>Last Updated:</strong> April 26, 2026
         </p>
 
         <section>
           <p>
-            Welcome to Veri Social ("we," "our," or "us"). We are committed to protecting
+            Welcome to Veri Social (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). We are committed to protecting
             your privacy and ensuring you understand how your information is used on our
             platform. This Privacy Policy explains how we collect, use, disclose, and
             safeguard your personal information when you visit our website at{' '}
             <a href="https://veri.social">https://veri.social</a>, use our mobile applications, or interact with our services
-            (collectively, the "Service").
+            (collectively, the &quot;Service&quot;).
           </p>
           <p>
             By accessing or using the Service, you signify that you have read, understood,
@@ -41,7 +122,7 @@ function PrivacyPolicyPage() {
             <li><strong>Account Information:</strong> When you register, we collect your name, email address, phone number, username, password, and date of birth.</li>
             <li><strong>Identity Verification Data (Live Selfie):</strong> To maintain the integrity of our platform and ensure users are real people, we require a live selfie verification during registration. We collect this facial image/scan solely for identity verification purposes.</li>
             <li><strong>Profile Information:</strong> You may provide a profile picture, bio, links to other social media accounts, professional history, and other details to build your reputation profile.</li>
-            <li><strong>User-Generated Content:</strong> As a platform built on social reputation ("What others say about you matters"), we collect the reviews, ratings, endorsements, comments, and messages you post about others, as well as those posted about you.</li>
+            <li><strong>User-Generated Content:</strong> As a platform built on social reputation (&quot;What others say about you matters&quot;), we collect the reviews, ratings, endorsements, comments, and messages you post about others, as well as those posted about you.</li>
             <li><strong>Communications:</strong> Information you provide when you contact customer support or communicate with us.</li>
           </ul>
 
@@ -58,7 +139,7 @@ function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2>2. Our Strict "No Sale" Policy</h2>
+          <h2>2. Our Strict &quot;No Sale&quot; Policy</h2>
           <p>
             We believe your personal data belongs to you. We do not sell your contact
             information (such as your email address, phone number, or physical address) to
@@ -100,7 +181,7 @@ function PrivacyPolicyPage() {
           <ul>
             <li><strong>Access and Portability:</strong> You can request a copy of the personal data we hold about you.</li>
             <li><strong>Correction:</strong> You can edit or update your profile information at any time through your account settings.</li>
-            <li><strong>Deletion ("Right to be Forgotten"):</strong> You can request the deletion of your account and personal data. Note: Because our platform relies on authentic reputation data, if you request deletion, reviews you have written about others may be anonymized rather than deleted, subject to applicable law.</li>
+            <li><strong>Deletion (&quot;Right to be Forgotten&quot;):</strong> You can request the deletion of your account and personal data. Note: Because our platform relies on authentic reputation data, if you request deletion, reviews you have written about others may be anonymized rather than deleted, subject to applicable law.</li>
             <li><strong>Withdraw Consent:</strong> Where we rely on your consent to process data (such as for your live selfie verification), you have the right to withdraw it by deleting your account.</li>
           </ul>
           <p>To exercise these rights, please contact us at <a href="mailto:dev@veri.social">dev@veri.social</a>.</p>
@@ -133,7 +214,7 @@ function PrivacyPolicyPage() {
         </section>
 
         <section>
-          <h2>8. Children's Privacy</h2>
+          <h2>8. Children&apos;s Privacy</h2>
           <p>
             Veri Social is not intended for individuals under the age of 13. We
             do not knowingly collect personal information from children. If we become aware
@@ -176,10 +257,6 @@ function PrivacyPolicyPage() {
         </section>
       </main>
 
-      <footer className="privacy-footer">
-        <Link to="/">Back to Home</Link>
-      </footer>
-
       <style>{`
         .privacy-policy-page {
           min-height: 100vh;
@@ -189,18 +266,10 @@ function PrivacyPolicyPage() {
           color: #333;
           line-height: 1.7;
         }
-        .privacy-header {
-          background: #667eea;
-          padding: 16px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .privacy-header .logo {
-          color: #fff;
+        .page-title {
+          margin: 0;
           font-size: 20px;
-          font-weight: 700;
-          text-decoration: none;
+          color: #667eea;
         }
         .privacy-content {
           flex: 1;
@@ -212,16 +281,6 @@ function PrivacyPolicyPage() {
           box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           margin-top: 24px;
           margin-bottom: 24px;
-        }
-        .privacy-content h1 {
-          color: #333;
-          margin-bottom: 8px;
-          font-size: 28px;
-        }
-        .effective-date {
-          color: #666;
-          font-size: 14px;
-          margin-bottom: 32px;
         }
         .privacy-content h2 {
           color: #444;
@@ -255,27 +314,18 @@ function PrivacyPolicyPage() {
         .privacy-content a:hover {
           text-decoration: underline;
         }
-        .privacy-footer {
-          background: #f0f0f0;
-          padding: 16px 24px;
-          text-align: center;
-          border-top: 1px solid #e0e0e0;
-        }
-        .privacy-footer a {
-          color: #667eea;
-          text-decoration: none;
-          font-weight: 500;
-        }
-        .privacy-footer a:hover {
-          text-decoration: underline;
+        .effective-date {
+          color: #666;
+          font-size: 14px;
+          margin-bottom: 32px;
         }
         @media (max-width: 600px) {
           .privacy-content {
             padding: 24px 16px;
             margin: 16px;
           }
-          .privacy-content h1 {
-            font-size: 22px;
+          .privacy-content h2 {
+            font-size: 18px;
           }
         }
       `}</style>

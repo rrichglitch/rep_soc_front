@@ -3,6 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import TopBar from '../components/TopBar';
 
 interface SearchResult {
   identity: string;
@@ -142,29 +143,25 @@ function SearchPage() {
 
   return (
     <div className="search-page">
-      <header className="header">
-        <div className="header-left">
-          <Link to="/home" className="logo">Veri Social</Link>
-        </div>
-        <div className="header-center">
-          <h1 className="page-title">Find People</h1>
-        </div>
-        <div className="header-right">
-          {isAuthenticated ? (
-            <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
+      <TopBar
+        left={<Link to="/home" className="topbar-logo">Veri Social</Link>}
+        center={<h1 className="page-title">Find People</h1>}
+        right={
+          isAuthenticated ? (
+            <Link to={isLoggedIn ? "/home" : "/me"} className="topbar-profile-link">
               {profilePicture ? (
-                <img src={profilePicture} alt="My Profile" className="profile-image" />
+                <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
               ) : (
-                <div className="profile-placeholder" />
+                <div className="topbar-profile-placeholder" />
               )}
             </Link>
           ) : (
-            <button onClick={handleSignIn} className="signin-button">
+            <button onClick={handleSignIn} className="topbar-signin">
               Sign In
             </button>
-          )}
-        </div>
-      </header>
+          )
+        }
+      />
 
       <div className="search-sticky">
         <form onSubmit={handleSearch} className="search-form">
@@ -233,111 +230,10 @@ function SearchPage() {
           background: #f5f5f5;
         }
 
-        .header {
-          position: sticky;
-          top: 0;
-          background: white;
-          padding: 12px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          z-index: 100;
-        }
-
-        .header-left {
-          display: flex;
-          align-items: center;
-          flex: 1;
-        }
-
-        .header-center {
-          flex: 0 0 auto;
-          text-align: center;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          flex: 1;
-        }
-
-        .back-button {
-          color: #667eea;
-          background: none;
-          border: none;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          padding: 0;
-          text-decoration: none;
-        }
-
-        .signin-button {
-          padding: 8px 16px;
-          background: #667eea;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .signin-button:hover {
-          background: #5a6fd6;
-        }
-
-        .profile-link {
-          display: block;
-        }
-
-        .profile-image {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .profile-placeholder {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: #e0e0e0;
-        }
-
         .page-title {
           margin: 0;
           font-size: 20px;
           color: #667eea;
-        }
-
-        .logo {
-          margin: 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: #667eea;
-          text-decoration: none;
-          white-space: nowrap;
-        }
-
-        .logo:hover {
-          color: #5a6fd6;
-        }
-
-        .header-left {
-          flex: 1;
-          display: flex;
-          justify-content: flex-start;
-          min-width: 0;
-        }
-
-        .header-center {
-          flex: 0 0 auto;
-          display: flex;
-          justify-content: center;
         }
 
         .search-sticky {
