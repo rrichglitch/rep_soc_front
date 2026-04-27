@@ -286,6 +286,7 @@ function AboutPage() {
           <span className="footer-copyright">&copy; 2026 Veri Social</span>
           <div className="footer-links">
             <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
             <a href="mailto:dev@veri.social">Contact Us</a>
           </div>
         </div>

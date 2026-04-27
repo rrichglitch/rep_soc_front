@@ -22,6 +22,7 @@ import CallbackPage from './pages/CallbackPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 
 interface AppContextType {
   identity: Identity | null;
@@ -228,6 +229,7 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route
         path="/profile/:identity"
