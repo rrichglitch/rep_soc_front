@@ -38,7 +38,7 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
           text-align: center;
           display: flex;
           justify-content: center;
-          padding: 0 16px;
+          padding: 0;
           min-width: 0;
         }
         .topbar-right {
