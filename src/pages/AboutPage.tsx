@@ -199,7 +199,6 @@ function AboutPage() {
       )}
 
       <main className="about-content">
-        <img src="/veri.png" alt="Veri Social" className="main-logo-img" />
         <h1 className="main-logo">Veri Social</h1>
 
         <div className="about-section">
@@ -395,13 +394,6 @@ function AboutPage() {
           max-width: 700px;
           margin: 0 auto;
           padding: 40px 24px;
-        }
-
-        .main-logo-img {
-          display: block;
-          margin: 0 auto 8px;
-          max-height: 80px;
-          width: auto;
         }
 
         .main-logo {
