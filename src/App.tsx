@@ -21,6 +21,7 @@ import FollowPage from './pages/FollowPage';
 import CallbackPage from './pages/CallbackPage';
 import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 interface AppContextType {
   identity: Identity | null;
@@ -216,6 +217,7 @@ function AppRoutes() {
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route
         path="/profile/:identity"

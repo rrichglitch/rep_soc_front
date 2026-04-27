@@ -281,10 +281,22 @@ function AboutPage() {
         </div>
       </main>
 
+      <footer className="about-footer">
+        <div className="footer-content">
+          <span className="footer-copyright">&copy; 2026 Veri Social</span>
+          <div className="footer-links">
+            <Link to="/privacy">Privacy</Link>
+            <a href="mailto:dev@veri.social">Contact Us</a>
+          </div>
+        </div>
+      </footer>
+
       <style>{`
         .about-page {
           min-height: 100vh;
           background: #f5f5f5;
+          display: flex;
+          flex-direction: column;
         }
 
         .header {
@@ -472,6 +484,44 @@ function AboutPage() {
           border-bottom: 1px solid #e0e0e0;
         }
 
+        .about-footer {
+          background: #fff;
+          border-top: 1px solid #e0e0e0;
+          padding: 16px 24px;
+          margin-top: auto;
+        }
+
+        .footer-content {
+          max-width: 700px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .footer-copyright {
+          color: #666;
+          font-size: 14px;
+        }
+
+        .footer-links {
+          display: flex;
+          gap: 16px;
+        }
+
+        .footer-links a {
+          color: #667eea;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .footer-links a:hover {
+          text-decoration: underline;
+        }
+
         @media (max-width: 640px) {
           .header {
             padding: 10px 16px;
@@ -513,6 +563,12 @@ function AboutPage() {
 
           .about-section h2 {
             font-size: 20px;
+          }
+
+          .footer-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 12px;
           }
         }
       `}</style>
