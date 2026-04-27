@@ -223,7 +223,7 @@ function ProfilePage() {
       <div className="profile-page">
         <header className="header">
           <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-          <Link to="/home" className="logo">Veri Social</Link>
+          <Link to="/home" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
           <div className="header-spacer"></div>
         </header>
         <main className="main-content">
@@ -240,7 +240,7 @@ function ProfilePage() {
     <div className="profile-page">
       <header className="header">
         <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-        <Link to="/" className="logo">Veri Social</Link>
+        <Link to="/" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
         <div className="header-right">
           {isAuthenticated ? (
             <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
@@ -393,6 +393,12 @@ function ProfilePage() {
 
         .logo:hover {
           color: #5a6fd6;
+        }
+
+        .logo-img {
+          height: 36px;
+          width: auto;
+          display: block;
         }
 
         .header-right {

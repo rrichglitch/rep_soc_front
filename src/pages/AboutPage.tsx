@@ -153,7 +153,11 @@ function AboutPage() {
     <div className="about-page">
       <header className="header">
         <div className="header-left">
-          <span />
+          {isLoggedIn ? (
+            <Link to="/home" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
+          ) : (
+            <img src="/veri.png" alt="Veri Social" className="logo-img" />
+          )}
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
@@ -195,6 +199,7 @@ function AboutPage() {
       )}
 
       <main className="about-content">
+        <img src="/veri.png" alt="Veri Social" className="main-logo-img" />
         <h1 className="main-logo">Veri Social</h1>
 
         <div className="about-section">
@@ -392,11 +397,24 @@ function AboutPage() {
           padding: 40px 24px;
         }
 
+        .main-logo-img {
+          display: block;
+          margin: 0 auto 8px;
+          max-height: 80px;
+          width: auto;
+        }
+
         .main-logo {
           text-align: center;
           font-size: 36px;
           color: #667eea;
           margin: 0 0 40px;
+        }
+
+        .logo-img {
+          height: 36px;
+          width: auto;
+          display: block;
         }
 
         .about-section {

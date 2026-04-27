@@ -178,7 +178,7 @@ function MyProfilePage() {
         <button onClick={() => navigate(-1)} className="back-link">
           ← Back
         </button>
-        <Link to="/home" className="logo">Veri Social</Link>
+        <Link to="/home" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
         <button onClick={() => setShowQR(true)} className="qr-button">
           Share
         </button>
@@ -400,6 +400,12 @@ function MyProfilePage() {
 
         .logo:hover {
           color: #5a6fd6;
+        }
+
+        .logo-img {
+          height: 36px;
+          width: auto;
+          display: block;
         }
 
         .qr-button {

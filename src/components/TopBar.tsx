@@ -49,15 +49,14 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
           gap: 8px;
         }
         .topbar-logo {
-          margin: 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: #667eea;
+          display: flex;
+          align-items: center;
           text-decoration: none;
-          white-space: nowrap;
         }
-        .topbar-logo:hover {
-          color: #5a6fd6;
+        .topbar-logo img {
+          height: 36px;
+          width: auto;
+          display: block;
         }
         .topbar-back {
           color: #667eea;

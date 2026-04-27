@@ -76,7 +76,7 @@ function PrivacyPolicyPage() {
   return (
     <div className="privacy-policy-page">
       <TopBar
-        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo">Veri Social</Link>}
+        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
         right={
           isLoggedIn ? (

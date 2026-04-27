@@ -144,7 +144,7 @@ function SearchPage() {
   return (
     <div className="search-page">
       <TopBar
-        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo">Veri Social</Link>}
+        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<h1 className="page-title">Find People</h1>}
         right={
           isLoggedIn ? (

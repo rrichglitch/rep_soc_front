@@ -163,7 +163,7 @@ function MainFeedPage() {
     <div className="main-feed-page">
       <header className="header">
         <div className="header-left">
-          <Link to="/about" className="logo">Veri Social</Link>
+          <Link to="/about" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
         </div>
         <div className="header-center">
           <SearchBar onSearch={handleSearch} />
@@ -341,6 +341,12 @@ function MainFeedPage() {
 
         .logo:hover {
           color: #5a6fd6;
+        }
+
+        .logo-img {
+          height: 36px;
+          width: auto;
+          display: block;
         }
 
         .search-toggle {
