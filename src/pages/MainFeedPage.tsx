@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
@@ -9,7 +10,6 @@ function MainFeedPage() {
   const { email } = useApp();
   const [isLoading, setIsLoading] = useState(true);
   const [profilePicture, setProfilePicture] = useState<string>('');
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
   const [orderOldToNew, setOrderOldToNew] = useState(true);
@@ -78,10 +78,6 @@ function MainFeedPage() {
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query)}`);
     }
-  };
-
-  const handleMobileSearchToggle = () => {
-    setShowMobileSearch(!showMobileSearch);
   };
 
   const handleToggleOrder = async () => {
@@ -161,38 +157,19 @@ function MainFeedPage() {
 
   return (
     <div className="main-feed-page">
-      <header className="header">
-        <div className="header-left">
-          <Link to="/about" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
-        </div>
-        <div className="header-center">
-          <SearchBar onSearch={handleSearch} />
-        </div>
-        <div className="header-right">
-          <button className="search-toggle" onClick={handleMobileSearchToggle} aria-label="Search">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
-          <Link to="/me" className="profile-link">
+      <TopBar
+        left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        center={<SearchBar onSearch={handleSearch} />}
+        right={
+          <Link to="/me" className="topbar-profile-link">
             {profilePicture ? (
-              <img src={profilePicture} alt="My Profile" className="profile-image" />
+              <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
             ) : (
-              <div className="profile-placeholder" />
+              <div className="topbar-profile-placeholder" />
             )}
           </Link>
-        </div>
-      </header>
-
-      {showMobileSearch && (
-        <div className="mobile-search-row">
-          <SearchBar onSearch={(query) => {
-            handleSearch(query);
-            setShowMobileSearch(false);
-          }} />
-        </div>
-      )}
+        }
+      />
 
       <main className="main-content" ref={feedContainerRef}>
         {!hasContent ? (
@@ -292,101 +269,6 @@ function MainFeedPage() {
         .main-feed-page {
           min-height: 100vh;
           background: #f5f5f5;
-        }
-
-        .header {
-          position: sticky;
-          top: 0;
-          background: white;
-          padding: 12px 24px;
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          align-items: center;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          z-index: 100;
-        }
-
-        .header-left {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-        }
-
-        .header-center {
-          display: flex;
-          justify-content: center;
-          width: 100%;
-          max-width: 600px;
-        }
-
-        .header-center .search-bar {
-          width: 100%;
-          max-width: 500px;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 16px;
-        }
-
-        .logo {
-          margin: 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: #667eea;
-          text-decoration: none;
-        }
-
-        .logo:hover {
-          color: #5a6fd6;
-        }
-
-        .logo-img {
-          height: 36px;
-          width: auto;
-          display: block;
-        }
-
-        .search-toggle {
-          display: none;
-          padding: 8px;
-          background: transparent;
-          border: none;
-          color: #666;
-          cursor: pointer;
-          border-radius: 8px;
-        }
-
-        .search-toggle:hover {
-          background: #f5f5f5;
-          color: #667eea;
-        }
-
-        .profile-link {
-          display: block;
-        }
-
-        .profile-placeholder {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: #e0e0e0;
-        }
-
-        .profile-image {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .mobile-search-row {
-          display: none;
-          padding: 12px 24px;
-          background: white;
-          border-bottom: 1px solid #e0e0e0;
         }
 
         .main-content {
@@ -620,42 +502,9 @@ function MainFeedPage() {
           to { transform: rotate(360deg); }
         }
 
-        @media (min-width: 641px) {
-          .header-center {
-            display: flex;
-          }
-        }
-
         @media (max-width: 640px) {
-          .header {
-            padding: 10px 16px;
-          }
-
-          .header-left {
-            flex-shrink: 0;
-          }
-
-          .header-center {
-            display: none;
-          }
-
-          .header-right {
-            flex-shrink: 0;
-            margin-left: auto;
-            gap: 12px;
-          }
-
-          .search-toggle {
-            display: block;
-          }
-
-          .mobile-search-row {
-            display: block;
-          }
-
-          .logo {
-            font-size: 16px;
-            white-space: nowrap;
+          .main-content {
+            padding: 16px;
           }
         }
       `}</style>

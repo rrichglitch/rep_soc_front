@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useApp } from '../App';
 import { useAuth } from 'react-oidc-context';
+import { useApp } from '../App';
 import ProfileHeader from '../components/ProfileHeader';
+import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
@@ -24,66 +26,42 @@ function ProfilePage() {
   const auth = useAuth();
   const navigate = useNavigate();
 
-  const isAuthenticated = auth.isAuthenticated;
-  const [profilePicture, setProfilePicture] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
 
-  const handleSignIn = () => {
-    auth.signinRedirect();
-  };
+  // Background: try to connect and get current user identity
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await connectToSpacetimeDB('', undefined);
+      } catch (e) {
+        console.log('Anonymous connect failed:', e);
+      }
+    };
+    init();
+  }, []);
 
-  // Background: try to connect and check for profile
   useEffect(() => {
     const initAuth = async () => {
-      // Try anonymous connection first
-      if (!isAuthenticated) {
-        try {
-          await connectToSpacetimeDB('', undefined);
-        } catch (e) {
-          console.log('Anonymous connect failed:', e);
-        }
-        return;
-      }
-
-      // If authenticated, try to connect with token
       const token = auth.user?.access_token;
-      if (!token) return;
-
+      if (!token || !email) return;
       try {
         await connectToSpacetimeDB('', token);
-
-        // Get email from token
-        let userEmail = email;
-        if (!userEmail && auth.user?.id_token) {
-          try {
-            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-            userEmail = payload.email;
-          } catch (e) {
-            console.error('Failed to parse token:', e);
+        for (let i = 0; i < 10; i++) {
+          const profile = await getProfileByEmail(email);
+          if (profile) {
+            setCurrentUserIdentity(profile.identity.toHexString());
+            break;
           }
-        }
-
-        if (userEmail) {
-          // Poll for profile
-          for (let i = 0; i < 10; i++) {
-            const profile = await getProfileByEmail(userEmail);
-            if (profile) {
-              setProfilePicture(profile.profilePicture);
-              setCurrentUserIdentity(profile.identity.toHexString());
-              setIsLoggedIn(true);
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
       } catch (e) {
         console.error('Auth connect failed:', e);
       }
     };
-
-    initAuth();
-  }, [isAuthenticated, auth.user, email]);
+    if (auth.isAuthenticated && auth.user) {
+      initAuth();
+    }
+  }, [auth.isAuthenticated, auth.user, email]);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -99,7 +77,7 @@ function ProfilePage() {
 
   const currentIdentityHex = currentUserIdentity || currentIdentity?.toHexString();
   const isOwnProfile = currentIdentityHex === profileIdentity;
-  const canPost = isLoggedIn && !isOwnProfile && currentIdentityHex !== profileIdentity;
+  const canPost = !!currentIdentityHex && !isOwnProfile && currentIdentityHex !== profileIdentity;
 
   // Separate effect for redirect - runs when identity is available
   useEffect(() => {
@@ -139,7 +117,7 @@ function ProfilePage() {
     };
 
     loadProfile();
-  }, [profileIdentity, currentIdentityHex, isLoggedIn]);
+  }, [profileIdentity, currentIdentityHex]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -221,11 +199,11 @@ function ProfilePage() {
   if (!profile) {
     return (
       <div className="profile-page">
-        <header className="header">
-          <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-          <Link to="/home" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
-          <div className="header-spacer"></div>
-        </header>
+        <TopBar
+          left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+          center={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+          right={<div style={{ width: 36 }} />}
+        />
         <main className="main-content">
           <div className="not-found">
             <p>Profile not found</p>
@@ -238,25 +216,11 @@ function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <header className="header">
-        <button onClick={() => navigate(-1)} className="back-button">← Back</button>
-        <Link to="/" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
-        <div className="header-right">
-          {isAuthenticated ? (
-            <Link to={isLoggedIn ? "/home" : "/me"} className="profile-link">
-              {profilePicture ? (
-                <img src={profilePicture} alt="My Profile" className="profile-image" />
-              ) : (
-                <div className="profile-placeholder" />
-              )}
-            </Link>
-          ) : (
-            <button onClick={handleSignIn} className="signin-button">
-              Sign In
-            </button>
-          )}
-        </div>
-      </header>
+      <TopBar
+        left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+        center={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        right={<AuthActions />}
+      />
 
       <main className="main-content">
         <ProfileHeader
@@ -360,90 +324,6 @@ function ProfilePage() {
         .profile-page {
           min-height: 100vh;
           background: #f5f5f5;
-        }
-
-        .header {
-          position: sticky;
-          top: 0;
-          background: white;
-          padding: 12px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .back-button {
-          color: #667eea;
-          background: none;
-          border: none;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          padding: 0;
-        }
-
-        .logo {
-          margin: 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: #667eea;
-          text-decoration: none;
-        }
-
-        .logo:hover {
-          color: #5a6fd6;
-        }
-
-        .logo-img {
-          height: 36px;
-          width: auto;
-          display: block;
-        }
-
-        .header-right {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          min-width: 80px;
-        }
-
-        .signin-button {
-          padding: 8px 16px;
-          background: #667eea;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          font-size: 14px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-
-        .signin-button:hover {
-          background: #5a6fd6;
-        }
-
-        .profile-link {
-          display: block;
-        }
-
-        .profile-placeholder {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: #e0e0e0;
-        }
-
-        .profile-image {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          object-fit: cover;
-        }
-
-        .header-spacer {
-          width: 60px;
         }
 
         .main-content {

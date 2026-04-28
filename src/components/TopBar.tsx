@@ -19,12 +19,14 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
           position: sticky;
           top: 0;
           background: white;
-          padding: 12px 24px;
+          height: 60px;
+          padding: 0 24px;
           display: flex;
           align-items: center;
           justify-content: space-between;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
           z-index: 100;
+          box-sizing: border-box;
         }
         .topbar-left {
           display: flex;
@@ -115,7 +117,7 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
         }
         @media (max-width: 640px) {
           .topbar {
-            padding: 10px 16px;
+            padding: 0 16px;
           }
           .topbar-search-toggle {
             display: block;

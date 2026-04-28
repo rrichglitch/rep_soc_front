@@ -2,10 +2,24 @@ import { useState } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  value?: string;
+  onChange?: (value: string) => void;
+  autoFocus?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
-function SearchBar({ onSearch }: SearchBarProps) {
-  const [query, setQuery] = useState('');
+function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className }: SearchBarProps) {
+  const [internalQuery, setInternalQuery] = useState('');
+  const isControlled = value !== undefined;
+  const query = isControlled ? value : internalQuery;
+
+  const setQuery = (newValue: string) => {
+    if (!isControlled) {
+      setInternalQuery(newValue);
+    }
+    onChange?.(newValue);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -13,20 +27,22 @@ function SearchBar({ onSearch }: SearchBarProps) {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setQuery(e.target.value);
-    if (e.target.value === '') {
+    const newValue = e.target.value;
+    setQuery(newValue);
+    if (newValue === '') {
       onSearch('');
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="search-bar">
+    <form onSubmit={handleSubmit} className={`search-bar ${className || ''}`}>
       <input
         type="text"
         value={query}
         onChange={handleChange}
-        placeholder="Find people..."
+        placeholder={placeholder || 'Find people...'}
         className="search-input"
+        autoFocus={autoFocus}
       />
       <button type="submit" className="search-button">
         <svg
@@ -49,6 +65,7 @@ function SearchBar({ onSearch }: SearchBarProps) {
           background: #f5f5f5;
           border-radius: 8px;
           overflow: hidden;
+          width: 100%;
         }
 
         .search-input {

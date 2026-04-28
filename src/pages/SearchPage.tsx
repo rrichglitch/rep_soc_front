@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../App';
-import { useAuth } from 'react-oidc-context';
-import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import { getDbConnection, connectToSpacetimeDB } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
+import SearchBar from '../components/SearchBar';
+import AuthActions from '../components/AuthActions';
 
 interface SearchResult {
   identity: string;
@@ -18,72 +19,24 @@ function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
-  const auth = useAuth();
   const { email } = useApp();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
   const [isConnected, setIsConnected] = useState(false);
 
-  const isAuthenticated = auth.isAuthenticated;
-  const [profilePicture, setProfilePicture] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const handleSignIn = () => {
-    auth.signinRedirect();
-  };
-
-  // Background: try to connect and check for profile
+  // Background: try to connect
   useEffect(() => {
-    const initAuth = async () => {
-      // Try anonymous connection first
-      if (!isAuthenticated) {
-        try {
-          await connectToSpacetimeDB('', undefined);
-        } catch (e) {
-          console.log('Anonymous connect failed:', e);
-        }
-        return;
-      }
-
-      // If authenticated, try to connect with token
-      const token = auth.user?.access_token;
-      if (!token) return;
-
+    const init = async () => {
       try {
-        await connectToSpacetimeDB('', token);
+        await connectToSpacetimeDB('', undefined);
         setIsConnected(true);
-
-        // Get email from token
-        let userEmail = email;
-        if (!userEmail && auth.user?.id_token) {
-          try {
-            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-            userEmail = payload.email;
-          } catch (e) {
-            console.error('Failed to parse token:', e);
-          }
-        }
-
-        if (userEmail) {
-          // Poll for profile
-          for (let i = 0; i < 10; i++) {
-            const profile = await getProfileByEmail(userEmail);
-            if (profile) {
-              setProfilePicture(profile.profilePicture);
-              setIsLoggedIn(true);
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
       } catch (e) {
-        console.error('Auth connect failed:', e);
+        console.log('Connect failed:', e);
       }
     };
-
-    initAuth();
-  }, [isAuthenticated, auth.user, email]);
+    init();
+  }, []);
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -134,52 +87,25 @@ function SearchPage() {
     searchQuery();
   }, [query, isConnected]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim()) {
-      navigate(`/search?q=${encodeURIComponent(inputValue)}`);
-    }
-  };
-
   return (
     <div className="search-page">
       <TopBar
-        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<h1 className="page-title">Find People</h1>}
-        right={
-          isLoggedIn ? (
-            <Link to="/home" className="topbar-profile-link">
-              {profilePicture ? (
-                <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
-              ) : (
-                <div className="topbar-profile-placeholder" />
-              )}
-            </Link>
-          ) : (
-            <button onClick={handleSignIn} className="topbar-signin">
-              Sign In
-            </button>
-          )
-        }
+        right={<AuthActions />}
       />
 
       <div className="search-sticky">
-        <form onSubmit={handleSearch} className="search-form">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Search people..."
-            className="search-input"
-            autoFocus
-          />
-          <button type="submit" className="search-button">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
-        </form>
+        <SearchBar
+          onSearch={(q) => {
+            if (q.trim()) {
+              navigate(`/search?q=${encodeURIComponent(q)}`);
+            }
+          }}
+          value={inputValue}
+          onChange={setInputValue}
+          autoFocus
+        />
       </div>
 
       <main className="search-content">
@@ -234,6 +160,8 @@ function SearchPage() {
           margin: 0;
           font-size: 20px;
           color: #667eea;
+          width: 100%;
+          text-align: center;
         }
 
         .search-sticky {
@@ -244,43 +172,17 @@ function SearchPage() {
           z-index: 50;
         }
 
+        .search-sticky .search-bar {
+          max-width: 500px;
+          margin: 0 auto;
+          background: white;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
         .search-content {
           max-width: 600px;
           margin: 0 auto;
           padding: 24px;
-        }
-
-        .search-form {
-          display: flex;
-          align-items: center;
-          background: white;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          margin-bottom: 24px;
-          max-width: 500px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        .search-input {
-          flex: 1;
-          padding: 14px 16px;
-          border: none;
-          font-size: 16px;
-          outline: none;
-        }
-
-        .search-button {
-          padding: 14px 16px;
-          background: transparent;
-          border: none;
-          color: #666;
-          cursor: pointer;
-        }
-
-        .search-button:hover {
-          color: #667eea;
         }
 
         .loading {

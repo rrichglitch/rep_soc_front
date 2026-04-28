@@ -1,19 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
-import { connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import AuthActions from '../components/AuthActions';
 
 function PrivacyPolicyPage() {
   const navigate = useNavigate();
-  const auth = useAuth();
-  const [profilePicture, setProfilePicture] = useState<string>('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  const handleSignIn = () => {
-    auth.signinRedirect();
-  };
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -26,73 +18,12 @@ function PrivacyPolicyPage() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Load auth profile picture (same pattern as SearchPage)
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!auth.isAuthenticated) {
-        try {
-          await connectToSpacetimeDB('', undefined);
-        } catch (e) {
-          console.log('Anonymous connect failed:', e);
-        }
-        return;
-      }
-
-      const token = auth.user?.access_token;
-      if (!token) return;
-
-      try {
-        await connectToSpacetimeDB('', token);
-
-        let userEmail: string | undefined;
-        if (auth.user?.id_token) {
-          try {
-            const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-            userEmail = payload.email;
-          } catch (e) {
-            console.error('Failed to parse token:', e);
-          }
-        }
-
-        if (userEmail) {
-          for (let i = 0; i < 10; i++) {
-            const profile = await getProfileByEmail(userEmail);
-            if (profile) {
-              setProfilePicture(profile.profilePicture);
-              setIsLoggedIn(true);
-              break;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        }
-      } catch (e) {
-        console.error('Auth connect failed:', e);
-      }
-    };
-
-    initAuth();
-  }, [auth.isAuthenticated, auth.user]);
-
   return (
     <div className="privacy-policy-page">
       <TopBar
-        left={<Link to={isLoggedIn ? "/home" : "/"} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
-        right={
-          isLoggedIn ? (
-            <Link to="/home" className="topbar-profile-link">
-              {profilePicture ? (
-                <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
-              ) : (
-                <div className="topbar-profile-placeholder" />
-              )}
-            </Link>
-          ) : (
-            <button onClick={handleSignIn} className="topbar-signin">
-              Sign In
-            </button>
-          )
-        }
+        right={<AuthActions />}
       />
 
       <main className="privacy-content">

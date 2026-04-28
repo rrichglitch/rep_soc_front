@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, updateProfile } from '../utils/spacetime';
+import TopBar from '../components/TopBar';
 
 interface UserProfile {
   identity: string;
@@ -174,15 +175,11 @@ function MyProfilePage() {
 
   return (
     <div className="my-profile-page">
-      <header className="header">
-        <button onClick={() => navigate(-1)} className="back-link">
-          ← Back
-        </button>
-        <Link to="/home" className="logo"><img src="/veri.png" alt="Veri Social" className="logo-img" /></Link>
-        <button onClick={() => setShowQR(true)} className="qr-button">
-          Share
-        </button>
-      </header>
+      <TopBar
+        left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+        center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        right={<button onClick={() => setShowQR(true)} className="topbar-signin">Share</button>}
+      />
 
       <main className="main-content">
         <div className="profile-section">
@@ -370,52 +367,6 @@ function MyProfilePage() {
         .my-profile-page {
           min-height: 100vh;
           background: #f5f5f5;
-        }
-
-        .header {
-          position: sticky;
-          top: 0;
-          background: white;
-          padding: 12px 24px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-          z-index: 100;
-        }
-
-        .back-link {
-          color: #667eea;
-          text-decoration: none;
-          font-weight: 600;
-        }
-
-        .logo {
-          margin: 0;
-          font-size: 20px;
-          font-weight: bold;
-          color: #667eea;
-          text-decoration: none;
-        }
-
-        .logo:hover {
-          color: #5a6fd6;
-        }
-
-        .logo-img {
-          height: 36px;
-          width: auto;
-          display: block;
-        }
-
-        .qr-button {
-          padding: 8px 16px;
-          background: #667eea;
-          color: white;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 600;
         }
 
         .main-content {
