@@ -6,6 +6,19 @@ let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
 let currentToken: string | undefined = undefined;
 
+// Matches backend Gmail normalization in profile_reducers.ts
+export function sanitizeEmail(email: string): string {
+  const normalized = email.toLowerCase().trim();
+  const atIndex = normalized.lastIndexOf('@');
+  if (atIndex === -1) {
+    return normalized;
+  }
+  const localPart = normalized.substring(0, atIndex);
+  const domain = normalized.substring(atIndex);
+  const cleanedLocal = localPart.split('+')[0].replace(/\./g, '');
+  return cleanedLocal + domain;
+}
+
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
   // If we have a connection with the same token, reuse it
   if (dbConnection && currentToken === token && subscriptionPromise) {
@@ -137,15 +150,15 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
   }
 
   try {
-    console.log('Checking profile for email:', email);
-    const lowerEmail = email.toLowerCase().trim();
+    const sanitized = sanitizeEmail(email);
+    console.log('Checking profile for email:', email, 'sanitized:', sanitized);
     for (const profile of dbConnection.db.user_profile.iter()) {
       console.log('Found profile with email:', profile.email);
-      if (profile.email === lowerEmail) {
+      if (profile.email === sanitized) {
         return true;
       }
     }
-    console.log('No profile found for email:', lowerEmail);
+    console.log('No profile found for sanitized email:', sanitized);
     return false;
   } catch (e) {
     console.error('Error checking profile:', e);
@@ -183,9 +196,9 @@ export async function getProfileByEmail(email: string) {
   }
 
   try {
-    const lowerEmail = email.toLowerCase().trim();
+    const sanitized = sanitizeEmail(email);
     for (const profile of dbConnection.db.user_profile.iter()) {
-      if (profile.email === lowerEmail) {
+      if (profile.email === sanitized) {
         return profile;
       }
     }
@@ -260,7 +273,7 @@ export async function checkDiditVerification(sessionId: string): Promise<{ fullN
   }
 
   if (!result.fullName) {
-    throw new Error('Identity verified but name not found in response');
+    throw new Error('Identity verified, but your name was not returned. Make sure your Didit workflow includes ID document verification.');
   }
 
   return { fullName: result.fullName, selfieImage: result.selfieImage ?? null, status: result.status ?? 'APPROVED' };

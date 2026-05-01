@@ -378,7 +378,6 @@ function RegisterPage() {
                   <li>Middle names are optional</li>
                   <li>Common nicknames accepted (e.g. Mike &rarr; Michael, Mark &rarr; Markus)</li>
                   <li>Shortened forms accepted (e.g. John &rarr; Johnny)</li>
-                  <li>Initials are OK for given names (e.g. J. Smith)</li>
                 </ul>
                 {displayNameError && (
                   <p className="tooltip-error">{displayNameError}</p>
