@@ -17,9 +17,8 @@ export default __t.row({
   profilePicture: __t.string().name("profile_picture"),
   city: __t.string(),
   description: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
   phoneNumber: __t.string().name("phone_number"),
-  phoneVerified: __t.bool().name("phone_verified"),
-  diditVerified: __t.bool().name("didit_verified"),
+  diditSessionId: __t.string().name("didit_session_id"),
   diditSelfieImage: __t.string().name("didit_selfie_image"),
+  createdAt: __t.timestamp().name("created_at"),
 });

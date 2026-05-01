@@ -10,12 +10,15 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
-  email: __t.string(),
-  fullName: __t.string(),
+import {
+  CreateVerifiedProfileResult,
+} from "./types";
+
+export const params = {
+  sessionId: __t.string(),
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),
-  phoneNumber: __t.string(),
-  code: __t.string(),
+  diditSelfieImage: __t.string(),
 };
+export const returnType = CreateVerifiedProfileResult

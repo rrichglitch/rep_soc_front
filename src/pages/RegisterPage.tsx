@@ -1,41 +1,114 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { useApp } from '../App';
-import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeFullName, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
-import { sendVerificationCode, verifyPhoneCode } from '../utils/spacetime';
+import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
+import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile } from '../utils/spacetime';
 
-const RESEND_COOLDOWN_SECONDS = 60;
+const PENDING_REGISTRATION_KEY = 'pending_registration';
+
+interface PendingRegistration {
+  profilePicture: string;
+  city: string;
+  description: string;
+}
+
+async function fetchImageAsBase64(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch image: ${response.status}`);
+  }
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      resolve(result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { email, setHasProfile } = useApp();
 
-  const [step, setStep] = useState<'form' | 'verify'>('form');
+  const diditSessionId = searchParams.get('verificationSessionId');
+  const diditStatus = searchParams.get('status');
+
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
+  const [storedPictureBase64, setStoredPictureBase64] = useState<string | null>(null);
+  const [diditSelfieBase64, setDiditSelfieBase64] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [storedPictureBase64, setStoredPictureBase64] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [storedPhone, setStoredPhone] = useState('');
+  const [diditVerified, setDiditVerified] = useState(false);
+  const [checkingDidit, setCheckingDidit] = useState(false);
 
-  // Countdown timer for resend cooldown
+  // On mount: restore pending registration from localStorage if present
   useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const timer = setInterval(() => {
-      setResendCooldown(prev => {
-        if (prev <= 1) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
+    const stored = localStorage.getItem(PENDING_REGISTRATION_KEY);
+    if (stored) {
+      try {
+        const parsed: PendingRegistration = JSON.parse(stored);
+        setCity(parsed.city);
+        setDescription(parsed.description);
+        if (parsed.profilePicture) {
+          setPicturePreview(parsed.profilePicture);
+          setStoredPictureBase64(parsed.profilePicture);
+        }
+      } catch (e) {
+        console.error('Failed to restore pending registration:', e);
+      }
+    }
+  }, []);
+
+  // On mount: handle Didit callback
+  useEffect(() => {
+    if (!diditSessionId || diditVerified) return;
+
+    const handleCallback = async () => {
+      setCheckingDidit(true);
+      setError(null);
+
+      try {
+        if (diditStatus && diditStatus.toUpperCase() !== 'APPROVED') {
+          throw new Error(`Identity verification ${diditStatus}. Please try again.`);
+        }
+
+        const result = await checkDiditVerification(diditSessionId);
+        setFullName(result.fullName);
+
+        // Fetch Didit selfie image and convert to base64 for storage
+        if (result.selfieImage) {
+          try {
+            const selfieBase64 = await fetchImageAsBase64(result.selfieImage);
+            setDiditSelfieBase64(selfieBase64);
+          } catch (imgErr) {
+            console.error('Failed to fetch Didit selfie image:', imgErr);
+            // Don't block registration if selfie fetch fails
+          }
+        }
+
+        setDiditVerified(true);
+        setCheckingDidit(false);
+
+        // Clean up URL query params
+        window.history.replaceState({}, document.title, '/register');
+      } catch (err) {
+        console.error('Didit callback error:', err);
+        setError(err instanceof Error ? err.message : 'Identity verification failed');
+        setCheckingDidit(false);
+      }
+    };
+
+    handleCallback();
+  }, [diditSessionId, diditStatus, diditVerified]);
 
   const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,249 +126,245 @@ function RegisterPage() {
         setPicturePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      
-      // Convert to base64 for storage
+
       const base64 = await fileToBase64(file);
       setStoredPictureBase64(base64);
       setError(null);
     }
   };
 
-  const handleSendVerification = async (e: React.FormEvent) => {
+  const savePendingRegistration = () => {
+    const pending: PendingRegistration = {
+      profilePicture: storedPictureBase64 || '',
+      city,
+      description,
+    };
+    localStorage.setItem(PENDING_REGISTRATION_KEY, JSON.stringify(pending));
+  };
+
+  const clearPendingRegistration = () => {
+    localStorage.removeItem(PENDING_REGISTRATION_KEY);
+  };
+
+  const handleInitiateDidit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      // Validate inputs
-      const sanitizedFullName = validateAndSanitizeFullName(fullName);
-      const sanitizedCity = validateAndSanitizeCity(city);
-      const sanitizedDescription = validateAndSanitizeDescription(description);
-
       if (!storedPictureBase64) {
         throw new Error('Profile picture is required');
       }
-
       if (!email) {
         throw new Error('Email not available. Please log in again.');
       }
 
-      // Validate phone number format (basic E.164 check)
-      const phone = phoneNumber.trim();
-      if (!phone.startsWith('+') || phone.length < 10) {
-        throw new Error('Please enter a valid phone number with country code (e.g., +14155551234)');
-      }
-
-      // Send verification code via Twilio (backend procedure validates all fields first)
-      console.log('Calling sendVerificationCode with phone:', phone);
-      await sendVerificationCode(
-        email,
-        sanitizedFullName,
-        storedPictureBase64,
-        sanitizedCity,
-        sanitizedDescription,
-        phone
-      );
-      console.log('sendVerificationCode completed, moving to verify step');
-      
-      setStep('verify');
-      setStoredPhone(phone);
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setIsLoading(false);
-    } catch (err) {
-      console.error('sendVerificationCode error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendCode = async () => {
-    if (resendCooldown > 0 || !email || !storedPictureBase64) return;
-    
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      console.log('Resending verification code to:', storedPhone);
-      const sanitizedFullName = validateAndSanitizeFullName(fullName);
       const sanitizedCity = validateAndSanitizeCity(city);
       const sanitizedDescription = validateAndSanitizeDescription(description);
 
-      await sendVerificationCode(
+      // Save form data so it's available after redirect
+      savePendingRegistration();
+
+      const url = await initiateDiditVerification(
         email,
-        sanitizedFullName,
         storedPictureBase64,
         sanitizedCity,
-        sanitizedDescription,
-        storedPhone
+        sanitizedDescription
       );
-      console.log('Resend successful');
-      
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
-      setVerificationCode('');
-      setIsLoading(false);
+
+      // Redirect to Didit hosted verification
+      window.location.href = url;
     } catch (err) {
-      console.error('Resend error:', err);
+      console.error('Initiate Didit error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsLoading(false);
     }
   };
 
-  const handleVerifyAndCreate = async (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
     try {
-      await verifyPhoneCode(
-        storedPhone,
-        verificationCode.trim()
+      if (!diditSessionId) {
+        throw new Error('No verification session found. Please start identity verification.');
+      }
+      if (!storedPictureBase64) {
+        throw new Error('Profile picture is required');
+      }
+
+      const sanitizedCity = validateAndSanitizeCity(city);
+      const sanitizedDescription = validateAndSanitizeDescription(description);
+
+      await createVerifiedProfile(
+        diditSessionId,
+        storedPictureBase64,
+        sanitizedCity,
+        sanitizedDescription,
+        diditSelfieBase64
       );
+
+      clearPendingRegistration();
 
       // Wait for subscription to sync
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Mark that user has a profile
       setHasProfile(true);
-
-      // Navigate to feed
       navigate('/home', { replace: true });
     } catch (err) {
+      console.error('Create profile error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setIsLoading(false);
     }
   };
 
-  const handleBack = () => {
-    setStep('form');
-    setVerificationCode('');
-    setResendCooldown(0);
+  const handleRetry = () => {
+    setDiditVerified(false);
+    setFullName('');
+    setError(null);
+    window.history.replaceState({}, document.title, '/register');
   };
+
+  if (checkingDidit) {
+    return (
+      <div className="register-page">
+        <div className="register-container">
+          <h1>Verifying Identity</h1>
+          <p className="subtitle">Please wait while we confirm your identity verification...</p>
+          <div className="loading-spinner" />
+        </div>
+        <style>{`
+          .register-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+          }
+          .register-container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+          }
+          h1 {
+            margin: 0 0 8px;
+            color: #333;
+          }
+          .subtitle {
+            color: #666;
+            margin: 0 0 24px;
+          }
+          .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+          }
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="register-page">
       <div className="register-container">
-        <h1>{step === 'form' ? 'Create Account' : 'Verify Phone'}</h1>
-        <p className="subtitle">{step === 'form' ? 'Join Veri Social today' : `Enter the code sent to ${phoneNumber}`}</p>
+        <h1>{diditVerified ? 'Confirm Your Details' : 'Create Account'}</h1>
+        <p className="subtitle">
+          {diditVerified
+            ? 'Review your information and create your account'
+            : 'Join Veri Social today'}
+        </p>
 
         {error && <div className="error-message">{error}</div>}
 
-        {step === 'form' ? (
-          <form onSubmit={handleSendVerification} className="register-form">
+        <form onSubmit={diditVerified ? handleCreateAccount : handleInitiateDidit} className="register-form">
+          <div className="form-group">
+            <label>Profile Picture *</label>
+            <div className="picture-upload" onClick={() => fileInputRef.current?.click()}>
+              {picturePreview ? (
+                <img src={picturePreview} alt="Profile preview" className="preview" />
+              ) : (
+                <div className="upload-placeholder">
+                  <span>Click to upload photo</span>
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePictureChange}
+                style={{ display: 'none' }}
+              />
+            </div>
+          </div>
+
+          {diditVerified && (
             <div className="form-group">
-              <label htmlFor="fullName">Full Name *</label>
+              <label htmlFor="fullName">Full Name</label>
               <input
                 type="text"
                 id="fullName"
                 value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                maxLength={CHAR_LIMITS.fullName}
-                required
-                placeholder="Enter your full name"
+                disabled
+                className="disabled-input"
               />
-              <span className="char-count">{fullName.length}/{CHAR_LIMITS.fullName}</span>
+              <span className="hint">Verified by Didit identity check</span>
             </div>
+          )}
 
-            <div className="form-group">
-              <label>Profile Picture *</label>
-              <div className="picture-upload" onClick={() => fileInputRef.current?.click()}>
-                {picturePreview ? (
-                  <img src={picturePreview} alt="Profile preview" className="preview" />
-                ) : (
-                  <div className="upload-placeholder">
-                    <span>Click to upload photo</span>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePictureChange}
-                  style={{ display: 'none' }}
-                />
-              </div>
-            </div>
+          <div className="form-group">
+            <label htmlFor="city">City</label>
+            <input
+              type="text"
+              id="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              maxLength={CHAR_LIMITS.city}
+              placeholder="Enter your city"
+            />
+            <span className="char-count">{city.length}/{CHAR_LIMITS.city}</span>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="city">City</label>
-              <input
-                type="text"
-                id="city"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                maxLength={CHAR_LIMITS.city}
-                placeholder="Enter your city"
-              />
-              <span className="char-count">{city.length}/{CHAR_LIMITS.city}</span>
-            </div>
+          <div className="form-group">
+            <label htmlFor="description">About You</label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={CHAR_LIMITS.description}
+              placeholder="Brief description or status"
+              rows={3}
+            />
+            <span className="char-count">{description.length}/{CHAR_LIMITS.description}</span>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="phoneNumber">Phone Number *</label>
-              <input
-                type="tel"
-                id="phoneNumber"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                required
-                placeholder="+14155551234"
-              />
-              <span className="hint">Include country code (e.g., +1 for US)</span>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="description">About You</label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={CHAR_LIMITS.description}
-                placeholder="Brief description or status"
-                rows={3}
-              />
-              <span className="char-count">{description.length}/{CHAR_LIMITS.description}</span>
-            </div>
-
+          {diditVerified ? (
+            <>
+              <button type="submit" className="submit-button" disabled={isLoading}>
+                {isLoading ? 'Creating Account...' : 'Create Account'}
+              </button>
+              <button type="button" onClick={handleRetry} className="back-button">
+                Restart Verification
+              </button>
+            </>
+          ) : (
             <button type="submit" className="submit-button" disabled={isLoading}>
-              {isLoading ? 'Sending Code...' : 'Send Verification Code'}
+              {isLoading ? 'Starting Verification...' : 'Verify Identity with Didit'}
             </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifyAndCreate} className="register-form">
-            <div className="form-group">
-              <label htmlFor="verificationCode">Verification Code *</label>
-              <input
-                type="text"
-                id="verificationCode"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                maxLength={6}
-                required
-                placeholder="Enter 6-digit code"
-                className="verification-input"
-              />
-              <span className="hint">Check your phone for a 6-digit code</span>
-            </div>
-
-            <button type="submit" className="submit-button" disabled={isLoading}>
-              {isLoading ? 'Verifying...' : 'Verify & Create Account'}
-            </button>
-
-            <div className="resend-section">
-              <span className="hint">Didn't receive a code?</span>
-              {resendCooldown > 0 ? (
-                <span className="cooldown-text">Resend in {resendCooldown}s</span>
-              ) : (
-                <button type="button" onClick={handleResendCode} className="resend-button" disabled={isLoading}>
-                  Resend Code
-                </button>
-              )}
-            </div>
-
-            <button type="button" onClick={handleBack} className="back-button">
-              Back
-            </button>
-          </form>
-        )}
+          )}
+        </form>
 
         <p className="login-link">
           Already have an account? <Link to="/login">Sign In</Link>
@@ -373,6 +442,12 @@ function RegisterPage() {
           border-color: #667eea;
         }
 
+        input.disabled-input {
+          background: #f5f5f5;
+          color: #333;
+          cursor: not-allowed;
+        }
+
         .char-count, .hint {
           font-size: 12px;
           color: #999;
@@ -411,12 +486,6 @@ function RegisterPage() {
           text-align: center;
         }
 
-        .verification-input {
-          text-align: center;
-          font-size: 24px;
-          letter-spacing: 4px;
-        }
-
         .submit-button {
           padding: 14px;
           background: #667eea;
@@ -451,36 +520,6 @@ function RegisterPage() {
 
         .back-button:hover {
           background: #f5f5f5;
-        }
-
-        .resend-section {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .cooldown-text {
-          font-size: 14px;
-          color: #999;
-        }
-
-        .resend-button {
-          background: transparent;
-          border: none;
-          color: #667eea;
-          font-size: 14px;
-          cursor: pointer;
-          padding: 8px;
-        }
-
-        .resend-button:hover:not(:disabled) {
-          text-decoration: underline;
-        }
-
-        .resend-button:disabled {
-          color: #ccc;
-          cursor: not-allowed;
         }
 
         .login-link {

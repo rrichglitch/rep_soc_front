@@ -212,55 +212,83 @@ export async function updateProfile(
   });
 }
 
-export async function sendVerificationCode(
+export async function initiateDiditVerification(
   email: string,
-  fullName: string,
+  profilePicture: string,
+  city: string,
+  description: string
+): Promise<string> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  console.log('Calling initiateDiditVerification procedure');
+
+  const result = await dbConnection.procedures.initiateDiditVerification({
+    email,
+    profilePicture,
+    city,
+    description,
+  });
+
+  console.log('initiateDiditVerification result:', result);
+
+  if (!result.success || !result.url) {
+    throw new Error(result.error ?? 'Failed to start identity verification');
+  }
+
+  return result.url;
+}
+
+export async function checkDiditVerification(sessionId: string): Promise<{ fullName: string; selfieImage: string | null; status: string }> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  console.log('Calling checkDiditVerification for session:', sessionId);
+
+  const result = await dbConnection.procedures.checkDiditVerification({
+    sessionId,
+  });
+
+  console.log('checkDiditVerification result:', result);
+
+  if (!result.success) {
+    throw new Error(result.error ?? `Identity verification ${result.status ?? 'failed'}`);
+  }
+
+  if (!result.fullName) {
+    throw new Error('Identity verified but name not found in response');
+  }
+
+  return { fullName: result.fullName, selfieImage: result.selfieImage ?? null, status: result.status ?? 'APPROVED' };
+}
+
+export async function createVerifiedProfile(
+  sessionId: string,
   profilePicture: string,
   city: string,
   description: string,
-  phoneNumber: string
+  diditSelfieImage: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  console.log('Calling sendVerificationCode procedure for:', phoneNumber);
+  console.log('Calling createVerifiedProfile for session:', sessionId);
 
-  const result = await dbConnection.procedures.sendVerificationCode({
-    email,
-    full_name: fullName,
-    profile_picture: profilePicture,
+  const result = await dbConnection.procedures.createVerifiedProfile({
+    sessionId,
+    profilePicture,
     city,
     description,
-    phone_number: phoneNumber,
+    diditSelfieImage,
   });
 
-  console.log('sendVerificationCode result:', result);
+  console.log('createVerifiedProfile result:', result);
 
   if (!result.success) {
-    throw new Error(result.error ?? 'Failed to send verification code');
-  }
-}
-
-export async function verifyPhoneCode(
-  phoneNumber: string,
-  code: string
-): Promise<void> {
-  if (!dbConnection) {
-    throw new Error('Not connected to SpacetimeDB');
-  }
-
-  console.log('Calling verifyPhoneCode procedure for:', phoneNumber, 'with code:', code);
-
-  const result = await dbConnection.procedures.verifyPhoneCode({
-    phone_number: phoneNumber,
-    code,
-  });
-
-  console.log('verifyPhoneCode result:', result);
-
-  if (!result.success) {
-    throw new Error(result.error ?? 'Failed to verify phone');
+    throw new Error(result.error ?? 'Failed to create profile');
   }
 }
 

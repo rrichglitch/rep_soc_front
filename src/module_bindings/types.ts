@@ -10,6 +10,21 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const CheckDiditResult = __t.object("CheckDiditResult", {
+  success: __t.bool(),
+  fullName: __t.option(__t.string()),
+  selfieImage: __t.option(__t.string()),
+  status: __t.option(__t.string()),
+  error: __t.option(__t.string()),
+});
+export type CheckDiditResult = __Infer<typeof CheckDiditResult>;
+
+export const CreateVerifiedProfileResult = __t.object("CreateVerifiedProfileResult", {
+  success: __t.bool(),
+  error: __t.option(__t.string()),
+});
+export type CreateVerifiedProfileResult = __Infer<typeof CreateVerifiedProfileResult>;
+
 export const FeedPosition = __t.object("FeedPosition", {
   identity: __t.identity(),
   lastReadAt: __t.timestamp(),
@@ -41,6 +56,13 @@ export const Following = __t.object("Following", {
 });
 export type Following = __Infer<typeof Following>;
 
+export const InitiateDiditResult = __t.object("InitiateDiditResult", {
+  success: __t.bool(),
+  url: __t.option(__t.string()),
+  error: __t.option(__t.string()),
+});
+export type InitiateDiditResult = __Infer<typeof InitiateDiditResult>;
+
 export const LastPost = __t.object("LastPost", {
   posterIdentity: __t.identity(),
   profileOwnerIdentity: __t.identity(),
@@ -50,6 +72,20 @@ export type LastPost = __Infer<typeof LastPost>;
 
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
+
+export const PendingRegistration = __t.object("PendingRegistration", {
+  identity: __t.identity(),
+  email: __t.string(),
+  fullName: __t.string(),
+  profilePicture: __t.string(),
+  city: __t.string(),
+  description: __t.string(),
+  phoneNumber: __t.string(),
+  diditSessionId: __t.string(),
+  diditSelfieImage: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type PendingRegistration = __Infer<typeof PendingRegistration>;
 
 export const PushSubscription = __t.object("PushSubscription", {
   identity: __t.identity(),
@@ -79,6 +115,10 @@ export const UserProfile = __t.object("UserProfile", {
   city: __t.string(),
   description: __t.string(),
   createdAt: __t.timestamp(),
+  phoneNumber: __t.string(),
+  phoneVerified: __t.bool(),
+  diditVerified: __t.bool(),
+  diditSelfieImage: __t.string(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

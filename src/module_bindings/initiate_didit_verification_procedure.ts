@@ -10,11 +10,14 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
+import {
+  InitiateDiditResult,
+} from "./types";
+
+export const params = {
   email: __t.string(),
-  fullName: __t.string(),
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),
-  phoneNumber: __t.string(),
 };
+export const returnType = InitiateDiditResult
