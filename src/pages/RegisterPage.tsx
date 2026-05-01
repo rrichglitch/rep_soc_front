@@ -38,8 +38,9 @@ function RegisterPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { email, setHasProfile } = useApp();
 
-  const diditSessionId = searchParams.get('verificationSessionId');
-  const diditStatus = searchParams.get('status');
+  const diditSessionIdFromUrl = searchParams.get('verificationSessionId');
+  const diditStatusFromUrl = searchParams.get('status');
+  const diditSessionIdRef = useRef<string | null>(diditSessionIdFromUrl);
 
   const [fullName, setFullName] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -53,7 +54,8 @@ function RegisterPage() {
   const [diditVerified, setDiditVerified] = useState(false);
   const [checkingDidit, setCheckingDidit] = useState(false);
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
-  const [showNameTooltip, setShowNameTooltip] = useState(false);
+  const [nameTooltipPinned, setNameTooltipPinned] = useState(false);
+  const [nameTooltipHover, setNameTooltipHover] = useState(false);
 
   // On mount: restore pending registration from localStorage if present
   useEffect(() => {
@@ -76,18 +78,19 @@ function RegisterPage() {
 
   // On mount: handle Didit callback
   useEffect(() => {
-    if (!diditSessionId || diditVerified) return;
+    const sessionId = diditSessionIdRef.current;
+    if (!sessionId || diditVerified) return;
 
     const handleCallback = async () => {
       setCheckingDidit(true);
       setError(null);
 
       try {
-        if (diditStatus && diditStatus.toUpperCase() !== 'APPROVED') {
-          throw new Error(`Identity verification ${diditStatus}. Please try again.`);
+        if (diditStatusFromUrl && diditStatusFromUrl.toUpperCase() !== 'APPROVED') {
+          throw new Error(`Identity verification ${diditStatusFromUrl}. Please try again.`);
         }
 
-        const result = await checkDiditVerification(diditSessionId);
+        const result = await checkDiditVerification(sessionId);
         setFullName(result.fullName);
         // Keep the display name the user already typed; don't overwrite with legal name
 
@@ -104,9 +107,6 @@ function RegisterPage() {
 
         setDiditVerified(true);
         setCheckingDidit(false);
-
-        // Clean up URL query params
-        window.history.replaceState({}, document.title, '/register');
       } catch (err) {
         console.error('Didit callback error:', err);
         setError(err instanceof Error ? err.message : 'Identity verification failed');
@@ -115,7 +115,7 @@ function RegisterPage() {
     };
 
     handleCallback();
-  }, [diditSessionId, diditStatus, diditVerified]);
+  }, [diditStatusFromUrl, diditVerified]);
 
   const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -196,7 +196,8 @@ function RegisterPage() {
     setIsLoading(true);
 
     try {
-      if (!diditSessionId) {
+      const sessionId = diditSessionIdRef.current;
+      if (!sessionId) {
         throw new Error('No verification session found. Please start identity verification.');
       }
       if (!storedPictureBase64) {
@@ -207,7 +208,7 @@ function RegisterPage() {
       const nameCheck = isDisplayNameAcceptable(displayName, fullName);
       if (!nameCheck.acceptable) {
         setDisplayNameError(nameCheck.reason ?? 'Invalid display name');
-        setShowNameTooltip(true);
+        setNameTooltipPinned(true);
         setIsLoading(false);
         return;
       }
@@ -216,7 +217,7 @@ function RegisterPage() {
       const sanitizedDescription = validateAndSanitizeDescription(description);
 
       await createVerifiedProfile(
-        diditSessionId,
+        sessionId,
         storedPictureBase64,
         sanitizedCity,
         sanitizedDescription,
@@ -225,6 +226,9 @@ function RegisterPage() {
       );
 
       clearPendingRegistration();
+
+      // Clean up URL query params now that we're done
+      window.history.replaceState({}, document.title, '/register');
 
       // Wait for subscription to sync
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -238,7 +242,7 @@ function RegisterPage() {
       // If backend rejected the name, highlight the field too
       if (msg.toLowerCase().includes('name')) {
         setDisplayNameError(msg);
-        setShowNameTooltip(true);
+        setNameTooltipPinned(true);
       }
       setIsLoading(false);
     }
@@ -247,10 +251,11 @@ function RegisterPage() {
   const handleRetry = () => {
     setDiditVerified(false);
     setFullName('');
-    setDisplayName('');
     setDisplayNameError(null);
-    setShowNameTooltip(false);
+    setNameTooltipPinned(false);
+    setNameTooltipHover(false);
     setError(null);
+    diditSessionIdRef.current = null;
     window.history.replaceState({}, document.title, '/register');
   };
 
@@ -338,14 +343,16 @@ function RegisterPage() {
             </div>
           </div>
 
-          <div className="form-group">
+          <div
+            className="form-group"
+            onMouseEnter={() => setNameTooltipHover(true)}
+            onMouseLeave={() => setNameTooltipHover(false)}
+          >
             <label htmlFor="displayName" className="label-with-info">
               <span>Display Name *</span>
               <span
                 className="info-icon"
-                onMouseEnter={() => setShowNameTooltip(true)}
-                onMouseLeave={() => !displayNameError && setShowNameTooltip(false)}
-                onClick={() => setShowNameTooltip(prev => !prev)}
+                onClick={() => setNameTooltipPinned(prev => !prev)}
               >
                 &#9432;
               </span>
@@ -362,7 +369,7 @@ function RegisterPage() {
               placeholder="Enter your display name"
               className={displayNameError ? 'input-error' : ''}
             />
-            {(showNameTooltip || displayNameError) && (
+            {(nameTooltipHover || nameTooltipPinned || displayNameError) && (
               <div className="name-tooltip">
                 <p><strong>Name requirements:</strong></p>
                 <ul>
