@@ -166,30 +166,6 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
   }
 }
 
-export async function createProfile(
-  email: string,
-  fullName: string,
-  displayName: string,
-  profilePicture: string,
-  city: string,
-  description: string
-): Promise<void> {
-  if (!dbConnection) {
-    throw new Error('Not connected to SpacetimeDB');
-  }
-
-  console.log('Creating profile for email:', email, 'with displayName:', displayName);
-  
-  await dbConnection.reducers.createProfile({
-    email: email.toLowerCase().trim(),
-    fullName,
-    displayName,
-    profilePicture,
-    city,
-    description,
-  });
-}
-
 export async function getProfileByEmail(email: string) {
   if (!dbConnection) {
     return null;
@@ -284,8 +260,7 @@ export async function createVerifiedProfile(
   profilePicture: string,
   city: string,
   description: string,
-  diditSelfieImage: string,
-  displayName: string
+  fullName: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
@@ -298,8 +273,7 @@ export async function createVerifiedProfile(
     profilePicture,
     city,
     description,
-    diditSelfieImage,
-    displayName,
+    fullName,
   });
 
   console.log('createVerifiedProfile result:', result);

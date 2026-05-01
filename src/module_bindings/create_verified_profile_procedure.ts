@@ -19,7 +19,6 @@ export const params = {
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),
-  diditSelfieImage: __t.string(),
-  displayName: __t.string(),
+  fullName: __t.string(),
 };
 export const returnType = CreateVerifiedProfileResult

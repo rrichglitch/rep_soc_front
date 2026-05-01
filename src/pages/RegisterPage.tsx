@@ -15,23 +15,6 @@ interface PendingRegistration {
   description: string;
 }
 
-async function fetchImageAsBase64(url: string): Promise<string> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image: ${response.status}`);
-  }
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      resolve(result);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-
 function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -48,7 +31,6 @@ function RegisterPage() {
   const [description, setDescription] = useState('');
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
   const [storedPictureBase64, setStoredPictureBase64] = useState<string | null>(null);
-  const [diditSelfieBase64, setDiditSelfieBase64] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [diditVerified, setDiditVerified] = useState(false);
@@ -93,17 +75,6 @@ function RegisterPage() {
         const result = await checkDiditVerification(sessionId);
         setFullName(result.fullName);
         // Keep the display name the user already typed; don't overwrite with legal name
-
-        // Fetch Didit selfie image and convert to base64 for storage
-        if (result.selfieImage) {
-          try {
-            const selfieBase64 = await fetchImageAsBase64(result.selfieImage);
-            setDiditSelfieBase64(selfieBase64);
-          } catch (imgErr) {
-            console.error('Failed to fetch Didit selfie image:', imgErr);
-            // Don't block registration if selfie fetch fails
-          }
-        }
 
         setDiditVerified(true);
         setCheckingDidit(false);
@@ -221,7 +192,6 @@ function RegisterPage() {
         storedPictureBase64,
         sanitizedCity,
         sanitizedDescription,
-        diditSelfieBase64,
         displayName
       );
 

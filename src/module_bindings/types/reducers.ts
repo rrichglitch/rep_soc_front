@@ -6,7 +6,6 @@
 import { type Infer as __Infer } from "spacetimedb";
 
 // Import all reducer arg schemas
-import CreateProfileReducer from "../create_profile_reducer";
 import CreateStoryPostReducer from "../create_story_post_reducer";
 import DeleteStoryPostReducer from "../delete_story_post_reducer";
 import FollowReducer from "../follow_reducer";
@@ -19,7 +18,6 @@ import UnregisterPushSubscriptionReducer from "../unregister_push_subscription_r
 import UpdateFeedScrollPositionReducer from "../update_feed_scroll_position_reducer";
 import UpdateProfileReducer from "../update_profile_reducer";
 
-export type CreateProfileParams = __Infer<typeof CreateProfileReducer>;
 export type CreateStoryPostParams = __Infer<typeof CreateStoryPostReducer>;
 export type DeleteStoryPostParams = __Infer<typeof DeleteStoryPostReducer>;
 export type FollowParams = __Infer<typeof FollowReducer>;

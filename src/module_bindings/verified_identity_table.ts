@@ -10,11 +10,9 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
-  email: __t.string(),
-  fullName: __t.string(),
-  displayName: __t.string(),
-  profilePicture: __t.string(),
-  city: __t.string(),
-  description: __t.string(),
-};
+export default __t.row({
+  identity: __t.identity().primaryKey(),
+  legalName: __t.string().name("legal_name"),
+  diditVerified: __t.bool().name("didit_verified"),
+  diditSelfieImage: __t.string().name("didit_selfie_image"),
+});

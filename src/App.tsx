@@ -11,7 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, createProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
 
 import RegisterPage from './pages/RegisterPage';
 import MainFeedPage from './pages/MainFeedPage';
@@ -30,7 +30,6 @@ interface AppContextType {
   isLoading: boolean;
   hasProfile: boolean;
   setHasProfile: (has: boolean) => void;
-  createProfile: (fullName: string, displayName: string, profilePicture: string, city: string, description: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType>({
@@ -39,7 +38,6 @@ const AppContext = createContext<AppContextType>({
   isLoading: true,
   hasProfile: false,
   setHasProfile: () => {},
-  createProfile: async () => {},
 });
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -60,14 +58,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
   const setHasProfile = (has: boolean) => {
     setHasProfileState(has);
-  };
-
-  const handleCreateProfile = async (fullName: string, displayName: string, profilePicture: string, city: string, description: string) => {
-    if (!email) {
-      throw new Error('No email');
-    }
-    await createProfile(email, fullName, displayName, profilePicture, city, description);
-    setHasProfile(true);
   };
 
   useEffect(() => {
@@ -165,7 +155,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
   }
 
   return (
-    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile, createProfile: handleCreateProfile }}>
+    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile }}>
       {children(true)}
     </AppContext.Provider>
   );

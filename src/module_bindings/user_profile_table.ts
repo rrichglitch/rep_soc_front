@@ -14,13 +14,10 @@ export default __t.row({
   identity: __t.identity().primaryKey(),
   email: __t.string(),
   fullName: __t.string().name("full_name"),
-  displayName: __t.string().name("display_name"),
   city: __t.string(),
   description: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
   phoneNumber: __t.string().name("phone_number"),
   phoneVerified: __t.bool().name("phone_verified"),
-  diditVerified: __t.bool().name("didit_verified"),
   profilePicture: __t.string().name("profile_picture"),
-  diditSelfieImage: __t.string().name("didit_selfie_image"),
 });

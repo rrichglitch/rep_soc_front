@@ -34,7 +34,6 @@ import {
 } from "spacetimedb";
 
 // Import all reducer arg schemas
-import CreateProfileReducer from "./create_profile_reducer";
 import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import FollowReducer from "./follow_reducer";
@@ -59,6 +58,7 @@ import PendingRegistrationRow from "./pending_registration_table";
 import PushSubscriptionRow from "./push_subscription_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
+import VerifiedIdentityRow from "./verified_identity_table";
 
 /** Type-only namespace exports for generated type groups. */
 
@@ -136,6 +136,17 @@ const tablesSchema = __schema({
       { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, UserProfileRow),
+  verified_identity: __table({
+    name: 'verified_identity',
+    indexes: [
+      { name: 'identity', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'verified_identity_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, VerifiedIdentityRow),
   my_feed: __table({
     name: 'my_feed',
     indexes: [
@@ -147,7 +158,6 @@ const tablesSchema = __schema({
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
 const reducersSchema = __reducers(
-  __reducerSchema("create_profile", CreateProfileReducer),
   __reducerSchema("create_story_post", CreateStoryPostReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("follow", FollowReducer),

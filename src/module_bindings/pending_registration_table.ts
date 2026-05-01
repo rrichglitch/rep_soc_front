@@ -14,7 +14,7 @@ export default __t.row({
   identity: __t.identity().primaryKey(),
   email: __t.string(),
   fullName: __t.string().name("full_name"),
-  displayName: __t.string().name("display_name"),
+  legalName: __t.string().name("legal_name"),
   city: __t.string(),
   description: __t.string(),
   phoneNumber: __t.string().name("phone_number"),

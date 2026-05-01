@@ -77,7 +77,7 @@ export const PendingRegistration = __t.object("PendingRegistration", {
   identity: __t.identity(),
   email: __t.string(),
   fullName: __t.string(),
-  displayName: __t.string(),
+  legalName: __t.string(),
   city: __t.string(),
   description: __t.string(),
   phoneNumber: __t.string(),
@@ -112,15 +112,20 @@ export const UserProfile = __t.object("UserProfile", {
   identity: __t.identity(),
   email: __t.string(),
   fullName: __t.string(),
-  displayName: __t.string(),
   city: __t.string(),
   description: __t.string(),
   createdAt: __t.timestamp(),
   phoneNumber: __t.string(),
   phoneVerified: __t.bool(),
-  diditVerified: __t.bool(),
   profilePicture: __t.string(),
-  diditSelfieImage: __t.string(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
+
+export const VerifiedIdentity = __t.object("VerifiedIdentity", {
+  identity: __t.identity(),
+  legalName: __t.string(),
+  diditVerified: __t.bool(),
+  diditSelfieImage: __t.string(),
+});
+export type VerifiedIdentity = __Infer<typeof VerifiedIdentity>;
 
