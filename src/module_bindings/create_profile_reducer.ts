@@ -13,6 +13,7 @@ import {
 export default {
   email: __t.string(),
   fullName: __t.string(),
+  displayName: __t.string(),
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),

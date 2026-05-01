@@ -30,7 +30,7 @@ interface AppContextType {
   isLoading: boolean;
   hasProfile: boolean;
   setHasProfile: (has: boolean) => void;
-  createProfile: (fullName: string, profilePicture: string, city: string, description: string) => Promise<void>;
+  createProfile: (fullName: string, displayName: string, profilePicture: string, city: string, description: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType>({
@@ -62,11 +62,11 @@ function AuthCallback({ children }: AuthCallbackProps) {
     setHasProfileState(has);
   };
 
-  const handleCreateProfile = async (fullName: string, profilePicture: string, city: string, description: string) => {
+  const handleCreateProfile = async (fullName: string, displayName: string, profilePicture: string, city: string, description: string) => {
     if (!email) {
       throw new Error('No email');
     }
-    await createProfile(email, fullName, profilePicture, city, description);
+    await createProfile(email, fullName, displayName, profilePicture, city, description);
     setHasProfile(true);
   };
 

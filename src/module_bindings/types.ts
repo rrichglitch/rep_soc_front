@@ -77,13 +77,14 @@ export const PendingRegistration = __t.object("PendingRegistration", {
   identity: __t.identity(),
   email: __t.string(),
   fullName: __t.string(),
-  profilePicture: __t.string(),
+  displayName: __t.string(),
   city: __t.string(),
   description: __t.string(),
   phoneNumber: __t.string(),
   diditSessionId: __t.string(),
-  diditSelfieImage: __t.string(),
   createdAt: __t.timestamp(),
+  profilePicture: __t.string(),
+  diditSelfieImage: __t.string(),
 });
 export type PendingRegistration = __Infer<typeof PendingRegistration>;
 
@@ -101,9 +102,9 @@ export const StoryPost = __t.object("StoryPost", {
   profileOwnerIdentity: __t.identity(),
   posterIdentity: __t.identity(),
   content: __t.string(),
-  mediaData: __t.string(),
   mediaTypes: __t.string(),
   createdAt: __t.timestamp(),
+  mediaData: __t.string(),
 });
 export type StoryPost = __Infer<typeof StoryPost>;
 
@@ -111,13 +112,14 @@ export const UserProfile = __t.object("UserProfile", {
   identity: __t.identity(),
   email: __t.string(),
   fullName: __t.string(),
-  profilePicture: __t.string(),
+  displayName: __t.string(),
   city: __t.string(),
   description: __t.string(),
   createdAt: __t.timestamp(),
   phoneNumber: __t.string(),
   phoneVerified: __t.bool(),
   diditVerified: __t.bool(),
+  profilePicture: __t.string(),
   diditSelfieImage: __t.string(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;

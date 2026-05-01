@@ -21,6 +21,17 @@ function CallbackPage() {
   useEffect(() => {
     if (hasRedirected.current) return;
 
+    // Handle Didit identity verification callback
+    const searchParams = new URLSearchParams(window.location.search);
+    const diditSessionId = searchParams.get('verificationSessionId');
+
+    if (diditSessionId) {
+      console.log('Didit callback detected, forwarding to /register with params');
+      hasRedirected.current = true;
+      navigate(`/register?${searchParams.toString()}`, { replace: true });
+      return;
+    }
+
     const handleAuthSuccess = async () => {
       const idToken = auth.user?.id_token;
       const accessToken = auth.user?.access_token;
@@ -104,7 +115,6 @@ function CallbackPage() {
     // becomes false BEFORE isAuthenticated becomes true. If the URL still
     // has OIDC callback params (code or state), the auth is still processing.
     // Don't redirect away yet!
-    const searchParams = new URLSearchParams(window.location.search);
     const hasCallbackParams = searchParams.has('code') || searchParams.has('state');
 
     if (!auth.isLoading && !auth.isAuthenticated && !hasCallbackParams) {

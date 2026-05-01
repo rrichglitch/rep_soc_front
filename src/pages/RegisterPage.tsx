@@ -3,6 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
+import { isDisplayNameAcceptable } from '../utils/nameMatcher';
 import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile } from '../utils/spacetime';
 
 const PENDING_REGISTRATION_KEY = 'pending_registration';
@@ -40,6 +41,7 @@ function RegisterPage() {
   const diditStatus = searchParams.get('status');
 
   const [fullName, setFullName] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [city, setCity] = useState('');
   const [description, setDescription] = useState('');
   const [picturePreview, setPicturePreview] = useState<string | null>(null);
@@ -49,6 +51,8 @@ function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [diditVerified, setDiditVerified] = useState(false);
   const [checkingDidit, setCheckingDidit] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+  const [showNameTooltip, setShowNameTooltip] = useState(false);
 
   // On mount: restore pending registration from localStorage if present
   useEffect(() => {
@@ -83,6 +87,7 @@ function RegisterPage() {
 
         const result = await checkDiditVerification(diditSessionId);
         setFullName(result.fullName);
+        setDisplayName(result.fullName);
 
         // Fetch Didit selfie image and convert to base64 for storage
         if (result.selfieImage) {
@@ -184,6 +189,7 @@ function RegisterPage() {
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setDisplayNameError(null);
     setIsLoading(true);
 
     try {
@@ -194,6 +200,15 @@ function RegisterPage() {
         throw new Error('Profile picture is required');
       }
 
+      // Client-side display name validation
+      const nameCheck = isDisplayNameAcceptable(displayName, fullName);
+      if (!nameCheck.acceptable) {
+        setDisplayNameError(nameCheck.reason ?? 'Invalid display name');
+        setShowNameTooltip(true);
+        setIsLoading(false);
+        return;
+      }
+
       const sanitizedCity = validateAndSanitizeCity(city);
       const sanitizedDescription = validateAndSanitizeDescription(description);
 
@@ -202,7 +217,8 @@ function RegisterPage() {
         storedPictureBase64,
         sanitizedCity,
         sanitizedDescription,
-        diditSelfieBase64
+        diditSelfieBase64,
+        displayName
       );
 
       clearPendingRegistration();
@@ -214,7 +230,13 @@ function RegisterPage() {
       navigate('/home', { replace: true });
     } catch (err) {
       console.error('Create profile error:', err);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const msg = err instanceof Error ? err.message : 'An error occurred';
+      setError(msg);
+      // If backend rejected the name, highlight the field too
+      if (msg.toLowerCase().includes('name')) {
+        setDisplayNameError(msg);
+        setShowNameTooltip(true);
+      }
       setIsLoading(false);
     }
   };
@@ -222,6 +244,9 @@ function RegisterPage() {
   const handleRetry = () => {
     setDiditVerified(false);
     setFullName('');
+    setDisplayName('');
+    setDisplayNameError(null);
+    setShowNameTooltip(false);
     setError(null);
     window.history.replaceState({}, document.title, '/register');
   };
@@ -311,17 +336,62 @@ function RegisterPage() {
           </div>
 
           {diditVerified && (
-            <div className="form-group">
-              <label htmlFor="fullName">Full Name</label>
-              <input
-                type="text"
-                id="fullName"
-                value={fullName}
-                disabled
-                className="disabled-input"
-              />
-              <span className="hint">Verified by Didit identity check</span>
-            </div>
+            <>
+              <div className="form-group">
+                <label htmlFor="displayName" className="label-with-info">
+                  <span>Display Name *</span>
+                  <span
+                    className="info-icon"
+                    onMouseEnter={() => setShowNameTooltip(true)}
+                    onMouseLeave={() => !displayNameError && setShowNameTooltip(false)}
+                    onClick={() => setShowNameTooltip(prev => !prev)}
+                  >
+                    &#9432;
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  id="displayName"
+                  value={displayName}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    if (displayNameError) setDisplayNameError(null);
+                  }}
+                  maxLength={CHAR_LIMITS.fullName}
+                  placeholder="Enter your display name"
+                  className={displayNameError ? 'input-error' : ''}
+                />
+                {(showNameTooltip || displayNameError) && (
+                  <div className="name-tooltip">
+                    <p><strong>Name requirements:</strong></p>
+                    <ul>
+                      <li>Must match your verified legal name</li>
+                      <li>Your complete surname must be included</li>
+                      <li>Middle names are optional</li>
+                      <li>Common nicknames accepted (e.g. Mike &rarr; Michael, Mark &rarr; Markus)</li>
+                      <li>Shortened forms accepted (e.g. John &rarr; Johnny)</li>
+                      <li>Initials are OK for given names (e.g. J. Smith)</li>
+                    </ul>
+                    {displayNameError && (
+                      <p className="tooltip-error">{displayNameError}</p>
+                    )}
+                  </div>
+                )}
+                <span className="char-count">{displayName.length}/{CHAR_LIMITS.fullName}</span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="fullName">Legal Name</label>
+                <input
+                  type="text"
+                  id="fullName"
+                  value={fullName}
+                  disabled
+                  className="disabled-input"
+                />
+                <span className="hint">Verified by Didit identity check</span>
+              </div>
+            </>
           )}
 
           <div className="form-group">
@@ -429,6 +499,31 @@ function RegisterPage() {
           font-size: 14px;
         }
 
+        .label-with-info {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .info-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #667eea;
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .info-icon:hover {
+          background: #5568d3;
+        }
+
         input, textarea {
           padding: 12px;
           border: 1px solid #e0e0e0;
@@ -442,10 +537,47 @@ function RegisterPage() {
           border-color: #667eea;
         }
 
+        input.input-error {
+          border-color: #dc2626;
+          background: #fef2f2;
+        }
+
+        input.input-error:focus {
+          border-color: #dc2626;
+        }
+
         input.disabled-input {
           background: #f5f5f5;
           color: #333;
           cursor: not-allowed;
+        }
+
+        .name-tooltip {
+          background: #f8f9fa;
+          border: 1px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 12px;
+          font-size: 13px;
+          color: #555;
+        }
+
+        .name-tooltip p {
+          margin: 0 0 6px;
+        }
+
+        .name-tooltip ul {
+          margin: 0;
+          padding-left: 18px;
+        }
+
+        .name-tooltip li {
+          margin-bottom: 4px;
+        }
+
+        .tooltip-error {
+          color: #dc2626;
+          font-weight: 600;
+          margin-top: 8px !important;
         }
 
         .char-count, .hint {

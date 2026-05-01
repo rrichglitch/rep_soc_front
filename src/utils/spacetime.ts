@@ -156,6 +156,7 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
 export async function createProfile(
   email: string,
   fullName: string,
+  displayName: string,
   profilePicture: string,
   city: string,
   description: string
@@ -164,11 +165,12 @@ export async function createProfile(
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  console.log('Creating profile for email:', email, 'with fullName:', fullName);
+  console.log('Creating profile for email:', email, 'with displayName:', displayName);
   
   await dbConnection.reducers.createProfile({
     email: email.toLowerCase().trim(),
     fullName,
+    displayName,
     profilePicture,
     city,
     description,
@@ -224,7 +226,7 @@ export async function initiateDiditVerification(
 
   console.log('Calling initiateDiditVerification procedure');
 
-  const result = await dbConnection.procedures.initiateDiditVerification({
+    const result = await dbConnection.procedures.initiateDiditVerification({
     email,
     profilePicture,
     city,
@@ -269,7 +271,8 @@ export async function createVerifiedProfile(
   profilePicture: string,
   city: string,
   description: string,
-  diditSelfieImage: string
+  diditSelfieImage: string,
+  displayName: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
@@ -283,6 +286,7 @@ export async function createVerifiedProfile(
     city,
     description,
     diditSelfieImage,
+    displayName,
   });
 
   console.log('createVerifiedProfile result:', result);
