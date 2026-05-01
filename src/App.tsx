@@ -180,6 +180,13 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     isLoading: auth.isLoading,
   });
 
+  // Wait for auth to finish loading before deciding to redirect.
+  // This is critical: after a page reload (e.g. returning from Didit),
+  // react-oidc-context needs time to restore auth from localStorage.
+  if (auth.isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
+
   if (!auth.isAuthenticated) {
     return <Navigate to="/" replace />;
   }

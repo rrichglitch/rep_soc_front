@@ -10,6 +10,7 @@ const PENDING_REGISTRATION_KEY = 'pending_registration';
 
 interface PendingRegistration {
   profilePicture: string;
+  displayName: string;
   city: string;
   description: string;
 }
@@ -60,6 +61,7 @@ function RegisterPage() {
     if (stored) {
       try {
         const parsed: PendingRegistration = JSON.parse(stored);
+        setDisplayName(parsed.displayName || '');
         setCity(parsed.city);
         setDescription(parsed.description);
         if (parsed.profilePicture) {
@@ -87,7 +89,7 @@ function RegisterPage() {
 
         const result = await checkDiditVerification(diditSessionId);
         setFullName(result.fullName);
-        setDisplayName(result.fullName);
+        // Keep the display name the user already typed; don't overwrite with legal name
 
         // Fetch Didit selfie image and convert to base64 for storage
         if (result.selfieImage) {
@@ -141,6 +143,7 @@ function RegisterPage() {
   const savePendingRegistration = () => {
     const pending: PendingRegistration = {
       profilePicture: storedPictureBase64 || '',
+      displayName,
       city,
       description,
     };
@@ -335,63 +338,61 @@ function RegisterPage() {
             </div>
           </div>
 
-          {diditVerified && (
-            <>
-              <div className="form-group">
-                <label htmlFor="displayName" className="label-with-info">
-                  <span>Display Name *</span>
-                  <span
-                    className="info-icon"
-                    onMouseEnter={() => setShowNameTooltip(true)}
-                    onMouseLeave={() => !displayNameError && setShowNameTooltip(false)}
-                    onClick={() => setShowNameTooltip(prev => !prev)}
-                  >
-                    &#9432;
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  id="displayName"
-                  value={displayName}
-                  onChange={(e) => {
-                    setDisplayName(e.target.value);
-                    if (displayNameError) setDisplayNameError(null);
-                  }}
-                  maxLength={CHAR_LIMITS.fullName}
-                  placeholder="Enter your display name"
-                  className={displayNameError ? 'input-error' : ''}
-                />
-                {(showNameTooltip || displayNameError) && (
-                  <div className="name-tooltip">
-                    <p><strong>Name requirements:</strong></p>
-                    <ul>
-                      <li>Must match your verified legal name</li>
-                      <li>Your complete surname must be included</li>
-                      <li>Middle names are optional</li>
-                      <li>Common nicknames accepted (e.g. Mike &rarr; Michael, Mark &rarr; Markus)</li>
-                      <li>Shortened forms accepted (e.g. John &rarr; Johnny)</li>
-                      <li>Initials are OK for given names (e.g. J. Smith)</li>
-                    </ul>
-                    {displayNameError && (
-                      <p className="tooltip-error">{displayNameError}</p>
-                    )}
-                  </div>
+          <div className="form-group">
+            <label htmlFor="displayName" className="label-with-info">
+              <span>Display Name *</span>
+              <span
+                className="info-icon"
+                onMouseEnter={() => setShowNameTooltip(true)}
+                onMouseLeave={() => !displayNameError && setShowNameTooltip(false)}
+                onClick={() => setShowNameTooltip(prev => !prev)}
+              >
+                &#9432;
+              </span>
+            </label>
+            <input
+              type="text"
+              id="displayName"
+              value={displayName}
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                if (displayNameError) setDisplayNameError(null);
+              }}
+              maxLength={CHAR_LIMITS.fullName}
+              placeholder="Enter your display name"
+              className={displayNameError ? 'input-error' : ''}
+            />
+            {(showNameTooltip || displayNameError) && (
+              <div className="name-tooltip">
+                <p><strong>Name requirements:</strong></p>
+                <ul>
+                  <li>Must match your verified legal name</li>
+                  <li>Your complete surname must be included</li>
+                  <li>Middle names are optional</li>
+                  <li>Common nicknames accepted (e.g. Mike &rarr; Michael, Mark &rarr; Markus)</li>
+                  <li>Shortened forms accepted (e.g. John &rarr; Johnny)</li>
+                  <li>Initials are OK for given names (e.g. J. Smith)</li>
+                </ul>
+                {displayNameError && (
+                  <p className="tooltip-error">{displayNameError}</p>
                 )}
-                <span className="char-count">{displayName.length}/{CHAR_LIMITS.fullName}</span>
               </div>
+            )}
+            <span className="char-count">{displayName.length}/{CHAR_LIMITS.fullName}</span>
+          </div>
 
-              <div className="form-group">
-                <label htmlFor="fullName">Legal Name</label>
-                <input
-                  type="text"
-                  id="fullName"
-                  value={fullName}
-                  disabled
-                  className="disabled-input"
-                />
-                <span className="hint">Verified by Didit identity check</span>
-              </div>
-            </>
+          {diditVerified && (
+            <div className="form-group">
+              <label htmlFor="fullName">Legal Name</label>
+              <input
+                type="text"
+                id="fullName"
+                value={fullName}
+                disabled
+                className="disabled-input"
+              />
+              <span className="hint">Verified by Didit identity check</span>
+            </div>
           )}
 
           <div className="form-group">
