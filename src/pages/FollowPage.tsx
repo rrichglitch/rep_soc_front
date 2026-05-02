@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
+import { followUser } from '../utils/spacetime';
 
 function FollowPage() {
   const { ownerIdentity } = useParams<{ ownerIdentity: string }>();
@@ -26,6 +27,7 @@ function FollowPage() {
 
     try {
       console.log('Following:', ownerIdentity);
+      await followUser(ownerIdentity!);
       navigate('/', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to follow');

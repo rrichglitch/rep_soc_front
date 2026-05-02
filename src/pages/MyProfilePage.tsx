@@ -171,7 +171,7 @@ function MyProfilePage() {
   }
 
   const basePath = import.meta.env.VITE_BASE_PATH || '';
-  const followUrl = `${window.location.origin}${basePath}/follow/${identity?.toHexString()}`;
+  const followUrl = `${window.location.origin}${basePath}/follow/${profile?.identity || ''}`;
 
   return (
     <div className="my-profile-page">

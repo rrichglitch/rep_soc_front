@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
-import { useApp } from '../App';
 import ProfileHeader from '../components/ProfileHeader';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -22,7 +21,6 @@ interface StoryPost {
 
 function ProfilePage() {
   const { identity: profileIdentity } = useParams<{ identity: string }>();
-  const { identity: currentIdentity, email } = useApp();
   const auth = useAuth();
   const navigate = useNavigate();
 
@@ -43,11 +41,24 @@ function ProfilePage() {
   useEffect(() => {
     const initAuth = async () => {
       const token = auth.user?.access_token;
-      if (!token || !email) return;
+      if (!token || !auth.isAuthenticated) return;
+
+      // Extract email directly from auth token since ProfilePage is not inside PrivateRoute
+      let userEmail: string | undefined;
+      if (auth.user?.id_token) {
+        try {
+          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+          userEmail = payload.email;
+        } catch (e) {
+          console.error('Failed to parse token:', e);
+        }
+      }
+      if (!userEmail) return;
+
       try {
         await connectToSpacetimeDB('', token);
         for (let i = 0; i < 10; i++) {
-          const profile = await getProfileByEmail(email);
+          const profile = await getProfileByEmail(userEmail);
           if (profile) {
             setCurrentUserIdentity(profile.identity.toHexString());
             break;
@@ -61,7 +72,7 @@ function ProfilePage() {
     if (auth.isAuthenticated && auth.user) {
       initAuth();
     }
-  }, [auth.isAuthenticated, auth.user, email]);
+  }, [auth.isAuthenticated, auth.user]);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -75,16 +86,16 @@ function ProfilePage() {
   const [postError, setPostError] = useState<string | null>(null);
   const [showPictureModal, setShowPictureModal] = useState(false);
 
-  const currentIdentityHex = currentUserIdentity || currentIdentity?.toHexString();
+  const currentIdentityHex = currentUserIdentity;
   const isOwnProfile = currentIdentityHex === profileIdentity;
   const canPost = !!currentIdentityHex && !isOwnProfile && currentIdentityHex !== profileIdentity;
 
   // Separate effect for redirect - runs when identity is available
   useEffect(() => {
-    if (currentIdentity && profileIdentity && currentIdentityHex === profileIdentity) {
+    if (currentIdentityHex && profileIdentity && currentIdentityHex === profileIdentity) {
       navigate('/me', { replace: true });
     }
-  }, [currentIdentity, currentIdentityHex, profileIdentity, navigate]);
+  }, [currentIdentityHex, profileIdentity, navigate]);
 
   useEffect(() => {
     const loadProfile = async () => {
