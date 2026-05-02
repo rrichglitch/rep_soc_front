@@ -889,7 +889,7 @@ function MyProfilePage() {
           background: white;
           border-radius: 12px;
           padding: 24px;
-          max-width: 400px;
+          max-width: 600px;
           width: 90%;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
@@ -909,6 +909,7 @@ function MyProfilePage() {
 
         .delete-modal-post .post-header-row {
           margin-bottom: 8px;
+          justify-content: flex-end;
         }
 
         .delete-modal-post .story-content {
