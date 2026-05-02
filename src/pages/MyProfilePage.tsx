@@ -744,7 +744,6 @@ function MyProfilePage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex-direction: row-reverse;
         }
 
         .post-receiver-meta {
