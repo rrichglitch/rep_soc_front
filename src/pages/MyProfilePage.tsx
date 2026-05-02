@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, updateProfile } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
 
 interface UserProfile {
@@ -33,7 +33,9 @@ function MyProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
-  
+  const [myPosts, setMyPosts] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'story' | 'posts'>('story');
+   
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -94,6 +96,9 @@ function MyProfilePage() {
 
         const profileStories = await getMyStoryPosts(identityHex);
         setStories(profileStories);
+
+        const userPosts = await getMyPosts(identityHex);
+        setMyPosts(userPosts);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -289,39 +294,106 @@ function MyProfilePage() {
         />
 
         <div className="story-section">
-          <h2>Your Story</h2>
-          <div className="no-post-own-story">
-            <p>You cannot post on your own story. Others can share stories about you.</p>
+          <div className="profile-tabs">
+            <button
+              className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`}
+              onClick={() => setActiveTab('story')}
+            >
+              Your Story
+            </button>
+            <button
+              className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`}
+              onClick={() => setActiveTab('posts')}
+            >
+              Your Posts
+            </button>
           </div>
-          
-          {stories.length === 0 ? (
-            <div className="empty-story">
-              <p>No stories about you yet.</p>
-            </div>
-          ) : (
-            <div className="stories-list">
-              {stories.map((story) => (
-                <div key={story.id.toString()} className="story-card">
-                  <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
-                    <div className="story-header">
-                      {story.posterPicture ? (
-                        <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                      ) : (
-                        <div className="story-avatar-placeholder" />
+
+          {activeTab === 'story' ? (
+            <>
+              <div className="no-post-own-story">
+                <p>You cannot post on your own story. Others can share stories about you.</p>
+              </div>
+
+              {stories.length === 0 ? (
+                <div className="empty-story">
+                  <p>No stories about you yet.</p>
+                </div>
+              ) : (
+                <div className="stories-list">
+                  {stories.map((story) => (
+                    <div key={story.id.toString()} className="story-card">
+                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                        <div className="story-header">
+                          {story.posterPicture ? (
+                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                          ) : (
+                            <div className="story-avatar-placeholder" />
+                          )}
+                          <div className="story-meta">
+                            <span className="story-author">{story.posterName}</span>
+                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </Link>
+                      <p className="story-content">{story.content}</p>
+                      {story.mediaData && story.mediaData.length > 0 && (
+                        <img src={story.mediaData} alt="Story media" className="story-media" />
                       )}
-                      <div className="story-meta">
-                        <span className="story-author">{story.posterName}</span>
-                        <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {myPosts.length === 0 ? (
+                <div className="empty-story">
+                  <p>You haven't posted on anyone's story yet.</p>
+                </div>
+              ) : (
+                <div className="stories-list">
+                  {myPosts.map((post) => (
+                    <div key={post.id.toString()} className="story-card">
+                      <div className="post-header-row">
+                        <span className="post-date">{new Date(post.createdAt).toLocaleDateString()}</span>
+                        <Link to={`/profile/${post.profileOwnerIdentity}`} className="post-receiver-link">
+                          <div className="post-receiver">
+                            <span className="post-receiver-name">{post.profileOwnerName}</span>
+                            {post.profileOwnerPicture ? (
+                              <img src={post.profileOwnerPicture} alt={post.profileOwnerName} className="story-avatar" />
+                            ) : (
+                              <div className="story-avatar-placeholder" />
+                            )}
+                          </div>
+                        </Link>
+                      </div>
+                      <p className="story-content">{post.content}</p>
+                      {post.mediaData && post.mediaData.length > 0 && (
+                        <img src={post.mediaData} alt="Story media" className="story-media" />
+                      )}
+                      <div className="post-actions">
+                        <button
+                          className="delete-post-btn"
+                          onClick={async () => {
+                            if (!confirm('Are you sure you want to delete this post?')) return;
+                            try {
+                              await deleteStoryPost(post.id);
+                              setMyPosts((prev) => prev.filter((p) => p.id !== post.id));
+                            } catch (e) {
+                              console.error('Failed to delete post:', e);
+                              alert('Failed to delete post');
+                            }
+                          }}
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
-                  </Link>
-                  <p className="story-content">{story.content}</p>
-                  {story.mediaData && story.mediaData.length > 0 && (
-                    <img src={story.mediaData} alt="Story media" className="story-media" />
-                  )}
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </div>
       </main>
@@ -542,6 +614,34 @@ function MyProfilePage() {
           color: #999;
         }
 
+        .profile-tabs {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 16px;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
+        .profile-tab {
+          padding: 10px 20px;
+          background: none;
+          border: none;
+          border-bottom: 2px solid transparent;
+          font-size: 15px;
+          font-weight: 600;
+          color: #666;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .profile-tab:hover {
+          color: #667eea;
+        }
+
+        .profile-tab.active {
+          color: #667eea;
+          border-bottom-color: #667eea;
+        }
+
         .story-section h2 {
           font-size: 16px;
           color: #666;
@@ -627,6 +727,63 @@ function MyProfilePage() {
           color: #333;
           line-height: 1.5;
           white-space: pre-wrap;
+        }
+
+        .post-header-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+        }
+
+        .post-date {
+          font-size: 12px;
+          color: #999;
+        }
+
+        .post-receiver-link {
+          text-decoration: none;
+        }
+
+        .post-receiver {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .post-receiver-name {
+          font-weight: 600;
+          color: #333;
+          font-size: 14px;
+        }
+
+        .post-receiver-link:hover .post-receiver-name {
+          color: #667eea;
+        }
+
+        .post-actions {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid #eee;
+        }
+
+        .delete-post-btn {
+          padding: 6px 14px;
+          background: white;
+          color: #dc2626;
+          border: 1px solid #dc2626;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .delete-post-btn:hover {
+          background: #dc2626;
+          color: white;
         }
 
         .story-media {

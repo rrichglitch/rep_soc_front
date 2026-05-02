@@ -449,6 +449,56 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
   }
 }
 
+export async function getMyPosts(currentIdentityHex: string) {
+  if (!dbConnection) {
+    return [];
+  }
+
+  try {
+    const posts: any[] = [];
+    
+    const profileCache = new Map<string, any>();
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      profileCache.set(profile.identity.toHexString(), profile);
+    }
+    
+    for (const post of dbConnection.db.story_post.iter()) {
+      if (post.posterIdentity.toHexString() === currentIdentityHex) {
+        const ownerHex = post.profileOwnerIdentity.toHexString();
+        const owner = profileCache.get(ownerHex);
+        posts.push({
+          id: post.id,
+          content: post.content,
+          mediaData: post.mediaData,
+          mediaTypes: post.mediaTypes,
+          createdAt: post.createdAt.toDate(),
+          profileOwnerIdentity: ownerHex,
+          profileOwnerName: owner?.fullName || 'Unknown',
+          profileOwnerPicture: owner?.profilePicture || '',
+        });
+      }
+    }
+    return posts.sort((a, b) => {
+      const aTime = a.createdAt as unknown as bigint;
+      const bTime = b.createdAt as unknown as bigint;
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting my posts:', e);
+    return [];
+  }
+}
+
+export async function deleteStoryPost(postId: bigint): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.deleteStoryPost({
+    postId,
+  });
+}
+
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
 const PAGE_SIZE = 20;

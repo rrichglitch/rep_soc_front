@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
@@ -19,6 +20,7 @@ function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
+  const auth = useAuth();
   const { email } = useApp();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,7 +92,7 @@ function SearchPage() {
   return (
     <div className="search-page">
       <TopBar
-        left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<h1 className="page-title">Find People</h1>}
         right={<AuthActions />}
       />
