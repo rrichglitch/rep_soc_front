@@ -229,7 +229,7 @@ function ProfilePage() {
     <div className="profile-page">
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
-        center={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        center={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         right={<AuthActions />}
       />
 

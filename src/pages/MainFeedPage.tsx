@@ -159,7 +159,7 @@ function MainFeedPage() {
     <div className="main-feed-page">
       <TopBar
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        center={<SearchBar onSearch={handleSearch} />}
+        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
         right={
           <Link to="/me" className="topbar-profile-link">
             {profilePicture ? (
@@ -266,6 +266,11 @@ function MainFeedPage() {
       </main>
 
       <style>{`
+        .topbar-search-wrap {
+          width: 100%;
+          max-width: 500px;
+        }
+
         .main-feed-page {
           min-height: 100vh;
           background: #f5f5f5;

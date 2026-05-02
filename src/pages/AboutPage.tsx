@@ -125,6 +125,11 @@ function AboutPage() {
       </footer>
 
       <style>{`
+        .topbar-search-wrap {
+          width: 100%;
+          max-width: 500px;
+        }
+
         .about-page {
           min-height: 100vh;
           background: #f5f5f5;
