@@ -41,6 +41,8 @@ function MyProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<any | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -358,15 +360,9 @@ function MyProfilePage() {
                       <div className="post-header-row">
                         <button
                           className="delete-post-btn"
-                          onClick={async () => {
-                            if (!confirm('Are you sure you want to delete this post?')) return;
-                            try {
-                              await deleteStoryPost(post.id);
-                              setMyPosts((prev) => prev.filter((p) => p.id !== post.id));
-                            } catch (e) {
-                              console.error('Failed to delete post:', e);
-                              alert('Failed to delete post');
-                            }
+                          onClick={() => {
+                            setPostToDelete(post);
+                            setShowDeleteModal(true);
                           }}
                         >
                           Delete
@@ -429,6 +425,57 @@ function MyProfilePage() {
               </button>
               <button onClick={() => setShowPictureModal(false)} className="close-button">
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && postToDelete && (
+        <div className="delete-modal" onClick={() => setShowDeleteModal(false)}>
+          <div className="delete-modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>Delete Post?</h3>
+            <div className="delete-modal-post">
+              <div className="post-header-row">
+                <Link to={`/profile/${postToDelete.profileOwnerIdentity}`} className="post-receiver-link" onClick={() => setShowDeleteModal(false)}>
+                  <div className="post-receiver-header">
+                    <div className="post-receiver-meta">
+                      <span className="post-receiver-name">{postToDelete.profileOwnerName}</span>
+                      <span className="post-receiver-date">{new Date(postToDelete.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {postToDelete.profileOwnerPicture ? (
+                      <img src={postToDelete.profileOwnerPicture} alt={postToDelete.profileOwnerName} className="story-avatar" />
+                    ) : (
+                      <div className="story-avatar-placeholder" />
+                    )}
+                  </div>
+                </Link>
+              </div>
+              <p className="story-content">{postToDelete.content}</p>
+              {postToDelete.mediaData && postToDelete.mediaData.length > 0 && (
+                <img src={postToDelete.mediaData} alt="Story media" className="story-media" />
+              )}
+            </div>
+            <p className="delete-modal-text">This action cannot be undone.</p>
+            <div className="delete-modal-actions">
+              <button onClick={() => setShowDeleteModal(false)} className="cancel-delete-btn">
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteStoryPost(postToDelete.id);
+                    setMyPosts((prev) => prev.filter((p) => p.id !== postToDelete.id));
+                    setShowDeleteModal(false);
+                    setPostToDelete(null);
+                  } catch (e) {
+                    console.error('Failed to delete post:', e);
+                    alert('Failed to delete post');
+                  }
+                }}
+                className="confirm-delete-btn"
+              >
+                Delete
               </button>
             </div>
           </div>
@@ -823,6 +870,101 @@ function MyProfilePage() {
 
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+
+        .delete-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 200;
+        }
+
+        .delete-modal-content {
+          background: white;
+          border-radius: 12px;
+          padding: 24px;
+          max-width: 400px;
+          width: 90%;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .delete-modal-content h3 {
+          margin: 0 0 16px;
+          font-size: 18px;
+          color: #333;
+        }
+
+        .delete-modal-post {
+          background: #f8f8f8;
+          border-radius: 8px;
+          padding: 12px;
+          margin-bottom: 16px;
+        }
+
+        .delete-modal-post .post-header-row {
+          margin-bottom: 8px;
+        }
+
+        .delete-modal-post .story-content {
+          margin: 0;
+          font-size: 14px;
+        }
+
+        .delete-modal-post .story-media {
+          margin-top: 8px;
+          max-height: 150px;
+          object-fit: cover;
+        }
+
+        .delete-modal-text {
+          margin: 0 0 16px;
+          font-size: 14px;
+          color: #666;
+          text-align: center;
+        }
+
+        .delete-modal-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .cancel-delete-btn {
+          padding: 10px 24px;
+          background: white;
+          color: #666;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .cancel-delete-btn:hover {
+          background: #f5f5f5;
+        }
+
+        .confirm-delete-btn {
+          padding: 10px 24px;
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .confirm-delete-btn:hover {
+          background: #b91c1c;
         }
 
         .qr-modal {
