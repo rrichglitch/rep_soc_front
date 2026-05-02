@@ -356,23 +356,6 @@ function MyProfilePage() {
                   {myPosts.map((post) => (
                     <div key={post.id.toString()} className="story-card">
                       <div className="post-header-row">
-                        <span className="post-date">{new Date(post.createdAt).toLocaleDateString()}</span>
-                        <Link to={`/profile/${post.profileOwnerIdentity}`} className="post-receiver-link">
-                          <div className="post-receiver">
-                            <span className="post-receiver-name">{post.profileOwnerName}</span>
-                            {post.profileOwnerPicture ? (
-                              <img src={post.profileOwnerPicture} alt={post.profileOwnerName} className="story-avatar" />
-                            ) : (
-                              <div className="story-avatar-placeholder" />
-                            )}
-                          </div>
-                        </Link>
-                      </div>
-                      <p className="story-content">{post.content}</p>
-                      {post.mediaData && post.mediaData.length > 0 && (
-                        <img src={post.mediaData} alt="Story media" className="story-media" />
-                      )}
-                      <div className="post-actions">
                         <button
                           className="delete-post-btn"
                           onClick={async () => {
@@ -388,7 +371,24 @@ function MyProfilePage() {
                         >
                           Delete
                         </button>
+                        <Link to={`/profile/${post.profileOwnerIdentity}`} className="post-receiver-link">
+                          <div className="post-receiver-header">
+                            <div className="post-receiver-meta">
+                              <span className="post-receiver-name">{post.profileOwnerName}</span>
+                              <span className="post-receiver-date">{new Date(post.createdAt).toLocaleDateString()}</span>
+                            </div>
+                            {post.profileOwnerPicture ? (
+                              <img src={post.profileOwnerPicture} alt={post.profileOwnerName} className="story-avatar" />
+                            ) : (
+                              <div className="story-avatar-placeholder" />
+                            )}
+                          </div>
+                        </Link>
                       </div>
+                      <p className="story-content">{post.content}</p>
+                      {post.mediaData && post.mediaData.length > 0 && (
+                        <img src={post.mediaData} alt="Story media" className="story-media" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -736,19 +736,21 @@ function MyProfilePage() {
           margin-bottom: 12px;
         }
 
-        .post-date {
-          font-size: 12px;
-          color: #999;
-        }
-
         .post-receiver-link {
           text-decoration: none;
         }
 
-        .post-receiver {
+        .post-receiver-header {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 12px;
+          flex-direction: row-reverse;
+        }
+
+        .post-receiver-meta {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
         }
 
         .post-receiver-name {
@@ -757,16 +759,13 @@ function MyProfilePage() {
           font-size: 14px;
         }
 
-        .post-receiver-link:hover .post-receiver-name {
-          color: #667eea;
+        .post-receiver-date {
+          font-size: 12px;
+          color: #999;
         }
 
-        .post-actions {
-          display: flex;
-          justify-content: flex-end;
-          margin-top: 12px;
-          padding-top: 12px;
-          border-top: 1px solid #eee;
+        .post-receiver-link:hover .post-receiver-name {
+          color: #667eea;
         }
 
         .delete-post-btn {
