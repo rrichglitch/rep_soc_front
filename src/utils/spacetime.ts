@@ -207,7 +207,8 @@ export async function initiateDiditVerification(
   email: string,
   profilePicture: string,
   city: string,
-  description: string
+  description: string,
+  turnstileToken: string
 ): Promise<string> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
@@ -220,6 +221,7 @@ export async function initiateDiditVerification(
     profilePicture,
     city,
     description,
+    turnstileToken,
   });
 
   console.log('initiateDiditVerification result:', result);

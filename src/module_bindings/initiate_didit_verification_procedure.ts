@@ -19,5 +19,6 @@ export const params = {
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),
+  turnstileToken: __t.string(),
 };
 export const returnType = InitiateDiditResult

@@ -67,3 +67,6 @@ export const ALLOWED_MEDIA_TYPES = [
 ] as const;
 
 export const RATE_LIMIT_HOURS = 0;
+
+// Cloudflare Turnstile site key (public)
+export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAADHTL34hzoQvhfs4';

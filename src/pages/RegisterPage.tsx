@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, TURNSTILE_SITE_KEY } from '../config';
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
@@ -38,6 +39,7 @@ function RegisterPage() {
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
   const [nameTooltipPinned, setNameTooltipPinned] = useState(false);
   const [nameTooltipHover, setNameTooltipHover] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
 
   // On mount: restore pending registration from localStorage if present
   useEffect(() => {
@@ -137,6 +139,9 @@ function RegisterPage() {
       if (!email) {
         throw new Error('Email not available. Please log in again.');
       }
+      if (TURNSTILE_SITE_KEY && !turnstileToken) {
+        throw new Error('Please complete the security check.');
+      }
 
       const sanitizedCity = validateAndSanitizeCity(city);
       const sanitizedDescription = validateAndSanitizeDescription(description);
@@ -148,7 +153,8 @@ function RegisterPage() {
         email,
         storedPictureBase64,
         sanitizedCity,
-        sanitizedDescription
+        sanitizedDescription,
+        turnstileToken
       );
 
       // Redirect to Didit hosted verification
@@ -225,6 +231,7 @@ function RegisterPage() {
     setNameTooltipPinned(false);
     setNameTooltipHover(false);
     setError(null);
+    setTurnstileToken('');
     diditSessionIdRef.current = null;
     window.history.replaceState({}, document.title, '/register');
   };
@@ -397,6 +404,20 @@ function RegisterPage() {
             <span className="char-count">{description.length}/{CHAR_LIMITS.description}</span>
           </div>
 
+          {!diditVerified && TURNSTILE_SITE_KEY && (
+            <div className="form-group">
+              <Turnstile
+                siteKey={TURNSTILE_SITE_KEY}
+                onSuccess={(token) => setTurnstileToken(token)}
+                onError={() => {
+                  setTurnstileToken('');
+                  setError('Security check failed. Please try again.');
+                }}
+                onExpire={() => setTurnstileToken('')}
+              />
+            </div>
+          )}
+
           {diditVerified ? (
             <>
               <button type="submit" className="submit-button" disabled={isLoading}>
@@ -407,7 +428,11 @@ function RegisterPage() {
               </button>
             </>
           ) : (
-            <button type="submit" className="submit-button" disabled={isLoading}>
+            <button
+              type="submit"
+              className="submit-button"
+              disabled={isLoading || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+            >
               {isLoading ? 'Starting Verification...' : 'Verify Identity with Didit'}
             </button>
           )}
