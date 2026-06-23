@@ -5,10 +5,14 @@ export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 // Oracle (self-hosted) — migrated from maincloud in 2026-06.
 // The Oracle instance IP changed after the box was wiped on 2026-06-23.
 // Old: 150.136.162.142. New: 129.80.36.57.
-// `SPACETIMEDB_HOST` is just the host[:port] (no scheme). Use wss:// on https
-// sites, ws:// on http sites. For local dev with the SSH tunnel, use
-// VITE_SPACETIMEDB_HOST=localhost:3300.
-export const SPACETIMEDB_HOST = import.meta.env.VITE_SPACETIMEDB_HOST || '129.80.36.57:3000';
+// `SPACETIMEDB_HOST` is just the host[:port] (no scheme). The frontend
+// adds the `ws://` or `wss://` scheme based on window.location.protocol.
+// IMPORTANT: the default MUST be the WSS host when running on a real
+// HTTPS site. Setting this to a bare IP would make the browser block
+// the connection as mixed content (HTTPS page → plain ws://).
+// For local dev with the SSH tunnel, override with:
+//   VITE_SPACETIMEDB_HOST=localhost:3300 npm run dev
+export const SPACETIMEDB_HOST = import.meta.env.VITE_SPACETIMEDB_HOST || 'spacetimedb.veri.social';
 export const SPACETIMEDB_MODULE = import.meta.env.VITE_SPACETIMEDB_MODULE || 'repsoc-oracle';
 
 const getOrigin = () => {
