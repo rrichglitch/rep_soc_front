@@ -9,6 +9,7 @@ import { type Infer as __Infer } from "spacetimedb";
 import * as CheckDiditVerificationProcedure from "../check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "../create_verified_profile_procedure";
 import * as InitiateDiditVerificationProcedure from "../initiate_didit_verification_procedure";
+import * as MyFeedProcedure from "../my_feed_procedure";
 
 export type CheckDiditVerificationArgs = __Infer<typeof CheckDiditVerificationProcedure.params>;
 export type CheckDiditVerificationResult = __Infer<typeof CheckDiditVerificationProcedure.returnType>;
@@ -16,4 +17,6 @@ export type CreateVerifiedProfileArgs = __Infer<typeof CreateVerifiedProfileProc
 export type CreateVerifiedProfileResult = __Infer<typeof CreateVerifiedProfileProcedure.returnType>;
 export type InitiateDiditVerificationArgs = __Infer<typeof InitiateDiditVerificationProcedure.params>;
 export type InitiateDiditVerificationResult = __Infer<typeof InitiateDiditVerificationProcedure.returnType>;
+export type MyFeedArgs = __Infer<typeof MyFeedProcedure.params>;
+export type MyFeedResult = __Infer<typeof MyFeedProcedure.returnType>;
 

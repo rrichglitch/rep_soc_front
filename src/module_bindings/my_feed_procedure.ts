@@ -10,9 +10,10 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  identity: __t.identity().primaryKey(),
-  legalName: __t.string().name("legal_name"),
-  diditVerified: __t.bool().name("didit_verified"),
-  diditSelfieImage: __t.string().name("didit_selfie_image"),
-});
+import {
+  FeedStoryRow,
+} from "./types";
+
+export const params = {
+};
+export const returnType = __t.array(FeedStoryRow)
