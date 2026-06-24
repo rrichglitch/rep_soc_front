@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, refreshFeed, loadMyFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 
@@ -41,12 +41,8 @@ function MainFeedPage() {
         if (refresh) {
           await refreshFeed();
         }
-
-        // Load the feed via the my_feed procedure. The server applies the
-        // follow / self / 2-year / cursor filters and returns the rows.
-        await loadMyFeed();
-
-        const { stories, hasMore: more } = await getPaginatedFeedStories(orderOldToNew, 0);
+        
+        const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, 0);
         allStoriesRef.current = stories;
         setFollowedStories(stories);
         setHasMore(more);
@@ -69,8 +65,8 @@ function MainFeedPage() {
     
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
-    const { stories, hasMore: more } = await getPaginatedFeedStories(orderOldToNew, nextPage);
-
+    const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, nextPage);
+    
     allStoriesRef.current = [...allStoriesRef.current, ...stories];
     setFollowedStories(allStoriesRef.current);
     setHasMore(more);
@@ -88,7 +84,7 @@ function MainFeedPage() {
     const newOrder = !orderOldToNew;
     setOrderOldToNew(newOrder);
     allStoriesRef.current = [];
-    const { stories, hasMore: more } = await getPaginatedFeedStories(newOrder, 0);
+    const { stories, hasMore: more } = getPaginatedFeedStories(newOrder, 0);
     allStoriesRef.current = stories;
     setFollowedStories(stories);
     setHasMore(more);

@@ -31,9 +31,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
     return dbConnection;
   }
 
-  const uri = SPACETIMEDB_HOST.startsWith('ws://') || SPACETIMEDB_HOST.startsWith('wss://')
-    ? SPACETIMEDB_HOST
-    : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${SPACETIMEDB_HOST}`;
+  const uri = `wss://${SPACETIMEDB_HOST}`;
   const isAnonymous = !token;
 
   console.log('Connecting to SpacetimeDB at:', uri, 'with database:', SPACETIMEDB_MODULE, isAnonymous ? 'anonymous' : 'with token');
@@ -107,13 +105,10 @@ async function subscribeAnonymous(): Promise<void> {
 
 async function subscribeToTables(): Promise<void> {
   if (!dbConnection) return;
-
+  
   console.log('Subscribing to tables...');
   return new Promise((resolve, reject) => {
     try {
-      // NOTE: `my_feed` is now a procedure in the Rust server, not a table,
-      // so it is no longer in this subscription list. The frontend calls
-      // `dbConnection.procedures.myFeed()` explicitly to load the feed.
       dbConnection!.subscriptionBuilder()
         .onApplied(() => {
           console.log('Subscription applied');
@@ -127,6 +122,7 @@ async function subscribeToTables(): Promise<void> {
           tables.user_profile,
           tables.following,
           tables.story_post,
+          tables.my_feed,
         ]);
     } catch (e) {
       console.error('Subscription error:', e);
@@ -505,6 +501,8 @@ export async function deleteStoryPost(postId: bigint): Promise<void> {
   });
 }
 
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+
 const PAGE_SIZE = 20;
 
 export interface FeedStory {
@@ -540,68 +538,42 @@ export async function updateFeedScrollPosition(lastReadAt: Date): Promise<void> 
   });
 }
 
-// In-memory cache of the most recent myFeed() result, so paginated reads
-// don't re-call the procedure on every page (it scans the whole table
-// internally). Cleared by loadMyFeed() on each new refresh.
-let myFeedCache: FeedStory[] = [];
-
-function rowToFeedStory(row: any): FeedStory {
-  return {
-    id: row.id,
-    profileOwnerIdentity: row.profileOwnerIdentity,
-    posterIdentity: row.posterIdentity,
-    content: row.content,
-    mediaData: row.mediaData,
-    mediaTypes: row.mediaTypes,
-    createdAt: row.createdAt.toDate(),
-    posterName: row.posterName,
-    posterPicture: row.posterPicture,
-    profileOwnerIdentityHex: row.profileOwnerIdentity.toHexString(),
-    profileOwnerName: row.profileOwnerName,
-    profileOwnerPicture: row.profileOwnerPicture,
-  };
-}
-
-function sortFeedStories(stories: FeedStory[], orderOldToNew: boolean): FeedStory[] {
-  return stories.slice().sort((a, b) => {
-    const aTime = a.createdAt.getTime();
-    const bTime = b.createdAt.getTime();
-    if (orderOldToNew) {
-      return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
-    }
-    return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
-  });
-}
-
-/**
- * Call the `my_feed` procedure and cache the result. Replaces the old
- * `db.my_feed.iter()` subscription. The server returns stories filtered
- * to the caller's identity (followed profiles, exclude self, 2-year cutoff,
- * and respects the caller's `feed_position.last_feed_load_at` cursor).
- */
-export async function loadMyFeed(): Promise<FeedStory[]> {
+export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
   if (!dbConnection) {
     return [];
   }
+
   try {
-    // The generated `params` for `my_feed` is an empty object — pass `{}`
-    // to satisfy the SDK's single-argument signature.
-    const rows = await dbConnection.procedures.myFeed({});
-    myFeedCache = rows.map(rowToFeedStory);
-    return myFeedCache;
+    const stories: FeedStory[] = [];
+    for (const row of dbConnection.db.my_feed.iter()) {
+      stories.push({
+        id: row.id,
+        profileOwnerIdentity: row.profileOwnerIdentity,
+        posterIdentity: row.posterIdentity,
+        content: row.content,
+        mediaData: row.mediaData,
+        mediaTypes: row.mediaTypes,
+        createdAt: row.createdAt.toDate(),
+        posterName: row.posterName,
+        posterPicture: row.posterPicture,
+        profileOwnerIdentityHex: row.profileOwnerIdentity.toHexString(),
+        profileOwnerName: row.profileOwnerName,
+        profileOwnerPicture: row.profileOwnerPicture,
+      });
+    }
+
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt.getTime();
+      const bTime = b.createdAt.getTime();
+      if (orderOldToNew) {
+        return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
+      }
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
   } catch (e) {
-    console.error('Error calling my_feed procedure:', e);
+    console.error('Error getting feed stories:', e);
     return [];
   }
-}
-
-/**
- * Returns the cached feed (call loadMyFeed() first) sorted by createdAt.
- * The old sync version did this in place; the new version reads from
- * `myFeedCache` which is populated by `loadMyFeed()`.
- */
-export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
-  return sortFeedStories(myFeedCache, orderOldToNew);
 }
 
 export function getPaginatedFeedStories(
@@ -616,4 +588,114 @@ export function getPaginatedFeedStories(
     stories: allStories.slice(start, end),
     hasMore: end < allStories.length,
   };
+}
+
+export async function getFeedPosition(currentIdentityHex: string): Promise<Date | null> {
+  if (!dbConnection) {
+    return null;
+  }
+
+  try {
+    for (const position of dbConnection.db.feed_position.iter()) {
+      if (position.identity.toHexString() === currentIdentityHex) {
+        return position.lastReadAt?.toDate() ?? null;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error('Error getting feed position:', e);
+    return null;
+  }
+}
+
+export async function setFeedPosition(_currentIdentityHex: string, lastReadAt: Date): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+
+  await dbConnection.reducers.updateFeedScrollPosition({
+    lastReadAt: Timestamp.fromDate(lastReadAt),
+  });
+}
+
+export async function getFollowedStoriesWithOptions(
+  currentIdentityHex: string,
+  orderOldToNew: boolean,
+  startFromTimestamp?: Date
+) {
+  if (!dbConnection) {
+    return [];
+  }
+
+  const cutoffDate = new Date(Date.now() - TWO_YEARS_MS);
+
+  try {
+    const followedIdentities: string[] = [];
+    for (const f of dbConnection.db.following.iter()) {
+      if (f.followerIdentity.toHexString() === currentIdentityHex) {
+        followedIdentities.push(f.followingIdentity.toHexString());
+      }
+    }
+
+    if (followedIdentities.length === 0) {
+      return [];
+    }
+
+    const profileCache = new Map<string, any>();
+    for (const profile of dbConnection.db.user_profile.iter()) {
+      profileCache.set(profile.identity.toHexString(), profile);
+    }
+
+    const stories: any[] = [];
+    for (const post of dbConnection.db.story_post.iter()) {
+      const profileOwnerHex = post.profileOwnerIdentity.toHexString();
+      const posterHex = post.posterIdentity.toHexString();
+      const postDate = post.createdAt.toDate();
+      
+      if (followedIdentities.includes(profileOwnerHex) && posterHex !== profileOwnerHex) {
+        if (postDate < cutoffDate) {
+          continue;
+        }
+        if (startFromTimestamp) {
+          if (orderOldToNew && postDate < startFromTimestamp) {
+            continue;
+          }
+          if (!orderOldToNew && postDate > startFromTimestamp) {
+            continue;
+          }
+        }
+        const poster = profileCache.get(posterHex);
+        const profileOwner = profileCache.get(profileOwnerHex);
+        stories.push({
+          id: post.id,
+          content: post.content,
+          mediaData: post.mediaData,
+          mediaTypes: post.mediaTypes,
+          createdAt: postDate,
+          posterIdentity: posterHex,
+          posterName: poster?.fullName || 'Unknown',
+          posterPicture: poster?.profilePicture || '',
+          profileOwnerIdentity: profileOwnerHex,
+          profileOwnerName: profileOwner?.fullName || 'Unknown',
+          profileOwnerPicture: profileOwner?.profilePicture || '',
+        });
+      }
+    }
+
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt as unknown as bigint;
+      const bTime = b.createdAt as unknown as bigint;
+      if (orderOldToNew) {
+        return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
+      }
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting followed stories:', e);
+    return [];
+  }
+}
+
+export async function getFollowedStories(currentIdentityHex: string) {
+  return getFollowedStoriesWithOptions(currentIdentityHex, false);
 }

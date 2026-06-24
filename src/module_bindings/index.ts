@@ -48,28 +48,65 @@ import UpdateProfileReducer from "./update_profile_reducer";
 import * as CheckDiditVerificationProcedure from "./check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "./create_verified_profile_procedure";
 import * as InitiateDiditVerificationProcedure from "./initiate_didit_verification_procedure";
-import * as MyFeedProcedure from "./my_feed_procedure";
 
 // Import all table schema definitions
+import FeedPositionRow from "./feed_position_table";
 import FollowingRow from "./following_table";
+import LastPostRow from "./last_post_table";
+import MyFeedRow from "./my_feed_table";
+import PendingRegistrationRow from "./pending_registration_table";
+import PushSubscriptionRow from "./push_subscription_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
+import VerifiedIdentityRow from "./verified_identity_table";
 
 /** Type-only namespace exports for generated type groups. */
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
-  following: __table({
-    name: 'following',
+  feed_position: __table({
+    name: 'feed_position',
     indexes: [
-      { name: 'follower_identity', algorithm: 'btree', columns: [
-        'followerIdentity',
+      { name: 'identity', algorithm: 'btree', columns: [
+        'identity',
       ] },
     ],
     constraints: [
-      { name: 'following_follower_identity_key', constraint: 'unique', columns: ['followerIdentity'] },
+      { name: 'feed_position_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, FeedPositionRow),
+  following: __table({
+    name: 'following',
+    indexes: [
+    ],
+    constraints: [
     ],
   }, FollowingRow),
+  last_post: __table({
+    name: 'last_post',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, LastPostRow),
+  pending_registration: __table({
+    name: 'pending_registration',
+    indexes: [
+      { name: 'identity', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'pending_registration_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, PendingRegistrationRow),
+  push_subscription: __table({
+    name: 'push_subscription',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, PushSubscriptionRow),
   story_post: __table({
     name: 'story_post',
     indexes: [
@@ -99,6 +136,24 @@ const tablesSchema = __schema({
       { name: 'user_profile_identity_key', constraint: 'unique', columns: ['identity'] },
     ],
   }, UserProfileRow),
+  verified_identity: __table({
+    name: 'verified_identity',
+    indexes: [
+      { name: 'identity', algorithm: 'btree', columns: [
+        'identity',
+      ] },
+    ],
+    constraints: [
+      { name: 'verified_identity_identity_key', constraint: 'unique', columns: ['identity'] },
+    ],
+  }, VerifiedIdentityRow),
+  my_feed: __table({
+    name: 'my_feed',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyFeedRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -119,7 +174,6 @@ const proceduresSchema = __procedures(
   __procedureSchema("check_didit_verification", CheckDiditVerificationProcedure.params, CheckDiditVerificationProcedure.returnType),
   __procedureSchema("create_verified_profile", CreateVerifiedProfileProcedure.params, CreateVerifiedProfileProcedure.returnType),
   __procedureSchema("initiate_didit_verification", InitiateDiditVerificationProcedure.params, InitiateDiditVerificationProcedure.returnType),
-  __procedureSchema("my_feed", MyFeedProcedure.params, MyFeedProcedure.returnType),
 );
 
 /** The remote SpacetimeDB module schema, both runtime and type information. */

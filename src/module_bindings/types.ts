@@ -19,12 +19,6 @@ export const CheckDiditResult = __t.object("CheckDiditResult", {
 });
 export type CheckDiditResult = __Infer<typeof CheckDiditResult>;
 
-export const CleanupSchedule = __t.object("CleanupSchedule", {
-  id: __t.u64(),
-  scheduledAt: __t.scheduleAt(),
-});
-export type CleanupSchedule = __Infer<typeof CleanupSchedule>;
-
 export const CreateVerifiedProfileResult = __t.object("CreateVerifiedProfileResult", {
   success: __t.bool(),
   error: __t.option(__t.string()),
@@ -40,7 +34,7 @@ export const FeedPosition = __t.object("FeedPosition", {
 });
 export type FeedPosition = __Infer<typeof FeedPosition>;
 
-export const FeedStoryRow = __t.object("FeedStoryRow", {
+export const FeedStory = __t.object("FeedStory", {
   id: __t.u64(),
   profileOwnerIdentity: __t.identity(),
   posterIdentity: __t.identity(),
@@ -53,7 +47,7 @@ export const FeedStoryRow = __t.object("FeedStoryRow", {
   profileOwnerName: __t.string(),
   profileOwnerPicture: __t.string(),
 });
-export type FeedStoryRow = __Infer<typeof FeedStoryRow>;
+export type FeedStory = __Infer<typeof FeedStory>;
 
 export const Following = __t.object("Following", {
   followerIdentity: __t.identity(),
@@ -76,12 +70,8 @@ export const LastPost = __t.object("LastPost", {
 });
 export type LastPost = __Infer<typeof LastPost>;
 
-export const MonthlyVerificationCap = __t.object("MonthlyVerificationCap", {
-  monthKey: __t.string(),
-  completedCount: __t.u32(),
-  updatedAt: __t.timestamp(),
-});
-export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
+export const MyFeed = __t.object("MyFeed", {});
+export type MyFeed = __Infer<typeof MyFeed>;
 
 export const PendingRegistration = __t.object("PendingRegistration", {
   identity: __t.identity(),
@@ -130,14 +120,6 @@ export const UserProfile = __t.object("UserProfile", {
   profilePicture: __t.string(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
-
-export const VerificationRateLimit = __t.object("VerificationRateLimit", {
-  identity: __t.identity(),
-  attemptCount: __t.u32(),
-  lastAttemptAt: __t.timestamp(),
-  firstAttemptAt: __t.timestamp(),
-});
-export type VerificationRateLimit = __Infer<typeof VerificationRateLimit>;
 
 export const VerifiedIdentity = __t.object("VerifiedIdentity", {
   identity: __t.identity(),

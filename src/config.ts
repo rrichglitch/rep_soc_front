@@ -2,18 +2,8 @@ import { WebStorageStateStore, User } from 'oidc-client-ts';
 
 export const APP_URL = 'https://veri.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
-// Oracle (self-hosted) — migrated from maincloud in 2026-06.
-// The Oracle instance IP changed after the box was wiped on 2026-06-23.
-// Old: 150.136.162.142. New: 129.80.36.57.
-// `SPACETIMEDB_HOST` is just the host[:port] (no scheme). The frontend
-// adds the `ws://` or `wss://` scheme based on window.location.protocol.
-// IMPORTANT: the default MUST be the WSS host when running on a real
-// HTTPS site. Setting this to a bare IP would make the browser block
-// the connection as mixed content (HTTPS page → plain ws://).
-// For local dev with the SSH tunnel, override with:
-//   VITE_SPACETIMEDB_HOST=localhost:3300 npm run dev
-export const SPACETIMEDB_HOST = import.meta.env.VITE_SPACETIMEDB_HOST || 'spacetimedb.veri.social';
-export const SPACETIMEDB_MODULE = import.meta.env.VITE_SPACETIMEDB_MODULE || 'repsoc-oracle';
+export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
+export const SPACETIMEDB_MODULE = 'repsoc';
 
 const getOrigin = () => {
   if (typeof window !== 'undefined') {
@@ -26,10 +16,8 @@ const getOrigin = () => {
 
 const origin = getOrigin();
 
-// Environment variable overrides for local development and Oracle deployment.
-// Defaults are maincloud; Oracle needs VITE_AUTH_AUTHORITY set to its own
-// OIDC issuer (or to the empty string to disable SpacetimeAuth entirely).
-const authAuthority = import.meta.env.VITE_AUTH_AUTHORITY ?? 'https://auth.spacetimedb.com/oidc';
+// Environment variable overrides for local development
+const authAuthority = import.meta.env.VITE_AUTH_AUTHORITY || 'https://auth.spacetimedb.com/oidc';
 const authClientId = import.meta.env.VITE_AUTH_CLIENT_ID || 'client_032dcrU7dNeqH21pwTabNC';
 
 // SpacetimeAuth configuration
