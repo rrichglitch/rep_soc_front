@@ -160,6 +160,7 @@ function MainFeedPage() {
       <TopBar
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
+        hasSearch
         right={
           <Link to="/me" className="topbar-profile-link">
             {profilePicture ? (

@@ -23,6 +23,7 @@ function PrivacyPolicyPage() {
       <TopBar
         left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
+        hasSearch
         right={<AuthActions />}
       />
 
