@@ -23,7 +23,6 @@ function AboutPage() {
           </Link>
         }
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
-        hasSearch
         right={<AuthActions />}
       />
 
