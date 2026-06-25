@@ -70,6 +70,7 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
 
         .search-input {
           flex: 1;
+          min-width: 0;
           padding: 10px 14px;
           border: none;
           background: transparent;
@@ -82,6 +83,7 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         }
 
         .search-button {
+          flex: 0 0 auto;
           padding: 10px 14px;
           background: transparent;
           border: none;
