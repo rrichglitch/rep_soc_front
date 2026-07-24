@@ -4,7 +4,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost } from '../utils/spacetime';
-import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
 
@@ -187,7 +186,7 @@ function MyProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        right={<AuthActions />}
+        right={<button onClick={() => setShowQR(true)} className="topbar-signin">Share</button>}
       />
 
       <main className="main-content">
