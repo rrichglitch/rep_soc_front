@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
+import ClaimProfileReducer from "./claim_profile_reducer";
 import CreateOrganizationReducer from "./create_organization_reducer";
 import CreateProfileReducer from "./create_profile_reducer";
 import CreateStoryPostReducer from "./create_story_post_reducer";
@@ -208,6 +209,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("accept_friend_request", AcceptFriendRequestReducer),
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
+  __reducerSchema("claim_profile", ClaimProfileReducer),
   __reducerSchema("create_organization", CreateOrganizationReducer),
   __reducerSchema("create_profile", CreateProfileReducer),
   __reducerSchema("create_story_post", CreateStoryPostReducer),

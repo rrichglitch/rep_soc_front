@@ -198,6 +198,7 @@ export const UserProfile = __t.object("UserProfile", {
   phoneVerified: __t.bool(),
   profilePicture: __t.string(),
   isPro: __t.bool(),
+  manuallyCreated: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

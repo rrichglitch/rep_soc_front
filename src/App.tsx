@@ -11,7 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB, claimProfile } from './utils/spacetime';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
@@ -109,6 +109,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
             console.log('Profile exists in DB:', profileExists);
             setHasProfileState(profileExists);
+            if (profileExists) { try { await claimProfile(userEmail); } catch (e) { /* non-fatal */ } }
 
             if (!profileExists && !window.location.pathname.includes('/register')) {
               console.log('No profile found, redirecting to register');

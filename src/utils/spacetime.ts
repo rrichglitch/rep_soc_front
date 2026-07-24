@@ -185,6 +185,11 @@ export async function getProfileByEmail(email: string) {
   }
 }
 
+export async function claimProfile(email: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.claimProfile({ email });
+}
+
 export async function updateProfile(
   profilePicture?: string,
   city?: string,

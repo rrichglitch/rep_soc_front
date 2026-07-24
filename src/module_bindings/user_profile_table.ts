@@ -21,4 +21,5 @@ export default __t.row({
   phoneVerified: __t.bool().name("phone_verified"),
   profilePicture: __t.string().name("profile_picture"),
   isPro: __t.bool().name("is_pro"),
+  manuallyCreated: __t.bool().name("manually_created"),
 });
