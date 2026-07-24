@@ -11,8 +11,12 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  identity: __t.identity().primaryKey(),
-  legalName: __t.string().name("legal_name"),
-  diditVerified: __t.bool().name("didit_verified"),
-  diditSelfieImage: __t.string().name("didit_selfie_image"),
+  id: __t.u64().primaryKey(),
+  recipientIdentity: __t.identity().name("recipient_identity"),
+  type: __t.string(),
+  fromIdentity: __t.option(__t.identity()).name("from_identity"),
+  orgId: __t.option(__t.u64()).name("org_id"),
+  message: __t.string(),
+  createdAt: __t.timestamp().name("created_at"),
+  resolved: __t.bool(),
 });

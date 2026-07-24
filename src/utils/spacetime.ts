@@ -360,6 +360,7 @@ export async function createStoryPost(
     content,
     mediaData,
     mediaTypes: mediaTypes ? JSON.stringify(mediaTypes) : undefined,
+    actingAsOrgId: undefined,
   });
 }
 
@@ -590,22 +591,10 @@ export function getPaginatedFeedStories(
   };
 }
 
-export async function getFeedPosition(currentIdentityHex: string): Promise<Date | null> {
-  if (!dbConnection) {
-    return null;
-  }
-
-  try {
-    for (const position of dbConnection.db.feed_position.iter()) {
-      if (position.identity.toHexString() === currentIdentityHex) {
-        return position.lastReadAt?.toDate() ?? null;
-      }
-    }
-    return null;
-  } catch (e) {
-    console.error('Error getting feed position:', e);
-    return null;
-  }
+export async function getFeedPosition(_currentIdentityHex: string): Promise<Date | null> {
+  if (!dbConnection) return null;
+  // feed_position is a private table, not available client-side
+  return null;
 }
 
 export async function setFeedPosition(_currentIdentityHex: string, lastReadAt: Date): Promise<void> {
@@ -699,3 +688,298 @@ export async function getFollowedStoriesWithOptions(
 export async function getFollowedStories(currentIdentityHex: string) {
   return getFollowedStoriesWithOptions(currentIdentityHex, false);
 }
+
+// ─── Organization APIs ───────────────────────────────────────────
+
+export async function createOrganization(
+  name: string, picture: string, city: string, description: string
+): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.createOrganization({ name, picture, city, description });
+}
+
+export async function updateOrganization(
+  orgId: bigint, picture?: string, city?: string, description?: string
+): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.updateOrganization({ orgId, picture, city, description });
+}
+
+export function getMyOrganizations(identity: string) {
+  if (!dbConnection) return [];
+  const orgs: any[] = [];
+  const orgCache = new Map<bigint, any>();
+  for (const org of dbConnection.db.organization.iter()) {
+    orgCache.set(org.id, org);
+  }
+  for (const m of dbConnection.db.organization_member.iter()) {
+    if (m.memberIdentity.toHexString() === identity) {
+      const org = orgCache.get(m.orgId);
+      if (org) {
+        orgs.push({ ...org, role: m.role });
+      }
+    }
+  }
+  return orgs;
+}
+
+export function getOrganizationById(orgId: bigint) {
+  if (!dbConnection) return null;
+  for (const org of dbConnection.db.organization.iter()) {
+    if (org.id === orgId) return org;
+  }
+  return null;
+}
+
+export function getOrganizationMembers(orgId: bigint) {
+  if (!dbConnection) return [];
+  const members: any[] = [];
+  const profileCache = new Map<string, any>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    profileCache.set(p.identity.toHexString(), p);
+  }
+  for (const m of dbConnection.db.organization_member.iter()) {
+    if (m.orgId === orgId) {
+      const profile = profileCache.get(m.memberIdentity.toHexString());
+      members.push({
+        identity: m.memberIdentity.toHexString(),
+        role: m.role,
+        fullName: profile?.fullName || 'Unknown',
+        picture: profile?.profilePicture || '',
+        joinedAt: m.joinedAt?.toDate() ?? new Date(),
+      });
+    }
+  }
+  return members;
+}
+
+export async function acceptOrgMember(requestId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.acceptOrgMember({ requestId });
+}
+
+export async function declineOrgMember(requestId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.declineOrgMember({ requestId });
+}
+
+export async function promoteToCoLeader(orgId: bigint, memberIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.promoteToCoLeader({
+    orgId,
+    memberIdentity: Identity.fromString(memberIdentity),
+  });
+}
+
+export async function transferLeadership(orgId: bigint, newLeaderIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.transferLeadership({
+    orgId,
+    newLeaderIdentity: Identity.fromString(newLeaderIdentity),
+  });
+}
+
+export async function removeOrgMember(orgId: bigint, memberIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.removeOrgMember({
+    orgId,
+    memberIdentity: Identity.fromString(memberIdentity),
+  });
+}
+
+// ─── Friend Request APIs ──────────────────────────────────────────
+
+export async function sendFriendRequest(toIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.sendFriendRequest({
+    toIdentity: Identity.fromString(toIdentity),
+  });
+}
+
+export async function acceptFriendRequest(requestId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.acceptFriendRequest({ requestId });
+}
+
+export async function declineFriendRequest(requestId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.declineFriendRequest({ requestId });
+}
+
+export function checkIsFriend(currentIdentityHex: string, otherIdentity: string): boolean {
+  if (!dbConnection) return false;
+  for (const f of dbConnection.db.friendship.iter()) {
+    const a = f.userA.toHexString();
+    const b = f.userB.toHexString();
+    if ((a === currentIdentityHex && b === otherIdentity) || 
+        (a === otherIdentity && b === currentIdentityHex)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function getFriendRequestStatus(fromIdentity: string, toIdentity: string): string | null {
+  if (!dbConnection) return null;
+  for (const r of dbConnection.db.friend_request.iter()) {
+    if (r.fromIdentity.toHexString() === fromIdentity && 
+        r.toIdentity.toHexString() === toIdentity) {
+      return r.status;
+    }
+  }
+  return null;
+}
+
+export function getOrgMemberRequestStatus(orgId: bigint, fromIdentity: string): string | null {
+  if (!dbConnection) return null;
+  for (const r of dbConnection.db.org_member_request.iter()) {
+    if (r.orgId === orgId && r.fromIdentity.toHexString() === fromIdentity) {
+      return r.status;
+    }
+  }
+  return null;
+}
+
+export async function sendOrgMemberRequest(orgId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.sendOrgMemberRequest({ orgId });
+}
+
+// ─── Messaging APIs ───────────────────────────────────────────────
+
+export async function sendDirectMessage(recipientIdentity: string, content: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.sendDirectMessage({
+    recipientIdentity: Identity.fromString(recipientIdentity),
+    content,
+  });
+}
+
+export async function sendOrgMessage(orgId: bigint, content: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.sendOrgMessage({ orgId, content });
+}
+
+export function getDirectMessages(userA: string, userB: string) {
+  if (!dbConnection) return [];
+  const msgs: any[] = [];
+  for (const m of dbConnection.db.message.iter()) {
+    const sender = m.senderIdentity.toHexString();
+    const recipient = m.recipientIdentity?.toHexString() || '';
+    if ((sender === userA && recipient === userB) || (sender === userB && recipient === userA)) {
+      msgs.push({
+        id: m.id,
+        senderIdentity: sender,
+        content: m.content,
+        createdAt: m.createdAt.toDate(),
+      });
+    }
+  }
+  return msgs.sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+export function getOrgMessages(orgId: bigint) {
+  if (!dbConnection) return [];
+  const msgs: any[] = [];
+  const profileCache = new Map<string, any>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    profileCache.set(p.identity.toHexString(), p);
+  }
+  for (const m of dbConnection.db.message.iter()) {
+    if (m.orgId === orgId) {
+      const senderHex = m.senderIdentity.toHexString();
+      const profile = profileCache.get(senderHex);
+      msgs.push({
+        id: m.id,
+        senderIdentity: senderHex,
+        senderName: profile?.fullName || 'Unknown',
+        senderPicture: profile?.profilePicture || '',
+        content: m.content,
+        createdAt: m.createdAt.toDate(),
+      });
+    }
+  }
+  return msgs.sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+export function getFriendChats(identity: string) {
+  if (!dbConnection) return [];
+  const friends = new Set<string>();
+  for (const f of dbConnection.db.friendship.iter()) {
+    const a = f.userA.toHexString();
+    const b = f.userB.toHexString();
+    if (a === identity) friends.add(b);
+    else if (b === identity) friends.add(a);
+  }
+  const profileCache = new Map<string, any>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    profileCache.set(p.identity.toHexString(), p);
+  }
+  return Array.from(friends).map(fid => {
+    const profile = profileCache.get(fid);
+    return {
+      identity: fid,
+      fullName: profile?.fullName || 'Unknown',
+      picture: profile?.profilePicture || '',
+    };
+  });
+}
+
+// ─── Notification APIs ────────────────────────────────────────────
+
+export function getNotifications(identity: string) {
+  if (!dbConnection) return [];
+  const notifs: any[] = [];
+  const profileCache = new Map<string, any>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    profileCache.set(p.identity.toHexString(), p);
+  }
+  for (const n of dbConnection.db.notification.iter()) {
+    if (n.recipientIdentity.toHexString() === identity) {
+      const fromHex = n.fromIdentity?.toHexString();
+      const fromProfile = fromHex ? profileCache.get(fromHex) : null;
+      notifs.push({
+        id: n.id,
+        type: n.type,
+        fromIdentity: fromHex,
+        fromName: fromProfile?.fullName || 'Someone',
+        fromPicture: fromProfile?.profilePicture || '',
+        orgId: n.orgId,
+        message: n.message,
+        createdAt: n.createdAt.toDate(),
+        resolved: n.resolved,
+      });
+    }
+  }
+  return notifs.sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+export function getUnreadNotificationCount(identity: string): number {
+  if (!dbConnection) return 0;
+  let count = 0;
+  for (const n of dbConnection.db.notification.iter()) {
+    if (n.recipientIdentity.toHexString() === identity && !n.resolved) {
+      count++;
+    }
+  }
+  return count;
+}
+
+export async function resolveNotification(notificationId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.resolveNotification({ notificationId });
+}
+
+// ─── Pro Upgrade ──────────────────────────────────────────────────
+
+export async function upgradeToPro(): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.upgradeToPro({});
+}
+
+export function isPro(identity: string): boolean {
+  if (!dbConnection) return false;
+  const p = dbConnection.db.user_profile.identity.find(Identity.fromString(identity));
+  return p?.isPro ?? false;
+}
+

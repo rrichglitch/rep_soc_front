@@ -15,7 +15,8 @@ export default __t.row({
   profileOwnerIdentity: __t.identity().name("profile_owner_identity"),
   posterIdentity: __t.identity().name("poster_identity"),
   content: __t.string(),
+  mediaData: __t.string().name("media_data"),
   mediaTypes: __t.string().name("media_types"),
   createdAt: __t.timestamp().name("created_at"),
-  mediaData: __t.string().name("media_data"),
+  actingAsOrgId: __t.option(__t.u64()).name("acting_as_org_id"),
 });

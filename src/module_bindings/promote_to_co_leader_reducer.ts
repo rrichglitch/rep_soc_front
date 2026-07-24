@@ -10,8 +10,7 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  posterIdentity: __t.identity().name("poster_identity"),
-  profileOwnerIdentity: __t.identity().name("profile_owner_identity"),
-  lastPostedAt: __t.timestamp().name("last_posted_at"),
-});
+export default {
+  orgId: __t.u64(),
+  memberIdentity: __t.identity(),
+};

@@ -10,10 +10,10 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  identity: __t.identity(),
-  endpoint: __t.string(),
-  p256Dh: __t.string().name("p_256_dh"),
-  auth: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
-});
+export default {
+  email: __t.string(),
+  fullName: __t.string(),
+  profilePicture: __t.string(),
+  city: __t.string(),
+  description: __t.string(),
+};

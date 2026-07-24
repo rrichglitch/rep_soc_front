@@ -46,6 +46,9 @@ export const FeedStory = __t.object("FeedStory", {
   posterPicture: __t.string(),
   profileOwnerName: __t.string(),
   profileOwnerPicture: __t.string(),
+  actingAsOrgId: __t.option(__t.u64()),
+  actingAsOrgName: __t.option(__t.string()),
+  actingAsOrgPicture: __t.option(__t.string()),
 });
 export type FeedStory = __Infer<typeof FeedStory>;
 
@@ -55,6 +58,23 @@ export const Following = __t.object("Following", {
   createdAt: __t.timestamp(),
 });
 export type Following = __Infer<typeof Following>;
+
+export const FriendRequest = __t.object("FriendRequest", {
+  id: __t.u64(),
+  fromIdentity: __t.identity(),
+  toIdentity: __t.identity(),
+  status: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type FriendRequest = __Infer<typeof FriendRequest>;
+
+export const Friendship = __t.object("Friendship", {
+  id: __t.u64(),
+  userA: __t.identity(),
+  userB: __t.identity(),
+  createdAt: __t.timestamp(),
+});
+export type Friendship = __Infer<typeof Friendship>;
 
 export const InitiateDiditResult = __t.object("InitiateDiditResult", {
   success: __t.bool(),
@@ -70,8 +90,59 @@ export const LastPost = __t.object("LastPost", {
 });
 export type LastPost = __Infer<typeof LastPost>;
 
+export const Message = __t.object("Message", {
+  id: __t.u64(),
+  senderIdentity: __t.identity(),
+  recipientIdentity: __t.option(__t.identity()),
+  orgId: __t.option(__t.u64()),
+  content: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type Message = __Infer<typeof Message>;
+
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
+
+export const Notification = __t.object("Notification", {
+  id: __t.u64(),
+  recipientIdentity: __t.identity(),
+  type: __t.string(),
+  fromIdentity: __t.option(__t.identity()),
+  orgId: __t.option(__t.u64()),
+  message: __t.string(),
+  createdAt: __t.timestamp(),
+  resolved: __t.bool(),
+});
+export type Notification = __Infer<typeof Notification>;
+
+export const OrgMemberRequest = __t.object("OrgMemberRequest", {
+  id: __t.u64(),
+  orgId: __t.u64(),
+  fromIdentity: __t.identity(),
+  status: __t.string(),
+  createdAt: __t.timestamp(),
+});
+export type OrgMemberRequest = __Infer<typeof OrgMemberRequest>;
+
+export const Organization = __t.object("Organization", {
+  id: __t.u64(),
+  name: __t.string(),
+  picture: __t.string(),
+  city: __t.string(),
+  description: __t.string(),
+  leaderIdentity: __t.identity(),
+  createdAt: __t.timestamp(),
+  isPro: __t.bool(),
+});
+export type Organization = __Infer<typeof Organization>;
+
+export const OrganizationMember = __t.object("OrganizationMember", {
+  orgId: __t.u64(),
+  memberIdentity: __t.identity(),
+  role: __t.string(),
+  joinedAt: __t.timestamp(),
+});
+export type OrganizationMember = __Infer<typeof OrganizationMember>;
 
 export const PendingRegistration = __t.object("PendingRegistration", {
   identity: __t.identity(),
@@ -102,9 +173,10 @@ export const StoryPost = __t.object("StoryPost", {
   profileOwnerIdentity: __t.identity(),
   posterIdentity: __t.identity(),
   content: __t.string(),
+  mediaData: __t.string(),
   mediaTypes: __t.string(),
   createdAt: __t.timestamp(),
-  mediaData: __t.string(),
+  actingAsOrgId: __t.option(__t.u64()),
 });
 export type StoryPost = __Infer<typeof StoryPost>;
 
@@ -118,6 +190,7 @@ export const UserProfile = __t.object("UserProfile", {
   phoneNumber: __t.string(),
   phoneVerified: __t.bool(),
   profilePicture: __t.string(),
+  isPro: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

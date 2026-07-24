@@ -5,6 +5,7 @@ import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
+import OrgSection from '../components/OrgSection';
 
 interface UserProfile {
   identity: string;
@@ -392,6 +393,8 @@ function MyProfilePage() {
             </>
           )}
         </div>
+
+        <OrgSection profileIdentity={profile?.identity || ''} />
       </main>
 
       {showQR && (

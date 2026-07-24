@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
 import MainFeedPage from './pages/MainFeedPage';
@@ -23,6 +24,11 @@ import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import OrgProfilePage from './pages/OrgProfilePage';
+import NotificationsPage from './pages/NotificationsPage';
+import MessagesPage from './pages/MessagesPage';
+import DMChatPage from './pages/DMChatPage';
+import OrgChatPage from './pages/OrgChatPage';
 
 interface AppContextType {
   identity: Identity | null;
@@ -94,7 +100,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
           try {
             await connectToSpacetimeDB(userEmail, accessToken);
 
-            // Poll for profile up to 1 second
             let profileExists = false;
             for (let i = 0; i < 10; i++) {
               profileExists = await checkProfileExistsByEmail(userEmail);
@@ -126,12 +131,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
       } else {
         setIdentity(null as unknown as Identity);
       }
-      
-      const pendingFollow = localStorage.getItem('pending_follow');
-      if (pendingFollow) {
-        console.log('Pending follow found:', pendingFollow);
-        localStorage.removeItem('pending_follow');
-      }
+
       setIsLoading(false);
     };
 
@@ -148,8 +148,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
     return <div className="loading">Loading...</div>;
   }
 
-  console.log('AuthCallback isAuth:', auth.isAuthenticated);
-
   if (!auth.isAuthenticated) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
@@ -164,15 +162,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
 function PrivateRoute({ children }: { children: ReactNode }) {
   const auth = useAuth();
 
-  console.log('PrivateRoute check:', {
-    isAuthenticated: auth.isAuthenticated,
-    hasUser: !!auth.user,
-    isLoading: auth.isLoading,
-  });
-
-  // Wait for auth to finish loading before deciding to redirect.
-  // This is critical: after a page reload (e.g. returning from Didit),
-  // react-oidc-context needs time to restore auth from localStorage.
   if (auth.isLoading) {
     return <div className="loading">Loading...</div>;
   }
@@ -190,7 +179,6 @@ function PrivateRoute({ children }: { children: ReactNode }) {
 
 function RedirectHandler() {
   const navigate = useNavigate();
-  
   useEffect(() => {
     const redirectPath = sessionStorage.getItem('auth_redirect_path');
     if (redirectPath) {
@@ -198,7 +186,6 @@ function RedirectHandler() {
       navigate(redirectPath, { replace: true });
     }
   }, [navigate]);
-  
   return null;
 }
 
@@ -215,9 +202,6 @@ function ScrollToTop() {
 }
 
 function AppRoutes() {
-  const location = useLocation();
-  console.log('Current path:', location.pathname);
-
   return (
     <>
       <ScrollToTop />
@@ -228,45 +212,16 @@ function AppRoutes() {
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/search" element={<SearchPage />} />
-      <Route
-        path="/profile/:identity"
-        element={<ProfilePage />}
-      />
-      <Route
-        path="/register"
-        element={
-          <PrivateRoute>
-            <RegisterPage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/home"
-        element={
-          <>
-            <RedirectHandler />
-            <PrivateRoute>
-              <MainFeedPage />
-            </PrivateRoute>
-          </>
-        }
-      />
-      <Route
-        path="/me"
-        element={
-          <PrivateRoute>
-            <MyProfilePage />
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/follow/:ownerIdentity"
-        element={
-          <PrivateRoute>
-            <FollowPage />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/profile/:identity" element={<ProfilePage />} />
+      <Route path="/org/:id" element={<OrgProfilePage />} />
+      <Route path="/register" element={<PrivateRoute><RegisterPage /></PrivateRoute>} />
+      <Route path="/home" element={<><RedirectHandler /><PrivateRoute><MainFeedPage /></PrivateRoute></>} />
+      <Route path="/me" element={<PrivateRoute><MyProfilePage /></PrivateRoute>} />
+      <Route path="/follow/:ownerIdentity" element={<PrivateRoute><FollowPage /></PrivateRoute>} />
+      <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
+      <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+      <Route path="/messages/:identity" element={<PrivateRoute><DMChatPage /></PrivateRoute>} />
+      <Route path="/org-chat/:id" element={<PrivateRoute><OrgChatPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
@@ -277,7 +232,9 @@ function App() {
   return (
     <AuthProvider {...AUTH_CONFIG}>
       <BrowserRouter>
-        <AppRoutes />
+        <OrgProvider>
+          <AppRoutes />
+        </OrgProvider>
       </BrowserRouter>
     </AuthProvider>
   );

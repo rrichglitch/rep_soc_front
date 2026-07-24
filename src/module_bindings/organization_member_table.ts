@@ -10,10 +10,9 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default {
-  profileOwnerIdentity: __t.identity(),
-  content: __t.string(),
-  mediaData: __t.option(__t.string()),
-  mediaTypes: __t.option(__t.string()),
-  actingAsOrgId: __t.option(__t.u64()),
-};
+export default __t.row({
+  orgId: __t.u64().name("org_id"),
+  memberIdentity: __t.identity().name("member_identity"),
+  role: __t.string(),
+  joinedAt: __t.timestamp().name("joined_at"),
+});

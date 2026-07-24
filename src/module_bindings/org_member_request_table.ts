@@ -11,14 +11,9 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  identity: __t.identity().primaryKey(),
-  email: __t.string(),
-  fullName: __t.string().name("full_name"),
-  city: __t.string(),
-  description: __t.string(),
+  id: __t.u64().primaryKey(),
+  orgId: __t.u64().name("org_id"),
+  fromIdentity: __t.identity().name("from_identity"),
+  status: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
-  phoneNumber: __t.string().name("phone_number"),
-  phoneVerified: __t.bool().name("phone_verified"),
-  profilePicture: __t.string().name("profile_picture"),
-  isPro: __t.bool().name("is_pro"),
 });

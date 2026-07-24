@@ -11,15 +11,12 @@ import {
 } from "spacetimedb";
 
 export default __t.row({
-  identity: __t.identity().primaryKey(),
-  email: __t.string(),
-  fullName: __t.string().name("full_name"),
-  legalName: __t.string().name("legal_name"),
+  id: __t.u64().primaryKey(),
+  name: __t.string(),
+  picture: __t.string(),
   city: __t.string(),
   description: __t.string(),
-  phoneNumber: __t.string().name("phone_number"),
-  diditSessionId: __t.string().name("didit_session_id"),
+  leaderIdentity: __t.identity().name("leader_identity"),
   createdAt: __t.timestamp().name("created_at"),
-  profilePicture: __t.string().name("profile_picture"),
-  diditSelfieImage: __t.string().name("didit_selfie_image"),
+  isPro: __t.bool().name("is_pro"),
 });

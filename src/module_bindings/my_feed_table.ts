@@ -22,4 +22,7 @@ export default __t.row({
   posterPicture: __t.string().name("poster_picture"),
   profileOwnerName: __t.string().name("profile_owner_name"),
   profileOwnerPicture: __t.string().name("profile_owner_picture"),
+  actingAsOrgId: __t.option(__t.u64()).name("acting_as_org_id"),
+  actingAsOrgName: __t.option(__t.string()).name("acting_as_org_name"),
+  actingAsOrgPicture: __t.option(__t.string()).name("acting_as_org_picture"),
 });
