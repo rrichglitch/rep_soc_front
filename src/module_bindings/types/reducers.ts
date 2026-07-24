@@ -15,6 +15,7 @@ import DeclineFriendRequestReducer from "../decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "../decline_org_member_reducer";
 import DeleteStoryPostReducer from "../delete_story_post_reducer";
 import FollowReducer from "../follow_reducer";
+import ManualCreateProfileReducer from "../manual_create_profile_reducer";
 import PromoteToCoLeaderReducer from "../promote_to_co_leader_reducer";
 import RefreshFeedReducer from "../refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "../register_push_subscription_reducer";
@@ -41,6 +42,7 @@ export type DeclineFriendRequestParams = __Infer<typeof DeclineFriendRequestRedu
 export type DeclineOrgMemberParams = __Infer<typeof DeclineOrgMemberReducer>;
 export type DeleteStoryPostParams = __Infer<typeof DeleteStoryPostReducer>;
 export type FollowParams = __Infer<typeof FollowReducer>;
+export type ManualCreateProfileParams = __Infer<typeof ManualCreateProfileReducer>;
 export type PromoteToCoLeaderParams = __Infer<typeof PromoteToCoLeaderReducer>;
 export type RefreshFeedParams = __Infer<typeof RefreshFeedReducer>;
 export type RegisterPushSubscriptionParams = __Infer<typeof RegisterPushSubscriptionReducer>;

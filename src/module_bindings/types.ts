@@ -100,6 +100,13 @@ export const Message = __t.object("Message", {
 });
 export type Message = __Infer<typeof Message>;
 
+export const MonthlyVerificationCap = __t.object("MonthlyVerificationCap", {
+  monthKey: __t.string(),
+  completedCount: __t.u32(),
+  updatedAt: __t.timestamp(),
+});
+export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
+
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
 
@@ -193,6 +200,14 @@ export const UserProfile = __t.object("UserProfile", {
   isPro: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
+
+export const VerificationRateLimit = __t.object("VerificationRateLimit", {
+  identity: __t.identity(),
+  attemptCount: __t.u32(),
+  lastAttemptAt: __t.timestamp(),
+  firstAttemptAt: __t.timestamp(),
+});
+export type VerificationRateLimit = __Infer<typeof VerificationRateLimit>;
 
 export const VerifiedIdentity = __t.object("VerifiedIdentity", {
   identity: __t.identity(),
