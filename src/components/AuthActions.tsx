@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthProfile } from '../hooks/useAuthProfile';
 import { getUnreadNotificationCount, getProfileByEmail } from '../utils/spacetime';
 import { useAuth } from 'react-oidc-context';
 
-function AuthActions() {
+function AuthActions({ profileReplacement }: { profileReplacement?: ReactNode }) {
   const { isLoggedIn, profilePicture, handleSignIn } = useAuthProfile();
   const auth = useAuth();
   const [notifCount, setNotifCount] = useState(0);
@@ -54,13 +54,15 @@ function AuthActions() {
             }}>{notifCount > 9 ? '9+' : notifCount}</span>
           )}
         </Link>
-        <Link to="/me" className="topbar-profile-link">
-          {profilePicture ? (
-            <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
-          ) : (
-            <div className="topbar-profile-placeholder" />
-          )}
-        </Link>
+        {profileReplacement ? profileReplacement : (
+          <Link to="/me" className="topbar-profile-link">
+            {profilePicture ? (
+              <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
+            ) : (
+              <div className="topbar-profile-placeholder" />
+            )}
+          </Link>
+        )}
       </div>
     );
   }

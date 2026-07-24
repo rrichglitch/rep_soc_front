@@ -187,7 +187,7 @@ function MyProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        right={<><button onClick={() => setShowQR(true)} className="topbar-signin" style={{marginRight:12}}>Share</button><AuthActions /></>}
+        right={<AuthActions profileReplacement={<button onClick={() => setShowQR(true)} className="topbar-signin">Share</button>} />}
       />
 
       <main className="main-content">
