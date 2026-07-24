@@ -153,22 +153,21 @@ function MyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Resize to max 200x200 before converting to base64
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const size = Math.min(img.width, img.height, 200);
-      canvas.width = size; canvas.height = size;
-      const ctx = canvas.getContext('2d')!;
-      ctx.drawImage(img, (img.width - size) / 2, (img.height - size) / 2, size, size, 0, 0, size, size);
-      const base64 = canvas.toDataURL('image/jpeg', 0.7);
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const base64 = reader.result as string;
       setIsSaving(true);
-      updateProfile(base64, undefined, undefined)
-        .then(() => loadProfile())
-        .catch(e => console.error('Error updating profile picture:', e))
-        .finally(() => { setIsSaving(false); setShowPictureSelect(false); });
+      try {
+        await updateProfile(base64, undefined, undefined);
+        await loadProfile();
+      } catch (e) {
+        console.error('Error updating profile picture:', e);
+      } finally {
+        setIsSaving(false);
+        setShowPictureSelect(false);
+      }
     };
-    img.src = URL.createObjectURL(file);
+    reader.readAsDataURL(file);
   };
 
   if (isLoading) {
