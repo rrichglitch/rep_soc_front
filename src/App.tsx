@@ -7,12 +7,14 @@ import {
   Navigate,
   useLocation,
   useNavigate,
+  Link,
 } from 'react-router-dom';
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
 import { OrgProvider } from './contexts/OrgContext';
+import AuthActions from './components/AuthActions';
 
 import RegisterPage from './pages/RegisterPage';
 import MainFeedPage from './pages/MainFeedPage';
@@ -201,9 +203,34 @@ function ScrollToTop() {
   return null;
 }
 
-function AppRoutes() {
+function AppLayout({ children }: { children: ReactNode }) {
+  const { isAuthenticated } = useAuth();
   return (
     <>
+      {isAuthenticated && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
+          background: 'white', height: 60, padding: '0 24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          boxSizing: 'border-box',
+        }}>
+          <Link to="/home" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <img src="/veri.png" alt="Veri" style={{ height: 36, width: 'auto' }} />
+          </Link>
+          <AuthActions />
+        </div>
+      )}
+      <div style={isAuthenticated ? { paddingTop: 60 } : undefined}>
+        {children}
+      </div>
+    </>
+  );
+}
+
+function AppRoutes() {
+  return (
+    <AppLayout>
       <ScrollToTop />
     <Routes>
       <Route path="/callback" element={<CallbackPage />} />
@@ -224,7 +251,7 @@ function AppRoutes() {
       <Route path="/org-chat/:id" element={<PrivateRoute><OrgChatPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-    </>
+    </AppLayout>
   );
 }
 
