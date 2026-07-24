@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import { getNotifications, resolveNotification, getProfileByEmail } from '../utils/spacetime';
+import AuthActions from '../components/AuthActions';
 
 function NotificationsPage() {
   const auth = useAuth();
@@ -41,7 +42,7 @@ function NotificationsPage() {
 
   return (
     <div className="notif-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<span style={{fontWeight:600,fontSize:18}}>Notifications</span>} right={<div style={{width:36}} />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<span style={{fontWeight:600,fontSize:18}}>Notifications</span>} right={<AuthActions />} />
       <main className="main-content">
         {pendingNotifs.length > 0 && (
           <div className="notif-section">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileByEmail } from '../utils/spacetime';
+import AuthActions from '../components/AuthActions';
 
 function DMChatPage() {
   const { identity: otherId } = useParams<{ identity: string }>();
@@ -49,7 +50,7 @@ function DMChatPage() {
       <TopBar
         left={<button onClick={() => navigate('/messages')} className="topbar-back">← Back</button>}
         center={<span style={{fontWeight:600}}>{otherProfile?.fullName || 'Chat'}</span>}
-        right={<div style={{width:36}} />}
+        right={<AuthActions />}
       />
       <main className="chat-main">
         <div className="msg-list">

@@ -3,13 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
   const navigate = useNavigate();
   const { email } = useApp();
   const [isLoading, setIsLoading] = useState(true);
-  const [profilePicture, setProfilePicture] = useState<string>('');
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
   const [orderOldToNew, setOrderOldToNew] = useState(true);
@@ -33,7 +33,6 @@ function MainFeedPage() {
       if (profile) {
         const identityHex = profile.identity.toHexString();
         currentIdentityHexRef.current = identityHex;
-        setProfilePicture(profile.profilePicture);
 
         const myFeed = await getMyStoryPosts(identityHex);
         setMyStories(myFeed);
@@ -160,15 +159,7 @@ function MainFeedPage() {
       <TopBar
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
-        right={
-          <Link to="/me" className="topbar-profile-link">
-            {profilePicture ? (
-              <img src={profilePicture} alt="My Profile" className="topbar-profile-image" />
-            ) : (
-              <div className="topbar-profile-placeholder" />
-            )}
-          </Link>
-        }
+        right={<AuthActions />}
       />
 
       <main className="main-content" ref={feedContainerRef}>
