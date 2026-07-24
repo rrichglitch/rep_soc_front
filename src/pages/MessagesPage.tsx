@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -30,7 +30,7 @@ function MessagesPage() {
 
   return (
     <div className="messages-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<span style={{fontWeight:600,fontSize:18}}>Messages</span>} right={<AuthActions />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} right={<AuthActions />} />
       <main className="main-content">
         {orgs.length > 0 && (
           <div className="chat-section">
