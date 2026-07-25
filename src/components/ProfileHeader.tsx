@@ -96,7 +96,10 @@ function ProfileHeader({
             {requestPending ? 'Request Pending' : 'Request to Join'}
           </button>
         ) : isFriend ? (
-          <button onClick={handleUnfriend} className="unfriend-btn">Unfriend</button>
+          <>
+            <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
+            <button onClick={handleUnfriend} className="unfriend-btn">Unfriend</button>
+          </>
         ) : friendReqStatus === 'pending' ? (
           <>
             <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
