@@ -189,7 +189,14 @@ function MyProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        right={<AuthActions profileReplacement={<button onClick={() => { auth.removeUser(); window.location.href = '/'; }} className="topbar-signin" style={{background:"#dc2626"}}>Logout</button>} />}
+        right={<AuthActions profileReplacement={<button onClick={() => {
+          const idToken = auth.user?.id_token;
+          const params = new URLSearchParams();
+          if (idToken) params.set('id_token_hint', idToken);
+          params.set('post_logout_redirect_uri', window.location.origin + '/about');
+          auth.removeUser();
+          window.location.href = 'https://auth.spacetimedb.com/oidc/session/end?' + params.toString();
+        }} className="topbar-signin" style={{background:"#dc2626"}}>Logout</button>} />}
       />
 
       <main className="main-content">
