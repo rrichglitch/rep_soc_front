@@ -25,7 +25,7 @@ export const AUTH_CONFIG = {
   authority: authAuthority,
   client_id: authClientId,
   redirect_uri: `${origin}/callback`,
-  post_logout_redirect_uri: `${origin}/`,
+  post_logout_redirect_uri: `${origin}/about`,
   scope: 'openid profile email',
   response_type: 'code',
   automaticSilentRenew: true,
