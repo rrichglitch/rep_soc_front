@@ -101,10 +101,10 @@ function AuthCallback({ children }: AuthCallbackProps) {
             await connectToSpacetimeDB(userEmail, accessToken);
 
             let profileExists = false;
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 30; i++) {
               profileExists = await checkProfileExistsByEmail(userEmail);
               if (profileExists) break;
-              await new Promise(resolve => setTimeout(resolve, 100));
+              await new Promise(resolve => setTimeout(resolve, 200));
             }
 
             console.log('Profile exists in DB:', profileExists);
