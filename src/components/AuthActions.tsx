@@ -27,22 +27,21 @@ export default function AuthActions({ profileReplacement, hideChat }: { profileR
 
   return (
     <div className="auth-actions">
+      {!hideChat && (
+        <Link to="/friends" className="nav-icon-link" style={{position:'relative'}}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </Link>
+      )}
       <Link to="/notifications" className="nav-icon-link" style={{position:'relative'}}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         {unreadNotifs > 0 && <span className="ticker">{unreadNotifs > 99 ? '99+' : unreadNotifs}</span>}
       </Link>
-      {!hideChat && (
-        <Link to="/friends" className="nav-icon-link" style={{position:'relative'}}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-
-        </Link>
-      )}
       {profileReplacement ? profileReplacement : (
         <Link to="/me" className="nav-icon-link">
           {profilePicture ? (
-            <img src={profilePicture} alt="Profile" style={{width:32,height:32,borderRadius:'50%',objectFit:'cover'}} />
+            <img src={profilePicture} alt="Profile" style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} />
           ) : (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M20 20v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M20 20v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
           )}
         </Link>
       )}
