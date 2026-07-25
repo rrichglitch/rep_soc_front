@@ -841,7 +841,7 @@ export function getFriendRequestStatus(fromIdentity: string, toIdentity: string)
   for (const r of dbConnection.db.friend_request.iter()) {
     if (r.fromIdentity.toHexString() === fromIdentity && 
         r.toIdentity.toHexString() === toIdentity) {
-      return r.status;
+      return r.status === 'pending' ? 'pending' : null;
     }
   }
   return null;
