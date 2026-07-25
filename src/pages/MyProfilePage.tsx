@@ -38,7 +38,7 @@ function MyProfilePage() {
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts'>('story');
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'orgs'>('story');
    
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -306,13 +306,19 @@ function MyProfilePage() {
               className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`}
               onClick={() => setActiveTab('story')}
             >
-              Your Story
+              Story
             </button>
             <button
               className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`}
               onClick={() => setActiveTab('posts')}
             >
-              Your Posts
+              Posts
+            </button>
+            <button
+              className={`profile-tab ${activeTab === 'orgs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('orgs')}
+            >
+              Organizations
             </button>
           </div>
 
@@ -398,7 +404,7 @@ function MyProfilePage() {
           )}
         </div>
 
-        <OrgSection profileIdentity={profile?.identity || ''} />
+        {activeTab === 'orgs' && <OrgSection profileIdentity={profile?.identity || ''} />}
       </main>
 
       {showQR && (
