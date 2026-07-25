@@ -558,6 +558,7 @@ function MyProfilePage() {
 
         .profile-info {
           flex: 1;
+          position: relative;
         }
 
         .profile-name {
