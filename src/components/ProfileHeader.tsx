@@ -43,6 +43,16 @@ function ProfileHeader({
   const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
 
   const handleFriendRequest = async () => {
+    if (checkIsFriend(currentIdentityHex || '', profile.identity)) {
+      alert('Already friends');
+      refresh();
+      return;
+    }
+    if (getFriendRequestStatus(currentIdentityHex || '', profile.identity) === 'pending') {
+      alert('Friend request already sent');
+      refresh();
+      return;
+    }
     try {
       await sendFriendRequest(profile.identity);
       refresh();
