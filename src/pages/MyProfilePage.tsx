@@ -210,6 +210,7 @@ function MyProfilePage() {
                 />
               )}
             </div>
+            <button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>
             <div className="profile-info">
               <h2 className="profile-name">{profile?.full_name}</h2>
               <div className="profile-field">
@@ -287,7 +288,6 @@ function MyProfilePage() {
               <p className="join-date">
                 Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <button onClick={() => setShowQR(true)} className="share-btn-mobile">Share</button>
             </div>
           </div>
         </div>
@@ -558,7 +558,6 @@ function MyProfilePage() {
 
         .profile-info {
           flex: 1;
-          position: relative;
         }
 
         .profile-name {
@@ -677,31 +676,25 @@ function MyProfilePage() {
           color: #999;
         }
 
-        .share-btn-mobile {
+        .share-btn-under-pic {
           display: block;
-          width: 100%;
-          padding: 12px;
+          width: auto;
+          margin: 12px auto 0;
+          padding: 10px 28px;
           background: #667eea;
           color: white;
           border: none;
           border-radius: 8px;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
-          margin-top: 16px;
         }
-        .share-btn-mobile:hover { background: #5a6fd6; }
+        .share-btn-under-pic:hover { background: #5a6fd6; }
         @media (min-width: 768px) {
-          .share-btn-mobile {
-            display: inline-block;
+          .share-btn-under-pic {
             width: auto;
             padding: 8px 20px;
-            font-size: 14px;
-            position: absolute;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            margin-top: 0;
+            font-size: 13px;
           }
         }
 
