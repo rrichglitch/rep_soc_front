@@ -87,7 +87,7 @@ function OrgChatPage() {
         .msg-form { display: flex; gap: 8px; padding: 12px 16px; background: #f5f5f5; position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; z-index: 10; }
         .msg-input { flex: 1; padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 24px; outline: none; font-size: 15px; background: white; }
         .msg-input:focus { border-color: #667eea; }
-        .msg-send { padding: 6px 8px; background: #667eea; color: white; border: none; border-radius: 24px; font-weight: 600; cursor: pointer; }
+        .msg-send { padding: 6px 12px; display: flex; align-items: center; justify-content: center; background: #667eea; color: white; border: none; border-radius: 24px; font-weight: 600; cursor: pointer; }
       `}</style>
     </div>
   );
