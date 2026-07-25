@@ -53,7 +53,7 @@ function OrgChatPage() {
       <TopBar
         left={<button onClick={() => navigate('/messages')} className="topbar-back">← Back</button>}
         center={<span style={{fontWeight:600}}>{orgName}</span>}
-        right={<AuthActions />}
+        right={<AuthActions hideChat />}
        
       />
       <main className="chat-main">
@@ -69,7 +69,7 @@ function OrgChatPage() {
         </div>
         <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="msg-form">
           <input value={input} onChange={e => setInput(e.target.value)} placeholder="Type a message..." className="msg-input" />
-          <button type="submit" className="msg-send">✈</button>
+          <button type="submit" className="msg-send"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><polygon points="2,1 18,10 2,19" fill="white" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/><line x1="2" y1="10" x2="10" y2="10" stroke="#667eea" strokeWidth="1.5"/></svg></button>
         </form>
       </main>
 
