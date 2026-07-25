@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import { getOrgMessages, sendOrgMessage, getOrganizationById, getProfileByEmail } from '../utils/spacetime';
 
 function OrgChatPage() {
@@ -52,6 +53,7 @@ function OrgChatPage() {
       <TopBar
         left={<button onClick={() => navigate('/messages')} className="topbar-back">← Back</button>}
         center={<span style={{fontWeight:600}}>{orgName}</span>}
+        right={<AuthActions />}
        
       />
       <main className="chat-main">
