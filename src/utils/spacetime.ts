@@ -811,6 +811,18 @@ export async function declineFriendRequest(requestId: bigint): Promise<void> {
   await dbConnection.reducers.declineFriendRequest({ requestId });
 }
 
+export async function cancelFriendRequest(toIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  const { Identity } = await import('spacetimedb');
+  await dbConnection.reducers.cancelFriendRequest({ toIdentity: Identity.fromString(toIdentity) });
+}
+
+export async function unfriend(targetIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  const { Identity } = await import('spacetimedb');
+  await dbConnection.reducers.unfriend({ targetIdentity: Identity.fromString(targetIdentity) });
+}
+
 export function checkIsFriend(currentIdentityHex: string, otherIdentity: string): boolean {
   if (!dbConnection) return false;
   for (const f of dbConnection.db.friendship.iter()) {

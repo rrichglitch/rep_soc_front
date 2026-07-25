@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import FollowButton from './FollowButton';
-import { sendFriendRequest, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
+import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 
 interface UserProfile {
   identity: string;
@@ -52,6 +52,26 @@ function ProfileHeader({
     }
   };
 
+  const handleCancelRequest = async () => {
+    try {
+      await cancelFriendRequest(profile.identity);
+      setFriendReqStatus(null);
+    } catch (e: any) {
+      alert(e.message || 'Failed to cancel request');
+    }
+  };
+
+  const handleUnfriend = async () => {
+    try {
+      await unfriend(profile.identity);
+      setFriendReqStatus(null);
+      // force isFriend re-check via state
+      setFriendReqStatus(null);
+    } catch (e: any) {
+      alert(e.message || 'Failed to unfriend');
+    }
+  };
+
   return (
     <div className="profile-header">
       <div className="profile-picture-container">
@@ -76,9 +96,12 @@ function ProfileHeader({
             {requestPending ? 'Request Pending' : 'Request to Join'}
           </button>
         ) : isFriend ? (
-          <span className="friend-badge">Friends</span>
+          <button onClick={handleUnfriend} className="unfriend-btn">Unfriend</button>
         ) : friendReqStatus === 'pending' ? (
-          <span className="request-pending-badge">Request Sent</span>
+          <>
+            <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
+            <button onClick={handleCancelRequest} className="cancel-request-btn">Cancel Request</button>
+          </>
         ) : (
           <>
             <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
@@ -132,14 +155,16 @@ function ProfileHeader({
           border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
         .friend-request-btn:hover { background: #16a34a; }
-        .friend-badge {
-          padding: 10px 24px; background: #dcfce7; color: #166534; border-radius: 8px;
-          font-weight: 600; font-size: 14px;
+        .unfriend-btn {
+          padding: 10px 24px; background: #dc2626; color: white; border: none;
+          border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
-        .request-pending-badge {
-          padding: 10px 24px; background: #fef3c7; color: #92400e; border-radius: 8px;
-          font-weight: 600; font-size: 14px;
+        .unfriend-btn:hover { background: #b91c1c; }
+        .cancel-request-btn {
+          padding: 10px 24px; background: #f59e0b; color: white; border: none;
+          border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;
         }
+        .cancel-request-btn:hover { background: #d97706; }
       `}</style>
     </div>
   );

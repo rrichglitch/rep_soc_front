@@ -38,6 +38,7 @@ import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
 import AdminUpdateProfileReducer from "./admin_update_profile_reducer";
+import CancelFriendRequestReducer from "./cancel_friend_request_reducer";
 import ClaimProfileReducer from "./claim_profile_reducer";
 import CreateOrganizationReducer from "./create_organization_reducer";
 import CreateProfileReducer from "./create_profile_reducer";
@@ -58,6 +59,7 @@ import SendOrgMemberRequestReducer from "./send_org_member_request_reducer";
 import SendOrgMessageReducer from "./send_org_message_reducer";
 import TransferLeadershipReducer from "./transfer_leadership_reducer";
 import UnfollowReducer from "./unfollow_reducer";
+import UnfriendReducer from "./unfriend_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
 import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
 import UpdateOrganizationReducer from "./update_organization_reducer";
@@ -213,6 +215,7 @@ const reducersSchema = __reducers(
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
   __reducerSchema("admin_update_profile", AdminUpdateProfileReducer),
+  __reducerSchema("cancel_friend_request", CancelFriendRequestReducer),
   __reducerSchema("claim_profile", ClaimProfileReducer),
   __reducerSchema("create_organization", CreateOrganizationReducer),
   __reducerSchema("create_profile", CreateProfileReducer),
@@ -233,6 +236,7 @@ const reducersSchema = __reducers(
   __reducerSchema("send_org_message", SendOrgMessageReducer),
   __reducerSchema("transfer_leadership", TransferLeadershipReducer),
   __reducerSchema("unfollow", UnfollowReducer),
+  __reducerSchema("unfriend", UnfriendReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
   __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
   __reducerSchema("update_organization", UpdateOrganizationReducer),
