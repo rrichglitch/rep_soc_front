@@ -69,9 +69,9 @@ function DMChatPage() {
       </main>
 
       <style>{`
-        .chat-page { min-height: 100vh; background: #f5f5f5; display: flex; flex-direction: column; }
-        .chat-main { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; padding: 16px 16px 0; }
-        .msg-list { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+        .chat-page { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #f5f5f5; display: flex; flex-direction: column; height: 100dvh; height: 100vh; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; padding: 16px 16px 0; overflow: hidden; }
+        .msg-list { flex: 1; overflow-y: auto; padding-bottom: 80px; -webkit-overflow-scrolling: touch; }
         .msg { margin-bottom: 8px; max-width: 75%; }
         .msg.mine { margin-left: auto; text-align: right; }
         .msg.theirs { margin-right: auto; }
