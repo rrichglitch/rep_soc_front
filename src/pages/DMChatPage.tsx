@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileByEmail } from '../utils/spacetime';
@@ -48,7 +48,7 @@ function DMChatPage() {
     <div className="chat-page">
       <TopBar
         left={<button onClick={() => navigate('/messages')} className="topbar-back">← Back</button>}
-        center={otherProfile?.profilePicture ? <img src={otherProfile.profilePicture} alt={otherProfile.fullName} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} /> : <span style={{fontWeight:600}}>{otherProfile?.fullName || 'Chat'}</span>}
+        center={otherProfile?.profilePicture ? <Link to={`/profile/${otherProfile.identity}`}><img src={otherProfile.profilePicture} alt={otherProfile.fullName} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} /></Link> : <span style={{fontWeight:600}}>{otherProfile?.fullName || 'Chat'}</span>}
        
       />
       <main className="chat-main">
