@@ -10,6 +10,7 @@ function NotificationsPage() {
   const navigate = useNavigate();
   const [notifs, setNotifs] = useState<any[]>([]);
   const [currentIdentity, setCurrentIdentity] = useState<string | null>(null);
+  const identityRef = { current: null as string | null };
 
   useEffect(() => {
     if (!auth.isAuthenticated || !auth.user?.id_token) return;
@@ -18,7 +19,11 @@ function NotificationsPage() {
       const email = payload.email;
       if (email) {
         getProfileByEmail(email).then(p => {
-          if (p) setCurrentIdentity(p.identity.toHexString());
+          if (p) {
+            const id = p.identity.toHexString();
+            setCurrentIdentity(id);
+            identityRef.current = id;
+          }
         });
       }
     } catch {}
@@ -26,39 +31,28 @@ function NotificationsPage() {
 
   useEffect(() => {
     if (!currentIdentity) return;
-    const interval = setInterval(() => {
-      setNotifs(getNotifications(currentIdentity));
-    }, 1000);
+    const update = () => setNotifs(getNotifications(currentIdentity));
+    update();
+    const interval = setInterval(update, 1500);
     return () => clearInterval(interval);
   }, [currentIdentity]);
 
-  const pollRefresh = async () => {
-    for (let i = 0; i < 5; i++) {
-      await new Promise(r => setTimeout(r, 300));
-      if (currentIdentity) setNotifs(getNotifications(currentIdentity));
-    }
-  };
-
   const handleResolve = async (id: bigint) => {
     await resolveNotification(id);
-    pollRefresh();
   };
 
   const handleAccept = async (refId: bigint) => {
     await acceptFriendRequest(refId);
-    pollRefresh();
   };
 
   const handleDecline = async (refId: bigint) => {
     await declineFriendRequest(refId);
-    pollRefresh();
   };
 
   const handleClearAll = async () => {
     for (const n of notifs.filter(n => !n.resolved)) {
       try { await resolveNotification(n.id); } catch {}
     }
-    pollRefresh();
   };
 
   const pendingNotifs = notifs.filter(n => !n.resolved);
@@ -84,12 +78,12 @@ function NotificationsPage() {
                   {n.fromName !== 'Someone' && <span className="notif-from">From: {n.fromName}</span>}
                 </div>
                 {n.type === 'friend_request' ? (
-                  <div style={{display:'flex',gap:4}}>
-                    <button onClick={() => handleAccept(n.referenceId)} style={{padding:'4px 12px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600}}>Accept</button>
-                    <button onClick={() => handleDecline(n.referenceId)} style={{padding:'4px 12px',background:'#dc2626',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600}}>Decline</button>
+                  <div style={{display:'flex',gap:4,flexShrink:0}}>
+                    <button onClick={() => handleAccept(n.referenceId)} style={{padding:'6px 14px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>Accept</button>
+                    <button onClick={() => handleDecline(n.referenceId)} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>Decline</button>
                   </div>
                 ) : (
-                  <button onClick={() => handleResolve(n.id)} className="resolve-btn">✓</button>
+                  <button onClick={() => handleResolve(n.id)} style={{padding:'6px 14px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>✓</button>
                 )}
               </div>
             ))}
@@ -122,7 +116,6 @@ function NotificationsPage() {
         .notif-type { font-size: 11px; text-transform: uppercase; color: #667eea; font-weight: 600; }
         .notif-msg { margin: 4px 0; color: #333; font-size: 14px; }
         .notif-from { font-size: 12px; color: #999; }
-        .resolve-btn { padding: 4px 12px; background: #22c55e; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
         .empty { text-align: center; padding: 48px; color: #999; }
       `}</style>
     </div>
