@@ -322,7 +322,9 @@ function MyProfilePage() {
             </button>
           </div>
 
-          {activeTab === 'story' ? (
+          {activeTab === 'orgs' ? (
+            <OrgSection profileIdentity={profile?.identity || ''} />
+          ) : activeTab === 'story' ? (
             <>
               <div className="no-post-own-story">
                 <p>You cannot post on your own story. Others can share stories about you.</p>
@@ -404,7 +406,7 @@ function MyProfilePage() {
           )}
         </div>
 
-        {activeTab === 'orgs' && <OrgSection profileIdentity={profile?.identity || ''} />}
+
       </main>
 
       {showQR && (
