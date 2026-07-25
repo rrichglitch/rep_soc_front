@@ -669,23 +669,18 @@ function MyProfilePage() {
         }
 
         .share-btn-mobile {
-          display: block;
-          width: 100%;
-          margin-top: 16px;
-          padding: 12px;
+          padding: 8px 20px;
           background: #667eea;
           color: white;
           border: none;
           border-radius: 8px;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 600;
           cursor: pointer;
+          margin-top: 12px;
+          align-self: flex-end;
         }
         .share-btn-mobile:hover { background: #5a6fd6; }
-
-        @media (min-width: 768px) {
-          .share-btn-mobile { display: none; }
-        }
 
         .profile-tabs {
           display: flex;
