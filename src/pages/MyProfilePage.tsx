@@ -195,22 +195,24 @@ function MyProfilePage() {
       <main className="main-content">
         <div className="profile-section">
           <div className="profile-header">
-            <div className="profile-picture-container">
-              {profile?.profile_picture ? (
-                <img 
-                  src={profile.profile_picture} 
-                  alt={profile.full_name} 
-                  className="profile-picture clickable"
-                  onClick={() => setShowPictureModal(true)}
-                />
-              ) : (
-                <div 
-                  className="profile-picture-placeholder clickable"
-                  onClick={() => setShowPictureModal(true)}
-                />
-              )}
+            <div className="profile-pic-wrapper">
+              <div className="profile-picture-container">
+                {profile?.profile_picture ? (
+                  <img 
+                    src={profile.profile_picture} 
+                    alt={profile.full_name} 
+                    className="profile-picture clickable"
+                    onClick={() => setShowPictureModal(true)}
+                  />
+                ) : (
+                  <div 
+                    className="profile-picture-placeholder clickable"
+                    onClick={() => setShowPictureModal(true)}
+                  />
+                )}
+              </div>
+              <button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>
             </div>
-            <button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>
             <div className="profile-info">
               <h2 className="profile-name">{profile?.full_name}</h2>
               <div className="profile-field">
@@ -525,6 +527,12 @@ function MyProfilePage() {
         .profile-picture-container {
           position: relative;
           flex-shrink: 0;
+        }
+
+        .profile-pic-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
         .profile-picture {
