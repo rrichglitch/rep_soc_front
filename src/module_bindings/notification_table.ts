@@ -19,4 +19,5 @@ export default __t.row({
   message: __t.string(),
   createdAt: __t.timestamp().name("created_at"),
   resolved: __t.bool(),
+  referenceId: __t.option(__t.u64()).name("reference_id"),
 });

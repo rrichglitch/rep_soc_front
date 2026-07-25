@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
-import { getNotifications, resolveNotification, getProfileByEmail } from '../utils/spacetime';
+import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileByEmail } from '../utils/spacetime';
 import AuthActions from '../components/AuthActions';
 
 function NotificationsPage() {
@@ -37,6 +37,16 @@ function NotificationsPage() {
     if (currentIdentity) setNotifs(getNotifications(currentIdentity));
   };
 
+  const handleAccept = async (refId: bigint) => {
+    await acceptFriendRequest(refId);
+    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+  };
+
+  const handleDecline = async (refId: bigint) => {
+    await declineFriendRequest(refId);
+    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+  };
+
   const pendingNotifs = notifs.filter(n => !n.resolved);
   const resolvedNotifs = notifs.filter(n => n.resolved);
 
@@ -54,7 +64,14 @@ function NotificationsPage() {
                   <p className="notif-msg">{n.message}</p>
                   {n.fromName !== 'Someone' && <span className="notif-from">From: {n.fromName}</span>}
                 </div>
-                <button onClick={() => handleResolve(n.id)} className="resolve-btn">✓</button>
+                {n.type === 'friend_request' ? (
+                  <div style={{display:'flex',gap:4}}>
+                    <button onClick={() => handleAccept(n.referenceId)} style={{padding:'4px 12px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600}}>Accept</button>
+                    <button onClick={() => handleDecline(n.referenceId)} style={{padding:'4px 12px',background:'#dc2626',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600}}>Decline</button>
+                  </div>
+                ) : (
+                  <button onClick={() => handleResolve(n.id)} className="resolve-btn">✓</button>
+                )}
               </div>
             ))}
           </div>

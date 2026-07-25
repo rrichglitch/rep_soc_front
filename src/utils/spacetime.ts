@@ -953,6 +953,7 @@ export function getNotifications(identity: string) {
         message: n.message,
         createdAt: n.createdAt.toDate(),
         resolved: n.resolved,
+        referenceId: n.referenceId,
       });
     }
   }

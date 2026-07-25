@@ -8,6 +8,8 @@ import { type Infer as __Infer } from "spacetimedb";
 // Import all reducer arg schemas
 import AcceptFriendRequestReducer from "../accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "../accept_org_member_reducer";
+import AdminDeleteProfileReducer from "../admin_delete_profile_reducer";
+import AdminUpdateProfileReducer from "../admin_update_profile_reducer";
 import ClaimProfileReducer from "../claim_profile_reducer";
 import CreateOrganizationReducer from "../create_organization_reducer";
 import CreateProfileReducer from "../create_profile_reducer";
@@ -36,6 +38,8 @@ import UpgradeToProReducer from "../upgrade_to_pro_reducer";
 
 export type AcceptFriendRequestParams = __Infer<typeof AcceptFriendRequestReducer>;
 export type AcceptOrgMemberParams = __Infer<typeof AcceptOrgMemberReducer>;
+export type AdminDeleteProfileParams = __Infer<typeof AdminDeleteProfileReducer>;
+export type AdminUpdateProfileParams = __Infer<typeof AdminUpdateProfileReducer>;
 export type ClaimProfileParams = __Infer<typeof ClaimProfileReducer>;
 export type CreateOrganizationParams = __Infer<typeof CreateOrganizationReducer>;
 export type CreateProfileParams = __Infer<typeof CreateProfileReducer>;

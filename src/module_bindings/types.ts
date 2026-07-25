@@ -119,6 +119,7 @@ export const Notification = __t.object("Notification", {
   message: __t.string(),
   createdAt: __t.timestamp(),
   resolved: __t.bool(),
+  referenceId: __t.option(__t.u64()),
 });
 export type Notification = __Infer<typeof Notification>;
 
