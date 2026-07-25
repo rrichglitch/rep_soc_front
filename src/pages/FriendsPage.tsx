@@ -66,7 +66,7 @@ function FriendsPage() {
         )}
 
         <div className="chat-section">
-          <h3>{search.trim() ? `Results for "${search}"` : 'Friends'}</h3>
+          <h3>Friends</h3>
           {filteredFriends.length === 0 ? (
             <p className="empty">No friends yet. Add friends to start chatting!</p>
           ) : (
