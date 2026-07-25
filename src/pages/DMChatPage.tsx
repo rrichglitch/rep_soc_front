@@ -64,7 +64,7 @@ function DMChatPage() {
         </div>
         <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="msg-form">
           <input value={input} onChange={e => setInput(e.target.value)} placeholder="Type a message..." className="msg-input" />
-          <button type="submit" className="msg-send">Send</button>
+          <button type="submit" className="msg-send">✈</button>
         </form>
       </main>
 
