@@ -51,7 +51,7 @@ function OrgChatPage() {
   return (
     <div className="chat-page">
       <TopBar
-        left={<button onClick={() => navigate('/messages')} className="topbar-back">← Back</button>}
+        left={<button onClick={() => navigate('/friends')} className="topbar-back">← Back</button>}
         center={<span style={{fontWeight:600}}>{orgName}</span>}
         right={<AuthActions hideChat />}
        

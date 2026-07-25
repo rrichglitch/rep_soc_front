@@ -26,7 +26,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import OrgProfilePage from './pages/OrgProfilePage';
 import NotificationsPage from './pages/NotificationsPage';
-import MessagesPage from './pages/MessagesPage';
+import FriendsPage from './pages/FriendsPage';
 import DMChatPage from './pages/DMChatPage';
 import OrgChatPage from './pages/OrgChatPage';
 
@@ -220,7 +220,7 @@ function AppRoutes() {
       <Route path="/me" element={<PrivateRoute><MyProfilePage /></PrivateRoute>} />
       <Route path="/follow/:ownerIdentity" element={<PrivateRoute><FollowPage /></PrivateRoute>} />
       <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-      <Route path="/messages" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
+      <Route path="/friends" element={<PrivateRoute><FriendsPage /></PrivateRoute>} />
       <Route path="/messages/:identity" element={<PrivateRoute><DMChatPage /></PrivateRoute>} />
       <Route path="/org-chat/:id" element={<PrivateRoute><OrgChatPage /></PrivateRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />

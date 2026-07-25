@@ -936,14 +936,32 @@ export function getFriendChats(identity: string) {
   for (const p of dbConnection.db.user_profile.iter()) {
     profileCache.set(p.identity.toHexString(), p);
   }
-  return Array.from(friends).map(fid => {
-    const profile = profileCache.get(fid);
-    return {
-      identity: fid,
-      fullName: profile?.fullName || 'Unknown',
-      picture: profile?.profilePicture || '',
-    };
-  });
+  // Find latest message for each friend
+  const latestMsg = new Map<string, number>();
+  for (const m of dbConnection.db.message.iter()) {
+    const s = m.senderIdentity.toHexString();
+    const r = m.recipientIdentity?.toHexString();
+    if (!r) continue;
+    const friendId = s === identity ? r : r === identity ? s : null;
+    if (friendId && friends.has(friendId)) {
+      const existing = latestMsg.get(friendId);
+      const ts = Number(m.createdAt);
+      if (existing === undefined || ts > existing) {
+        latestMsg.set(friendId, ts);
+      }
+    }
+  }
+  return Array.from(friends)
+    .map(fid => {
+      const profile = profileCache.get(fid);
+      return {
+        identity: fid,
+        fullName: profile?.fullName || 'Unknown',
+        picture: profile?.profilePicture || '',
+        lastMsgAt: latestMsg.get(fid) || 0,
+      };
+    })
+    .sort((a, b) => Number(b.lastMsgAt) - Number(a.lastMsgAt));
 }
 
 // ─── Notification APIs ────────────────────────────────────────────

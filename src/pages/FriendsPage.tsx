@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import { getFriendChats, getMyOrganizations, getProfileByEmail } from '../utils/spacetime';
 
-function MessagesPage() {
+function FriendsPage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const [friends, setFriends] = useState<any[]>([]);
   const [orgs, setOrgs] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     if (!auth.isAuthenticated || !auth.user?.id_token) return;
@@ -27,10 +29,27 @@ function MessagesPage() {
     } catch {}
   }, [auth.isAuthenticated]);
 
+  const filteredFriends = useMemo(() => {
+    if (!search.trim()) return friends;
+    const q = search.toLowerCase();
+    return friends.filter(f => f.fullName.toLowerCase().includes(q));
+  }, [friends, search]);
+
   return (
     <div className="messages-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} />
+      <TopBar
+        left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+        center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        right={<AuthActions hideChat />}
+      />
       <main className="main-content">
+        <input
+          type="text"
+          placeholder="Search friends..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="search-input"
+        />
         {orgs.length > 0 && (
           <div className="chat-section">
             <h3>Organization Chats</h3>
@@ -47,11 +66,11 @@ function MessagesPage() {
         )}
 
         <div className="chat-section">
-          <h3>Friends</h3>
-          {friends.length === 0 ? (
+          <h3>{search.trim() ? `Results for "${search}"` : 'Friends'}</h3>
+          {filteredFriends.length === 0 ? (
             <p className="empty">No friends yet. Add friends to start chatting!</p>
           ) : (
-            friends.map(f => (
+            filteredFriends.map(f => (
               <button key={f.identity} onClick={() => navigate(`/messages/${f.identity}`)} className="chat-row">
                 {f.picture ? <img src={f.picture} alt={f.fullName} className="chat-avatar" /> : <div className="chat-avatar-placeholder" />}
                 <span className="chat-name">{f.fullName}</span>
@@ -64,6 +83,11 @@ function MessagesPage() {
       <style>{`
         .messages-page { min-height: 100vh; background: #f5f5f5; }
         .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }
+        .search-input {
+          width: 100%; padding: 12px 16px; border: 1px solid #e0e0e0; border-radius: 24px;
+          font-size: 15px; outline: none; margin-bottom: 20px; box-sizing: border-box;
+        }
+        .search-input:focus { border-color: #667eea; }
         .chat-section { margin-bottom: 24px; }
         .chat-section h3 { margin: 0 0 12px; color: #333; font-size: 16px; }
         .chat-row { display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border: none; border-radius: 8px; width: 100%; cursor: pointer; margin-bottom: 4px; text-align: left; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -79,4 +103,4 @@ function MessagesPage() {
   );
 }
 
-export default MessagesPage;
+export default FriendsPage;
