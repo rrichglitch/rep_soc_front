@@ -687,7 +687,7 @@ function MyProfilePage() {
         .share-btn-under-pic {
           display: block;
           width: auto;
-          margin: 12px auto 0;
+          margin: 6px auto 0;
           padding: 10px 28px;
           background: #667eea;
           color: white;
