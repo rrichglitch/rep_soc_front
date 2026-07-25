@@ -287,7 +287,7 @@ function MyProfilePage() {
               <p className="join-date">
                 Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
-              <button onClick={() => setShowQR(true)} className="share-btn-mobile">Share Profile</button>
+              <button onClick={() => setShowQR(true)} className="share-btn-mobile">Share</button>
             </div>
           </div>
         </div>
@@ -677,18 +677,31 @@ function MyProfilePage() {
         }
 
         .share-btn-mobile {
-          padding: 8px 20px;
+          display: block;
+          width: 100%;
+          padding: 12px;
           background: #667eea;
           color: white;
           border: none;
           border-radius: 8px;
-          font-size: 14px;
+          font-size: 15px;
           font-weight: 600;
           cursor: pointer;
-          margin-top: 12px;
-          align-self: flex-end;
+          margin-top: 16px;
         }
         .share-btn-mobile:hover { background: #5a6fd6; }
+        @media (min-width: 768px) {
+          .share-btn-mobile {
+            display: inline-block;
+            width: auto;
+            padding: 8px 20px;
+            font-size: 14px;
+            position: absolute;
+            right: 0;
+            top: 0;
+            margin-top: 0;
+          }
+        }
 
         .profile-tabs {
           display: flex;
