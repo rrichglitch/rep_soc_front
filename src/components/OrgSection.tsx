@@ -105,7 +105,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
             )}
           </div>
           <input value={form.city} onChange={e => setForm({...form, city: e.target.value})} placeholder="City (optional)" className="org-input" />
-          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Description (optional)" className="org-input" rows={2} />
+          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Description" required className="org-input" rows={2} />
           <div className="org-form-actions">
             <button type="submit" className="org-submit">Create</button>
             <button type="button" onClick={() => setShowCreate(false)} className="org-cancel">Cancel</button>
