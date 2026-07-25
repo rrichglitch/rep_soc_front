@@ -123,6 +123,9 @@ async function subscribeToTables(): Promise<void> {
           tables.following,
           tables.story_post,
           tables.my_feed,
+          tables.friend_request,
+          tables.friendship,
+          tables.notification,
         ]);
     } catch (e) {
       console.error('Subscription error:', e);
