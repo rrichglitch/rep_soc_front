@@ -247,6 +247,7 @@ function ProfilePage() {
           isFollowing={isFollowing}
           onFollowChange={handleFollowChange}
           onPictureClick={() => setShowPictureModal(true)}
+          currentIdentityHex={currentIdentityHex || undefined}
         />
 
         {canPost && (
