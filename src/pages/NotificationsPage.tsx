@@ -32,26 +32,33 @@ function NotificationsPage() {
     return () => clearInterval(interval);
   }, [currentIdentity]);
 
+  const pollRefresh = async () => {
+    for (let i = 0; i < 5; i++) {
+      await new Promise(r => setTimeout(r, 300));
+      if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+    }
+  };
+
   const handleResolve = async (id: bigint) => {
     await resolveNotification(id);
-    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+    pollRefresh();
   };
 
   const handleAccept = async (refId: bigint) => {
     await acceptFriendRequest(refId);
-    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+    pollRefresh();
   };
 
   const handleDecline = async (refId: bigint) => {
     await declineFriendRequest(refId);
-    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+    pollRefresh();
   };
 
   const handleClearAll = async () => {
     for (const n of notifs.filter(n => !n.resolved)) {
       try { await resolveNotification(n.id); } catch {}
     }
-    if (currentIdentity) setNotifs(getNotifications(currentIdentity));
+    pollRefresh();
   };
 
   const pendingNotifs = notifs.filter(n => !n.resolved);

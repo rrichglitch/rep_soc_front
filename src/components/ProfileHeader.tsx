@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FollowButton from './FollowButton';
 import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 
@@ -40,6 +40,13 @@ function ProfileHeader({
   const [optimisticSent, setOptimisticSent] = useState(false);
   const refresh = () => setTick(t => t + 1);
   void tick;
+
+  // Poll for subscription updates (friendship changes from notification accept/reject)
+  useEffect(() => {
+    const interval = setInterval(refresh, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
   const friendReqStatus = optimisticSent ? 'pending' : (currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null);
   const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
 
