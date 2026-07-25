@@ -36,15 +36,16 @@ function ProfileHeader({
   onJoinRequest,
   requestPending,
 }: ProfileHeaderProps) {
-  const [friendReqStatus, setFriendReqStatus] = useState<string | null>(
-    currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null
-  );
+  const [tick, setTick] = useState(0);
+  const refresh = () => setTick(t => t + 1);
+  void tick;
+  const friendReqStatus = currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null;
   const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
 
   const handleFriendRequest = async () => {
     try {
       await sendFriendRequest(profile.identity);
-      setFriendReqStatus('pending');
+      refresh();
     } catch (e: any) {
       alert(e.message || 'Failed to send request');
     }
@@ -53,7 +54,7 @@ function ProfileHeader({
   const handleCancelRequest = async () => {
     try {
       await cancelFriendRequest(profile.identity);
-      setFriendReqStatus(null);
+      refresh();
     } catch (e: any) {
       alert(e.message || 'Failed to cancel request');
     }
@@ -62,9 +63,7 @@ function ProfileHeader({
   const handleUnfriend = async () => {
     try {
       await unfriend(profile.identity);
-      setFriendReqStatus(null);
-      // force isFriend re-check via state
-      setFriendReqStatus(null);
+      refresh();
     } catch (e: any) {
       alert(e.message || 'Failed to unfriend');
     }
