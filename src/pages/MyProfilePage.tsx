@@ -698,7 +698,8 @@ function MyProfilePage() {
             font-size: 14px;
             position: absolute;
             right: 0;
-            top: 0;
+            top: 50%;
+            transform: translateY(-50%);
             margin-top: 0;
           }
         }
