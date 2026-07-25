@@ -39,9 +39,7 @@ function ProfileHeader({
   const [friendReqStatus, setFriendReqStatus] = useState<string | null>(
     currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null
   );
-  const [isFriend] = useState(
-    currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false
-  );
+  const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
 
   const handleFriendRequest = async () => {
     try {
