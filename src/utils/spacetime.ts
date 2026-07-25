@@ -127,6 +127,8 @@ async function subscribeToTables(): Promise<void> {
           tables.friendship,
           tables.notification,
           tables.message,
+          tables.organization,
+          tables.organization_member,
         ]);
     } catch (e) {
       console.error('Subscription error:', e);

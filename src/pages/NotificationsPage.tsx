@@ -61,14 +61,14 @@ function NotificationsPage() {
     <div className="notif-page">
       <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} right={<AuthActions />} />
       <main className="main-content">
-        {pendingNotifs.length > 0 && (
-          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+          <h3 style={{margin:0}}>Notifications</h3>
+          {pendingNotifs.length > 0 && (
             <button onClick={handleClearAll} style={{padding:'6px 14px',background:'#ef4444',color:'white',border:'none',borderRadius:6,cursor:'pointer',fontSize:13,fontWeight:600}}>Clear All</button>
-          </div>
-        )}
+          )}
+        </div>
         {pendingNotifs.length > 0 && (
           <div className="notif-section">
-            <h3>New</h3>
             {pendingNotifs.map(n => (
               <div key={n.id.toString()} className="notif-card pending">
                 <div className="notif-body">
