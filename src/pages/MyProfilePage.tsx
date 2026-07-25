@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from 'react-oidc-context';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
@@ -29,8 +30,9 @@ interface StoryPost {
 }
 
 function MyProfilePage() {
+  const auth = useAuth();
   const navigate = useNavigate();
-  const { identity, email } = useApp();
+  const { email } = useApp();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
@@ -117,7 +119,7 @@ function MyProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!editingField || !identity) return;
+    if (!editingField) return;
     
     setIsSaving(true);
     try {
@@ -187,7 +189,7 @@ function MyProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        right={<AuthActions profileReplacement={<button onClick={() => setShowQR(true)} className="topbar-signin">Share</button>} />}
+        right={<AuthActions profileReplacement={<button onClick={() => auth.signoutRedirect()} className="topbar-signin" style={{background:"#dc2626"}}>Logout</button>} />}
       />
 
       <main className="main-content">
@@ -285,6 +287,7 @@ function MyProfilePage() {
               <p className="join-date">
                 Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </p>
+              <button onClick={() => setShowQR(true)} className="share-btn-mobile">Share Profile</button>
             </div>
           </div>
         </div>
@@ -663,6 +666,25 @@ function MyProfilePage() {
           margin: 12px 0 0;
           font-size: 13px;
           color: #999;
+        }
+
+        .share-btn-mobile {
+          display: block;
+          width: 100%;
+          margin-top: 16px;
+          padding: 12px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .share-btn-mobile:hover { background: #5a6fd6; }
+
+        @media (min-width: 768px) {
+          .share-btn-mobile { display: none; }
         }
 
         .profile-tabs {
