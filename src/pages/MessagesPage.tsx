@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
-import AuthActions from '../components/AuthActions';
 import { getFriendChats, getMyOrganizations, getProfileByEmail } from '../utils/spacetime';
 
 function MessagesPage() {
@@ -30,7 +29,7 @@ function MessagesPage() {
 
   return (
     <div className="messages-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} right={<AuthActions />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} />
       <main className="main-content">
         {orgs.length > 0 && (
           <div className="chat-section">
