@@ -37,35 +37,33 @@ function ProfileHeader({
   requestPending,
 }: ProfileHeaderProps) {
   const [tick, setTick] = useState(0);
+  const [optimisticSent, setOptimisticSent] = useState(false);
   const refresh = () => setTick(t => t + 1);
   void tick;
-  const friendReqStatus = currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null;
+  const friendReqStatus = optimisticSent ? 'pending' : (currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null);
   const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
 
   const handleFriendRequest = async () => {
-    if (checkIsFriend(currentIdentityHex || '', profile.identity)) {
-      alert('Already friends');
-      refresh();
-      return;
-    }
-    if (getFriendRequestStatus(currentIdentityHex || '', profile.identity) === 'pending') {
-      alert('Friend request already sent');
-      refresh();
-      return;
-    }
+    if (checkIsFriend(currentIdentityHex || '', profile.identity)) return;
+    if (getFriendRequestStatus(currentIdentityHex || '', profile.identity) === 'pending') return;
+    setOptimisticSent(true);
     try {
       await sendFriendRequest(profile.identity);
-      refresh();
+      // Give subscription time to sync, then verify
+      setTimeout(refresh, 500);
     } catch (e: any) {
+      setOptimisticSent(false);
       alert(e.message || 'Failed to send request');
     }
   };
 
   const handleCancelRequest = async () => {
+    setOptimisticSent(false);
     try {
       await cancelFriendRequest(profile.identity);
       refresh();
     } catch (e: any) {
+      setOptimisticSent(true);
       alert(e.message || 'Failed to cancel request');
     }
   };
