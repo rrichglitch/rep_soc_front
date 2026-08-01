@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
+import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
@@ -25,6 +26,7 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
+  const { actingAsOrgId } = useOrg();
 
   // Background: try to connect and get current user identity
   useEffect(() => {
@@ -181,7 +183,7 @@ function ProfilePage() {
         mediaTypes = [storyMedia.type];
       }
 
-      await createStoryPost(profileIdentity, storyContent.trim(), mediaData, mediaTypes);
+      await createStoryPost(profileIdentity, storyContent.trim(), mediaData, mediaTypes, actingAsOrgId ?? undefined);
       
       setStoryContent('');
       setStoryMedia(null);

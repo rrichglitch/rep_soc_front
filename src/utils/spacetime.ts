@@ -333,7 +333,12 @@ export async function checkIsFollowing(targetIdentity: string, currentIdentityHe
   }
 }
 
-export async function followUser(targetIdentity: string): Promise<void> {
+// Deterministic SpacetimeDB identity for an organization account (0x4f + orgId)
+export function orgAccountIdentityHex(orgId: bigint): string {
+  return '4f' + orgId.toString(16).padStart(62, '0');
+}
+
+export async function followUser(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
@@ -341,10 +346,12 @@ export async function followUser(targetIdentity: string): Promise<void> {
   const identity = Identity.fromString(targetIdentity);
   await dbConnection.reducers.follow({
     targetIdentity: identity,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
   });
 }
 
-export async function unfollowUser(targetIdentity: string): Promise<void> {
+export async function unfollowUser(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
@@ -352,6 +359,8 @@ export async function unfollowUser(targetIdentity: string): Promise<void> {
   const identity = Identity.fromString(targetIdentity);
   await dbConnection.reducers.unfollow({
     targetIdentity: identity,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
   });
 }
 
@@ -359,7 +368,8 @@ export async function createStoryPost(
   profileOwnerIdentity: string,
   content: string,
   mediaData?: string,
-  mediaTypes?: string[]
+  mediaTypes?: string[],
+  actingAsOrgId?: bigint
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
@@ -371,7 +381,7 @@ export async function createStoryPost(
     content,
     mediaData,
     mediaTypes: mediaTypes ? JSON.stringify(mediaTypes) : undefined,
-    actingAsOrgId: undefined,
+    actingAsOrgId: actingAsOrgId ?? undefined,
   });
 }
 
@@ -800,10 +810,12 @@ export async function removeOrgMember(orgId: bigint, memberIdentity: string): Pr
 
 // ─── Friend Request APIs ──────────────────────────────────────────
 
-export async function sendFriendRequest(toIdentity: string): Promise<void> {
+export async function sendFriendRequest(toIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.sendFriendRequest({
     toIdentity: Identity.fromString(toIdentity),
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
   });
 }
 
@@ -817,16 +829,22 @@ export async function declineFriendRequest(requestId: bigint): Promise<void> {
   await dbConnection.reducers.declineFriendRequest({ requestId });
 }
 
-export async function cancelFriendRequest(toIdentity: string): Promise<void> {
+export async function cancelFriendRequest(toIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  const { Identity } = await import('spacetimedb');
-  await dbConnection.reducers.cancelFriendRequest({ toIdentity: Identity.fromString(toIdentity) });
+  await dbConnection.reducers.cancelFriendRequest({
+    toIdentity: Identity.fromString(toIdentity),
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
+  });
 }
 
-export async function unfriend(targetIdentity: string): Promise<void> {
+export async function unfriend(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  const { Identity } = await import('spacetimedb');
-  await dbConnection.reducers.unfriend({ targetIdentity: Identity.fromString(targetIdentity) });
+  await dbConnection.reducers.unfriend({
+    targetIdentity: Identity.fromString(targetIdentity),
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
+  });
 }
 
 export function checkIsFriend(currentIdentityHex: string, otherIdentity: string): boolean {
@@ -878,9 +896,9 @@ export async function sendDirectMessage(recipientIdentity: string, content: stri
   });
 }
 
-export async function sendOrgMessage(orgId: bigint, content: string): Promise<void> {
+export async function sendOrgMessage(orgId: bigint, content: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendOrgMessage({ orgId, content });
+  await dbConnection.reducers.sendOrgMessage({ orgId, content, actingAsOrgId: actingAsOrgId ?? undefined });
 }
 
 export function getDirectMessages(userA: string, userB: string) {
@@ -975,16 +993,22 @@ export function getNotifications(identity: string) {
   for (const p of dbConnection.db.user_profile.iter()) {
     profileCache.set(p.identity.toHexString(), p);
   }
+  // Organization account resolution: org account identity -> org name/picture
+  const orgAccountCache = new Map<string, any>();
+  for (const o of dbConnection.db.organization.iter()) {
+    orgAccountCache.set(orgAccountIdentityHex(o.id), o);
+  }
   for (const n of dbConnection.db.notification.iter()) {
     if (n.recipientIdentity.toHexString() === identity) {
       const fromHex = n.fromIdentity?.toHexString();
       const fromProfile = fromHex ? profileCache.get(fromHex) : null;
+      const fromOrg = fromHex ? orgAccountCache.get(fromHex) : null;
       notifs.push({
         id: n.id,
         type: n.type,
         fromIdentity: fromHex,
-        fromName: fromProfile?.fullName || 'Someone',
-        fromPicture: fromProfile?.profilePicture || '',
+        fromName: fromProfile?.fullName || fromOrg?.name || 'Someone',
+        fromPicture: fromProfile?.profilePicture || fromOrg?.picture || '',
         orgId: n.orgId,
         message: n.message,
         createdAt: n.createdAt.toDate(),

@@ -12,4 +12,6 @@ import {
 
 export default {
   targetIdentity: __t.identity(),
+  actingAsOrgId: __t.option(__t.u64()),
+  actingAsOrgIdentity: __t.option(__t.identity()),
 };

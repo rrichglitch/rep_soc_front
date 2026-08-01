@@ -5,10 +5,12 @@ import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStorie
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import SearchBar from '../components/SearchBar';
+import { useOrg } from '../contexts/OrgContext';
 
 function MainFeedPage() {
   const navigate = useNavigate();
   const { email } = useApp();
+  const { actingAsOrgId, actingAsOrgName, actingAsOrgPicture, clearActingOrg } = useOrg();
   const [isLoading, setIsLoading] = useState(true);
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
@@ -163,6 +165,13 @@ function MainFeedPage() {
       />
 
       <main className="main-content" ref={feedContainerRef}>
+        {actingAsOrgId !== null && (
+          <div className="org-banner">
+            {actingAsOrgPicture ? <img src={actingAsOrgPicture} alt={actingAsOrgName} className="org-banner-pic" /> : <div className="org-banner-pic-placeholder" />}
+            <span className="org-banner-name">Using {actingAsOrgName}'s account</span>
+            <button onClick={clearActingOrg} className="org-banner-stop">Stop</button>
+          </div>
+        )}
         {!hasContent ? (
           <div className="empty-feed">
             <p>No posts yet. Follow some people to see their stories!</p>
@@ -257,6 +266,12 @@ function MainFeedPage() {
       </main>
 
       <style>{`
+        .org-banner { display: flex; align-items: center; gap: 10px; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+        .org-banner-pic { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+        .org-banner-pic-placeholder { width: 32px; height: 32px; border-radius: 50%; background: #c7d2fe; }
+        .org-banner-name { flex: 1; font-size: 14px; font-weight: 600; color: #3730a3; }
+        .org-banner-stop { padding: 6px 14px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .org-banner-stop:hover { background: #dc2626; }
         .topbar-search-wrap {
           width: 100%;
           max-width: 500px;

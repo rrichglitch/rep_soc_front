@@ -13,4 +13,5 @@ import {
 export default {
   orgId: __t.u64(),
   content: __t.string(),
+  actingAsOrgId: __t.option(__t.u64()),
 };

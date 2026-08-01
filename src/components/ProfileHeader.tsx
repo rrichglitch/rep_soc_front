@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import FollowButton from './FollowButton';
-import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
+import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus, orgAccountIdentityHex } from '../utils/spacetime';
+import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
   identity: string;
@@ -36,6 +37,7 @@ function ProfileHeader({
   onJoinRequest,
   requestPending,
 }: ProfileHeaderProps) {
+  const { actingAsOrgId } = useOrg();
   const [tick, setTick] = useState(0);
   const [optimisticSent, setOptimisticSent] = useState(false);
   const refresh = () => setTick(t => t + 1);
@@ -49,13 +51,15 @@ function ProfileHeader({
 
   const friendReqStatus = optimisticSent ? 'pending' : (currentIdentityHex ? getFriendRequestStatus(currentIdentityHex, profile.identity) : null);
   const isFriend = currentIdentityHex ? checkIsFriend(currentIdentityHex, profile.identity) : false;
+  // Acting as org X while viewing org X's own account → it's "you"
+  const actingAsSelf = actingAsOrgId !== null && actingAsOrgId !== undefined && profile.identity === orgAccountIdentityHex(actingAsOrgId);
 
   const handleFriendRequest = async () => {
     if (checkIsFriend(currentIdentityHex || '', profile.identity)) return;
     if (getFriendRequestStatus(currentIdentityHex || '', profile.identity) === 'pending') return;
     setOptimisticSent(true);
     try {
-      await sendFriendRequest(profile.identity);
+      await sendFriendRequest(profile.identity, actingAsOrgId ?? undefined);
       // Give subscription time to sync, then verify
       setTimeout(refresh, 500);
     } catch (e: any) {
@@ -67,7 +71,7 @@ function ProfileHeader({
   const handleCancelRequest = async () => {
     setOptimisticSent(false);
     try {
-      await cancelFriendRequest(profile.identity);
+      await cancelFriendRequest(profile.identity, actingAsOrgId ?? undefined);
       refresh();
     } catch (e: any) {
       setOptimisticSent(true);
@@ -77,7 +81,7 @@ function ProfileHeader({
 
   const handleUnfriend = async () => {
     try {
-      await unfriend(profile.identity);
+      await unfriend(profile.identity, actingAsOrgId ?? undefined);
       refresh();
     } catch (e: any) {
       alert(e.message || 'Failed to unfriend');
@@ -101,7 +105,7 @@ function ProfileHeader({
       </div>
 
       <div className="profile-actions">
-        {isOwnProfile ? (
+        {isOwnProfile || actingAsSelf ? (
           onEditClick && <button onClick={onEditClick} className="edit-button">Edit Profile</button>
         ) : isOrgProfile ? (
           <button onClick={onJoinRequest} disabled={requestPending} className="follow-button">
