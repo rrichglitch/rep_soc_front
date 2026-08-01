@@ -62,7 +62,16 @@ function OrgChatPage() {
         <div className="msg-list">
           {messages.map(m => (
             <div key={m.id.toString()} className={`msg ${m.senderIdentity === currentIdentity ? 'mine' : 'theirs'}`}>
-              {m.senderIdentity !== currentIdentity && <span className="msg-sender">{m.senderName}</span>}
+              {m.senderIdentity !== currentIdentity && (
+                <div className="msg-sender-row">
+                  {m.senderPicture ? (
+                    <img src={m.senderPicture} alt={m.senderName} className="msg-sender-pic" />
+                  ) : (
+                    <div className="msg-sender-pic-placeholder" />
+                  )}
+                  <span className="msg-sender">{m.senderName}</span>
+                </div>
+              )}
               <p className="msg-text">{m.content}</p>
               <span className="msg-time">{new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
             </div>
@@ -89,7 +98,10 @@ function OrgChatPage() {
         .msg { margin-bottom: 8px; max-width: 75%; }
         .msg.mine { margin-left: auto; text-align: right; }
         .msg.theirs { margin-right: auto; }
-        .msg-sender { font-size: 11px; color: #667eea; font-weight: 600; display: block; margin-bottom: 2px; }
+        .msg-sender-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+        .msg-sender-pic { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+        .msg-sender-pic-placeholder { width: 22px; height: 22px; border-radius: 50%; background: #e0e0e0; }
+        .msg-sender { font-size: 12px; color: #667eea; font-weight: 600; }
         .msg-text { background: white; padding: 10px 14px; border-radius: 16px; display: inline-block; color: #333; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .msg.mine .msg-text { background: #667eea; color: white; }
         .msg-time { display: block; font-size: 11px; color: #999; margin-top: 2px; }
