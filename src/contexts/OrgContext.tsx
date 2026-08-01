@@ -1,42 +1,49 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { orgAccountIdentityHex } from '../utils/spacetime';
+
+export interface ActiveOrg {
+  id: bigint;
+  name: string;
+  picture: string;
+  city: string;
+  description: string;
+  identity: string; // deterministic org account identity (0x4f + id)
+}
 
 interface OrgContextType {
-  actingAsOrgId: bigint | null;
-  actingAsOrgName: string;
-  actingAsOrgPicture: string;
-  setActingOrg: (id: bigint | null, name?: string, picture?: string) => void;
-  clearActingOrg: () => void;
+  activeOrg: ActiveOrg | null;
+  loginAsOrg: (org: { id: bigint; name: string; picture?: string; city?: string; description?: string }) => void;
+  logoutOrg: () => void;
 }
 
 const OrgContext = createContext<OrgContextType>({
-  actingAsOrgId: null,
-  actingAsOrgName: '',
-  actingAsOrgPicture: '',
-  setActingOrg: () => {},
-  clearActingOrg: () => {},
+  activeOrg: null,
+  loginAsOrg: () => {},
+  logoutOrg: () => {},
 });
 
 export const useOrg = () => useContext(OrgContext);
 
 export function OrgProvider({ children }: { children: ReactNode }) {
-  const [actingAsOrgId, setActingAsOrgId] = useState<bigint | null>(null);
-  const [actingAsOrgName, setActingAsOrgName] = useState('');
-  const [actingAsOrgPicture, setActingAsOrgPicture] = useState('');
+  const [activeOrg, setActiveOrg] = useState<ActiveOrg | null>(null);
 
-  const setActingOrg = useCallback((id: bigint | null, name?: string, picture?: string) => {
-    setActingAsOrgId(id);
-    setActingAsOrgName(name || '');
-    setActingAsOrgPicture(picture || '');
+  const loginAsOrg = useCallback((org: { id: bigint; name: string; picture?: string; city?: string; description?: string }) => {
+    setActiveOrg({
+      id: org.id,
+      name: org.name,
+      picture: org.picture || '',
+      city: org.city || '',
+      description: org.description || '',
+      identity: orgAccountIdentityHex(org.id),
+    });
   }, []);
 
-  const clearActingOrg = useCallback(() => {
-    setActingAsOrgId(null);
-    setActingAsOrgName('');
-    setActingAsOrgPicture('');
+  const logoutOrg = useCallback(() => {
+    setActiveOrg(null);
   }, []);
 
   return (
-    <OrgContext.Provider value={{ actingAsOrgId, actingAsOrgName, actingAsOrgPicture, setActingOrg, clearActingOrg }}>
+    <OrgContext.Provider value={{ activeOrg, loginAsOrg, logoutOrg }}>
       {children}
     </OrgContext.Provider>
   );

@@ -4,13 +4,13 @@ import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
-import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, getOrgMemberRequestStatus, connectToSpacetimeDB } from '../utils/spacetime';
+import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 
 function OrgProfilePage() {
   const { id } = useParams<{ id: string }>();
   const auth = useAuth();
   const navigate = useNavigate();
-  const { setActingOrg, actingAsOrgId } = useOrg();
+  const { loginAsOrg, activeOrg, logoutOrg } = useOrg();
 
   const [org, setOrg] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
@@ -43,16 +43,11 @@ function OrgProfilePage() {
       if (orgData) {
         setOrg(orgData);
         setMembers(getOrganizationMembers(orgId));
-        // Determine current user identity
-        for (const m of getOrganizationMembers(orgId)) {
-          setCurrentIdentity(m.identity);
-          break;
-        }
-        // Actually, get my identity from the connection
-        const status = getOrgMemberRequestStatus(orgId, '');
-        if (!status) {
-          // Check with actual identity later
-        }
+      }
+      // Resolve my actual identity from my profile
+      const profile = await getProfileByEmail(userEmail!).catch(() => null);
+      if (profile) {
+        setCurrentIdentity(profile.identity.toHexString());
       }
       setIsLoading(false);
     };
@@ -71,8 +66,8 @@ function OrgProfilePage() {
 
   const handleSwitchToOrg = () => {
     if (org) {
-      setActingOrg(org.id, org.name, org.picture);
-      navigate('/home');
+      loginAsOrg(org);
+      navigate('/me');
     }
   };
 
@@ -96,6 +91,7 @@ function OrgProfilePage() {
   }
 
   const isMember = members.some(m => m.identity === currentIdentity);
+  const isOwnOrg = activeOrg !== null && activeOrg.id === orgId;
 
   return (
     <div className="org-page">
@@ -109,11 +105,19 @@ function OrgProfilePage() {
           {org.city && <p className="org-city">{org.city}</p>}
           {org.description && <p className="org-description">{org.description}</p>}
           <div className="org-actions">
-            {isMember ? (
+            {isOwnOrg ? (
+              <>
+                <span className="active-badge">Using this account</span>
+                <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">Back to my account</button>
+              </>
+            ) : isMember && !activeOrg ? (
               <>
                 <button onClick={handleSwitchToOrg} className="switch-org-btn">Use as {org.name}</button>
-                {actingAsOrgId === org.id && <span className="active-badge">Active</span>}
               </>
+            ) : isMember && activeOrg ? (
+              <span className="profile-note">Members can chat in this organization</span>
+            ) : activeOrg ? (
+              <span className="profile-note">Organizations cannot join other organizations</span>
             ) : (
               <button onClick={handleJoinRequest} disabled={requestStatus === 'pending'} className="join-org-btn">
                 {requestStatus === 'pending' ? 'Request Pending' : 'Request to Join'}
@@ -163,6 +167,8 @@ function OrgProfilePage() {
         .role-leader { background: #fef3c7; color: #92400e; }
         .role-co_leader { background: #dbeafe; color: #1e40af; }
         .role-member { background: #f3f4f6; color: #374151; }
+        .back-to-account-btn { padding: 10px 24px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .profile-note { font-size: 13px; color: #666; }
       `}</style>
     </div>
   );

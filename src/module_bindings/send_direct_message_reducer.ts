@@ -13,4 +13,6 @@ import {
 export default {
   recipientIdentity: __t.identity(),
   content: __t.string(),
+  actingAsOrgId: __t.option(__t.u64()),
+  actingAsOrgIdentity: __t.option(__t.identity()),
 };

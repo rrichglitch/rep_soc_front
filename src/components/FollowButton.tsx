@@ -10,15 +10,15 @@ interface FollowButtonProps {
 
 function FollowButton({ targetIdentity, isFollowing, onFollowChange }: FollowButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const { actingAsOrgId } = useOrg();
+  const { activeOrg } = useOrg();
 
   const handleClick = async () => {
     setIsLoading(true);
     try {
       if (isFollowing) {
-        await unfollowUser(targetIdentity, actingAsOrgId ?? undefined);
+        await unfollowUser(targetIdentity, activeOrg?.id);
       } else {
-        await followUser(targetIdentity, actingAsOrgId ?? undefined);
+        await followUser(targetIdentity, activeOrg?.id);
       }
       onFollowChange(!isFollowing);
     } catch (error) {

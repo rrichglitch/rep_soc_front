@@ -3,21 +3,24 @@ import { Link } from 'react-router-dom';
 import { useAuthProfile } from '../hooks/useAuthProfile';
 import { getUnreadNotificationCount } from '../utils/spacetime';
 import { useAuth } from 'react-oidc-context';
+import { useOrg } from '../contexts/OrgContext';
 
 export default function AuthActions({ profileReplacement, hideChat }: { profileReplacement?: ReactNode; hideChat?: boolean }) {
   const { isLoggedIn, profilePicture } = useAuthProfile();
+  const { activeOrg } = useOrg();
   const auth = useAuth();
   const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   useEffect(() => {
     if (!isLoggedIn) return;
+    const notifIdentity = activeOrg ? activeOrg.identity : (auth.user?.profile?.sub || '');
     const update = () => {
-      setUnreadNotifs(getUnreadNotificationCount(auth.user?.profile?.sub || ''));
+      setUnreadNotifs(getUnreadNotificationCount(notifIdentity));
     };
     update();
     const interval = setInterval(update, 5000);
     return () => clearInterval(interval);
-  }, [isLoggedIn, auth.user]);
+  }, [isLoggedIn, auth.user, activeOrg]);
 
   if (!isLoggedIn) {
     return (
@@ -27,7 +30,7 @@ export default function AuthActions({ profileReplacement, hideChat }: { profileR
 
   return (
     <div className="auth-actions">
-      {!hideChat && (
+      {!hideChat && !activeOrg && (
         <Link to="/friends" className="nav-icon-link" style={{position:'relative'}}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </Link>
@@ -38,7 +41,13 @@ export default function AuthActions({ profileReplacement, hideChat }: { profileR
       </Link>
       {profileReplacement ? profileReplacement : (
         <Link to="/me" className="nav-icon-link">
-          {profilePicture ? (
+          {activeOrg ? (
+            activeOrg.picture ? (
+              <img src={activeOrg.picture} alt={activeOrg.name} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} />
+            ) : (
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7 19c1-3 3-4 5-4s4 1 5 4"/></svg>
+            )
+          ) : profilePicture ? (
             <img src={profilePicture} alt="Profile" style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} />
           ) : (
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M20 20v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>

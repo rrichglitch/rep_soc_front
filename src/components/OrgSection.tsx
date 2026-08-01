@@ -5,7 +5,7 @@ import { getMyOrganizations, createOrganization, isPro, upgradeToPro } from '../
 
 function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   const navigate = useNavigate();
-  const { setActingOrg, actingAsOrgId } = useOrg();
+  const { loginAsOrg, activeOrg } = useOrg();
   const [orgs, setOrgs] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [proStatus, setProStatus] = useState(false);
@@ -78,8 +78,8 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
                   <span className="org-role">{org.role}</span>
                 </div>
               </Link>
-              <button onClick={() => { setActingOrg(org.id, org.name, org.picture); navigate('/home'); }} className="use-org-btn">
-                {actingAsOrgId === org.id ? 'Active' : 'Use'}
+              <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
+                {activeOrg?.id === org.id ? 'Active' : 'Use'}
               </button>
             </div>
           ))}

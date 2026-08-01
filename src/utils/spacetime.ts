@@ -820,14 +820,22 @@ export async function sendFriendRequest(toIdentity: string, actingAsOrgId?: bigi
   });
 }
 
-export async function acceptFriendRequest(requestId: bigint): Promise<void> {
+export async function acceptFriendRequest(requestId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.acceptFriendRequest({ requestId });
+  await dbConnection.reducers.acceptFriendRequest({
+    requestId,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
+  });
 }
 
-export async function declineFriendRequest(requestId: bigint): Promise<void> {
+export async function declineFriendRequest(requestId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.declineFriendRequest({ requestId });
+  await dbConnection.reducers.declineFriendRequest({
+    requestId,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
+  });
 }
 
 export async function cancelFriendRequest(toIdentity: string, actingAsOrgId?: bigint): Promise<void> {
@@ -882,18 +890,24 @@ export function getOrgMemberRequestStatus(orgId: bigint, fromIdentity: string): 
   return null;
 }
 
-export async function sendOrgMemberRequest(orgId: bigint): Promise<void> {
+export async function sendOrgMemberRequest(orgId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendOrgMemberRequest({ orgId });
+  await dbConnection.reducers.sendOrgMemberRequest({
+    orgId,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
+  });
 }
 
 // ─── Messaging APIs ───────────────────────────────────────────────
 
-export async function sendDirectMessage(recipientIdentity: string, content: string): Promise<void> {
+export async function sendDirectMessage(recipientIdentity: string, content: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.sendDirectMessage({
     recipientIdentity: Identity.fromString(recipientIdentity),
     content,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
   });
 }
 

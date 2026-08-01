@@ -26,7 +26,7 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
-  const { actingAsOrgId } = useOrg();
+  const { activeOrg } = useOrg();
 
   // Background: try to connect and get current user identity
   useEffect(() => {
@@ -183,7 +183,7 @@ function ProfilePage() {
         mediaTypes = [storyMedia.type];
       }
 
-      await createStoryPost(profileIdentity, storyContent.trim(), mediaData, mediaTypes, actingAsOrgId ?? undefined);
+      await createStoryPost(profileIdentity, storyContent.trim(), mediaData, mediaTypes, activeOrg?.id);
       
       setStoryContent('');
       setStoryMedia(null);

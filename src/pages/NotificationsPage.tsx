@@ -4,15 +4,22 @@ import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileByEmail } from '../utils/spacetime';
 import AuthActions from '../components/AuthActions';
+import { useOrg } from '../contexts/OrgContext';
 
 function NotificationsPage() {
   const auth = useAuth();
   const navigate = useNavigate();
+  const { activeOrg } = useOrg();
   const [notifs, setNotifs] = useState<any[]>([]);
   const [currentIdentity, setCurrentIdentity] = useState<string | null>(null);
   const identityRef = { current: null as string | null };
 
   useEffect(() => {
+    if (activeOrg) {
+      setCurrentIdentity(activeOrg.identity);
+      identityRef.current = activeOrg.identity;
+      return;
+    }
     if (!auth.isAuthenticated || !auth.user?.id_token) return;
     try {
       const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
@@ -27,7 +34,7 @@ function NotificationsPage() {
         });
       }
     } catch {}
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, activeOrg]);
 
   useEffect(() => {
     if (!currentIdentity) return;
@@ -42,11 +49,11 @@ function NotificationsPage() {
   };
 
   const handleAccept = async (refId: bigint) => {
-    await acceptFriendRequest(refId);
+    await acceptFriendRequest(refId, activeOrg?.id);
   };
 
   const handleDecline = async (refId: bigint) => {
-    await declineFriendRequest(refId);
+    await declineFriendRequest(refId, activeOrg?.id);
   };
 
   const handleClearAll = async () => {

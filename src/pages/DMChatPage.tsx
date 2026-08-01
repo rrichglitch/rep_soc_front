@@ -2,11 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
+import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
 import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileByEmail } from '../utils/spacetime';
 
 function DMChatPage() {
-  const { identity: otherId } = useParams<{ identity: string }>();
+  const { activeOrg } = useOrg();
+  const { partnerId: otherId } = useParams<{ partnerId: string }>();
   const auth = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<any[]>([]);
@@ -44,6 +46,21 @@ function DMChatPage() {
     await sendDirectMessage(otherId, input.trim());
     setInput('');
   };
+
+  if (activeOrg) {
+    return (
+      <div className="chat-page">
+        <TopBar
+          left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+          center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+          right={<AuthActions />}
+        />
+        <main className="main-content" style={{ padding: 40, textAlign: 'center', color: '#666' }}>
+          <p>Organizations cannot use direct messaging. Only posts.</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="chat-page">

@@ -8,6 +8,8 @@ import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteSt
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
+import OrgAccountView from '../components/OrgAccountView';
+import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
   identity: string;
@@ -33,6 +35,7 @@ function MyProfilePage() {
   const auth = useAuth();
   const navigate = useNavigate();
   const { email } = useApp();
+  const { activeOrg } = useOrg();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
@@ -171,6 +174,10 @@ function MyProfilePage() {
     };
     reader.readAsDataURL(file);
   };
+
+  if (activeOrg) {
+    return <OrgAccountView />;
+  }
 
   if (isLoading) {
     return (
