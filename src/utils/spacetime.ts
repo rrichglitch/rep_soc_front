@@ -338,6 +338,19 @@ export function orgAccountIdentityHex(orgId: bigint): string {
   return '4f' + orgId.toString(16).padStart(62, '0');
 }
 
+// identity hex -> { name, picture } for BOTH individual profiles and org accounts
+export function buildAccountCache(): Map<string, { name: string; picture: string }> {
+  const cache = new Map<string, { name: string; picture: string }>();
+  if (!dbConnection) return cache;
+  for (const profile of dbConnection.db.user_profile.iter()) {
+    cache.set(profile.identity.toHexString(), { name: profile.fullName, picture: profile.profilePicture || '' });
+  }
+  for (const org of dbConnection.db.organization.iter()) {
+    cache.set(orgAccountIdentityHex(org.id), { name: org.name, picture: org.picture || '' });
+  }
+  return cache;
+}
+
 export async function followUser(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
@@ -400,10 +413,7 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
       }
     }
     
-    const profileCache = new Map<string, any>();
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      profileCache.set(profile.identity.toHexString(), profile);
-    }
+    const profileCache = buildAccountCache();
     
     for (const post of dbConnection.db.story_post.iter()) {
       if (post.profileOwnerIdentity.toHexString() === profileOwnerIdentity) {
@@ -416,8 +426,8 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
           mediaTypes: post.mediaTypes,
           createdAt: post.createdAt.toDate(),
           posterIdentity: posterHex,
-          posterName: poster?.fullName || 'Unknown',
-          posterPicture: poster?.profilePicture || '',
+          posterName: poster?.name || 'Unknown',
+          posterPicture: poster?.picture || '',
         });
       }
     }
@@ -440,10 +450,7 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
   try {
     const stories: any[] = [];
     
-    const profileCache = new Map<string, any>();
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      profileCache.set(profile.identity.toHexString(), profile);
-    }
+    const profileCache = buildAccountCache();
     
     for (const post of dbConnection.db.story_post.iter()) {
       if (post.profileOwnerIdentity.toHexString() === currentIdentityHex) {
@@ -456,8 +463,8 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
           mediaTypes: post.mediaTypes,
           createdAt: post.createdAt.toDate(),
           posterIdentity: posterHex,
-          posterName: poster?.fullName || 'Unknown',
-          posterPicture: poster?.profilePicture || '',
+          posterName: poster?.name || 'Unknown',
+          posterPicture: poster?.picture || '',
           profileOwnerIdentity: currentIdentityHex,
         });
       }
@@ -481,10 +488,7 @@ export async function getMyPosts(currentIdentityHex: string) {
   try {
     const posts: any[] = [];
     
-    const profileCache = new Map<string, any>();
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      profileCache.set(profile.identity.toHexString(), profile);
-    }
+    const profileCache = buildAccountCache();
     
     for (const post of dbConnection.db.story_post.iter()) {
       if (post.posterIdentity.toHexString() === currentIdentityHex) {
@@ -497,8 +501,8 @@ export async function getMyPosts(currentIdentityHex: string) {
           mediaTypes: post.mediaTypes,
           createdAt: post.createdAt.toDate(),
           profileOwnerIdentity: ownerHex,
-          profileOwnerName: owner?.fullName || 'Unknown',
-          profileOwnerPicture: owner?.profilePicture || '',
+          profileOwnerName: owner?.name || 'Unknown',
+          profileOwnerPicture: owner?.picture || '',
         });
       }
     }
@@ -651,10 +655,7 @@ export async function getFollowedStoriesWithOptions(
       return [];
     }
 
-    const profileCache = new Map<string, any>();
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      profileCache.set(profile.identity.toHexString(), profile);
-    }
+    const profileCache = buildAccountCache();
 
     const stories: any[] = [];
     for (const post of dbConnection.db.story_post.iter()) {
@@ -683,11 +684,11 @@ export async function getFollowedStoriesWithOptions(
           mediaTypes: post.mediaTypes,
           createdAt: postDate,
           posterIdentity: posterHex,
-          posterName: poster?.fullName || 'Unknown',
-          posterPicture: poster?.profilePicture || '',
+          posterName: poster?.name || 'Unknown',
+          posterPicture: poster?.picture || '',
           profileOwnerIdentity: profileOwnerHex,
-          profileOwnerName: profileOwner?.fullName || 'Unknown',
-          profileOwnerPicture: profileOwner?.profilePicture || '',
+          profileOwnerName: profileOwner?.name || 'Unknown',
+          profileOwnerPicture: profileOwner?.picture || '',
         });
       }
     }
@@ -765,8 +766,8 @@ export function getOrganizationMembers(orgId: bigint) {
       members.push({
         identity: m.memberIdentity.toHexString(),
         role: m.role,
-        fullName: profile?.fullName || 'Unknown',
-        picture: profile?.profilePicture || '',
+        fullName: profile?.name || 'Unknown',
+        picture: profile?.picture || '',
         joinedAt: m.joinedAt?.toDate() ?? new Date(),
       });
     }
@@ -933,8 +934,8 @@ export function getOrgMessages(orgId: bigint) {
       msgs.push({
         id: m.id,
         senderIdentity: senderHex,
-        senderName: profile?.fullName || 'Unknown',
-        senderPicture: profile?.profilePicture || '',
+        senderName: profile?.name || 'Unknown',
+        senderPicture: profile?.picture || '',
         content: m.content,
         createdAt: m.createdAt.toDate(),
       });
@@ -976,8 +977,8 @@ export function getFriendChats(identity: string) {
       const profile = profileCache.get(fid);
       return {
         identity: fid,
-        fullName: profile?.fullName || 'Unknown',
-        picture: profile?.profilePicture || '',
+        fullName: profile?.name || 'Unknown',
+        picture: profile?.picture || '',
         lastMsgAt: latestMsg.get(fid) || 0,
       };
     })
@@ -989,26 +990,17 @@ export function getFriendChats(identity: string) {
 export function getNotifications(identity: string) {
   if (!dbConnection) return [];
   const notifs: any[] = [];
-  const profileCache = new Map<string, any>();
-  for (const p of dbConnection.db.user_profile.iter()) {
-    profileCache.set(p.identity.toHexString(), p);
-  }
-  // Organization account resolution: org account identity -> org name/picture
-  const orgAccountCache = new Map<string, any>();
-  for (const o of dbConnection.db.organization.iter()) {
-    orgAccountCache.set(orgAccountIdentityHex(o.id), o);
-  }
+  const profileCache = buildAccountCache();
   for (const n of dbConnection.db.notification.iter()) {
     if (n.recipientIdentity.toHexString() === identity) {
       const fromHex = n.fromIdentity?.toHexString();
       const fromProfile = fromHex ? profileCache.get(fromHex) : null;
-      const fromOrg = fromHex ? orgAccountCache.get(fromHex) : null;
       notifs.push({
         id: n.id,
         type: n.type,
         fromIdentity: fromHex,
-        fromName: fromProfile?.fullName || fromOrg?.name || 'Someone',
-        fromPicture: fromProfile?.profilePicture || fromOrg?.picture || '',
+        fromName: fromProfile?.name || 'Someone',
+        fromPicture: fromProfile?.picture || '',
         orgId: n.orgId,
         message: n.message,
         createdAt: n.createdAt.toDate(),
