@@ -830,10 +830,7 @@ export function getOrganizationById(orgId: bigint) {
 export function getOrganizationMembers(orgId: bigint) {
   if (!dbConnection) return [];
   const members: any[] = [];
-  const profileCache = new Map<string, any>();
-  for (const p of dbConnection.db.user_profile.iter()) {
-    profileCache.set(p.identity.toHexString(), p);
-  }
+  const profileCache = buildAccountCache();
   for (const m of dbConnection.db.organization_member.iter()) {
     if (m.orgId === orgId) {
       const profile = profileCache.get(m.memberIdentity.toHexString());
@@ -1019,10 +1016,7 @@ export function getDirectMessages(userA: string, userB: string) {
 export function getOrgMessages(orgId: bigint) {
   if (!dbConnection) return [];
   const msgs: any[] = [];
-  const profileCache = new Map<string, any>();
-  for (const p of dbConnection.db.user_profile.iter()) {
-    profileCache.set(p.identity.toHexString(), p);
-  }
+  const profileCache = buildAccountCache();
   for (const m of dbConnection.db.message.iter()) {
     if (m.orgId === orgId) {
       const senderHex = m.senderIdentity.toHexString();
@@ -1049,10 +1043,7 @@ export function getFriendChats(identity: string) {
     if (a === identity) friends.add(b);
     else if (b === identity) friends.add(a);
   }
-  const profileCache = new Map<string, any>();
-  for (const p of dbConnection.db.user_profile.iter()) {
-    profileCache.set(p.identity.toHexString(), p);
-  }
+  const profileCache = buildAccountCache();
   // Find latest message for each friend
   const latestMsg = new Map<string, number>();
   for (const m of dbConnection.db.message.iter()) {

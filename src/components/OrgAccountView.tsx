@@ -222,6 +222,18 @@ function OrgAccountView() {
       </main>
 
       <style>{`
+        .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }
+        .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .profile-header { display: flex; gap: 20px; }
+        .profile-pic-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .profile-picture-container { position: relative; flex-shrink: 0; }
+        .profile-picture { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
+        .profile-picture-placeholder { width: 100px; height: 100px; border-radius: 50%; background: #e0e0e0; }
+        .profile-info { flex: 1; }
+        .profile-name { margin: 0 0 12px; font-size: 22px; color: #333; }
+        .profile-city { margin: 0 0 8px; color: #666; font-size: 14px; }
+        .profile-description { margin: 0; color: #444; font-size: 14px; line-height: 1.5; max-width: 400px; white-space: pre-wrap; }
+        .join-date { margin: 12px 0 0; font-size: 13px; color: #999; }
         .back-to-account-btn { margin-top: 12px; padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .back-to-account-btn:hover { background: #e5e7eb; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -238,6 +250,33 @@ function OrgAccountView() {
         .role-member { background: #f3f4f6; color: #374151; }
         .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
         .role-select:disabled { background: #f3f4f6; color: #9ca3af; cursor: default; }
+        .story-section h2 { font-size: 16px; color: #666; margin: 0 0 16px; }
+        .profile-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+        .profile-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 15px; font-weight: 600; color: #666; cursor: pointer; }
+        .profile-tab:hover { color: #667eea; }
+        .profile-tab.active { color: #667eea; border-bottom-color: #667eea; }
+        .no-post-own-story { background: white; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .no-post-own-story p { margin: 0; color: #666; font-size: 14px; }
+        .stories-list { display: flex; flex-direction: column; gap: 16px; overflow: hidden; }
+        .story-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .story-header-link { text-decoration: none; display: block; margin-bottom: 12px; }
+        .story-header-link:hover .story-author { color: #667eea; }
+        .story-header { display: flex; align-items: center; gap: 12px; }
+        .story-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .story-avatar-placeholder { width: 40px; height: 40px; border-radius: 50%; background: #e0e0e0; }
+        .story-meta { display: flex; flex-direction: column; }
+        .story-author { font-weight: 600; color: #333; }
+        .story-date { font-size: 12px; color: #999; }
+        .story-content { margin: 0; color: #333; line-height: 1.5; white-space: pre-wrap; }
+        .story-media { margin-top: 12px; max-width: 100%; border-radius: 8px; }
+        .empty-story { background: white; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+        .empty-story p { margin: 0; color: #666; }
+        .post-receiver-link { text-decoration: none; }
+        .post-receiver-header { display: flex; align-items: center; gap: 12px; }
+        .post-receiver-meta { display: flex; flex-direction: column; align-items: flex-end; }
+        .post-receiver-name { font-weight: 600; color: #333; font-size: 14px; }
+        .post-receiver-date { font-size: 12px; color: #999; }
+        .post-receiver-link:hover .post-receiver-name { color: #667eea; }
       `}</style>
     </div>
   );
