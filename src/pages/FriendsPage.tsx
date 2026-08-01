@@ -85,9 +85,7 @@ function FriendsPage() {
           ) : (
             filteredFriends.map(f => (
               <button key={f.identity} onClick={() => navigate(activeOrg ? `/profile/${f.identity}` : `/messages/${f.identity}`)} className="chat-row">
-                {activeOrg ? (
-                  <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="1.5" style={{background:'#f0f0f0',borderRadius:'50%',padding:8,boxSizing:'border-box'}}><circle cx="12" cy="8" r="4"/><path d="M20 20v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/></svg>
-                ) : f.picture ? <img src={f.picture} alt={f.fullName} className="chat-avatar" /> : <div className="chat-avatar-placeholder" />}
+                {f.picture ? <img src={f.picture} alt={f.fullName} className="chat-avatar" /> : <div className="chat-avatar-placeholder" />}
                 <span className="chat-name">{f.fullName}</span>
               </button>
             ))
