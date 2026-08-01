@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
-import { getFriendChats, getMyOrganizations, getProfileByEmail } from '../utils/spacetime';
+import { getFriendChats, getMyOrganizations, getOrganizationMembers, getProfileByEmail } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
 
 function FriendsPage() {
@@ -24,8 +24,8 @@ function FriendsPage() {
           if (p) {
             const id = p.identity.toHexString();
             if (activeOrg) {
-              // Org account: friends are individuals, org chats = its own org
-              setFriends(getFriendChats(activeOrg.identity));
+              // Org account: list ALL individual members, org chats = its own org
+              setFriends(getOrganizationMembers(activeOrg.id));
               setOrgs([{
                 id: activeOrg.id,
                 name: activeOrg.name,
@@ -79,9 +79,9 @@ function FriendsPage() {
         )}
 
         <div className="chat-section">
-          <h3>Friends</h3>
+          <h3>{activeOrg ? 'Members' : 'Friends'}</h3>
           {filteredFriends.length === 0 ? (
-            <p className="empty">No friends yet. Add friends to start chatting!</p>
+            <p className="empty">{activeOrg ? 'No members yet.' : 'No friends yet. Add friends to start chatting!'}</p>
           ) : (
             filteredFriends.map(f => (
               <button key={f.identity} onClick={() => navigate(activeOrg ? `/profile/${f.identity}` : `/messages/${f.identity}`)} className="chat-row">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, transferLeadership, removeOrgMember, connectToSpacetimeDB } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB } from '../utils/spacetime';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
@@ -59,13 +59,28 @@ function OrgAccountView() {
   const handlePromote = async (memberIdentity: string) => {
     try { await promoteToCoLeader(org.id, memberIdentity); } catch (e: any) { alert(e.message || 'Failed'); }
   };
-  const handleTransfer = async (memberIdentity: string) => {
-    if (!window.confirm('Transfer leadership to this member?')) return;
+  const handleDemote = async (memberIdentity: string) => {
+    try { await demoteCoLeader(org.id, memberIdentity); } catch (e: any) { alert(e.message || 'Failed'); }
+  };
+  const handleTransfer = async (memberIdentity: string, memberName: string) => {
+    const ok = window.confirm(`Transfer leadership to ${memberName}? You will be instantly demoted to co-leader.`);
+    if (!ok) return;
     try { await transferLeadership(org.id, memberIdentity); } catch (e: any) { alert(e.message || 'Failed'); }
   };
-  const handleRemove = async (memberIdentity: string) => {
-    if (!window.confirm('Remove this member?')) return;
-    try { await removeOrgMember(org.id, memberIdentity); } catch (e: any) { alert(e.message || 'Failed'); }
+
+  const handleRoleChange = async (m: any, newRole: string) => {
+    if (newRole === m.role) return;
+    if (newRole === 'leader') {
+      await handleTransfer(m.identity, m.fullName);
+      return;
+    }
+    if (newRole === 'co_leader') {
+      await handlePromote(m.identity);
+      return;
+    }
+    if (newRole === 'member' && m.role === 'co_leader') {
+      await handleDemote(m.identity);
+    }
   };
 
   const canManage = myRole === 'leader' || myRole === 'co_leader';
@@ -113,19 +128,19 @@ function OrgAccountView() {
                     {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
                     <span className="member-name">{m.fullName}</span>
                   </Link>
-                  <span className={`role-badge role-${m.role}`}>{m.role}</span>
-                  {m.role !== 'leader' && (
-                    <div className="member-actions">
-                      {myRole === 'leader' && m.role === 'member' && (
-                        <button onClick={() => handlePromote(m.identity)} className="member-action-btn">Promote</button>
-                      )}
-                      {myRole === 'leader' && (
-                        <button onClick={() => handleTransfer(m.identity)} className="member-action-btn">Transfer</button>
-                      )}
-                      {(myRole === 'leader' || myRole === 'co_leader') && (
-                        <button onClick={() => handleRemove(m.identity)} className="member-action-btn danger">Remove</button>
-                      )}
-                    </div>
+                  {m.role === 'leader' ? (
+                    <span className={`role-badge role-leader`}>Leader</span>
+                  ) : (
+                    <select
+                      value={m.role}
+                      onChange={e => handleRoleChange(m, e.target.value)}
+                      disabled={!canManage}
+                      className="role-select"
+                    >
+                      <option value="member">Member</option>
+                      <option value="co_leader">Co-Leader</option>
+                      {myRole === 'leader' && <option value="leader">Leader</option>}
+                    </select>
                   )}
                 </div>
               ))}
@@ -221,9 +236,8 @@ function OrgAccountView() {
         .role-leader { background: #fef3c7; color: #92400e; }
         .role-co_leader { background: #dbeafe; color: #1e40af; }
         .role-member { background: #f3f4f6; color: #374151; }
-        .member-actions { display: flex; gap: 4px; flex-shrink: 0; }
-        .member-action-btn { padding: 4px 10px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .member-action-btn.danger { background: #ef4444; }
+        .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
+        .role-select:disabled { background: #f3f4f6; color: #9ca3af; cursor: default; }
       `}</style>
     </div>
   );

@@ -4,7 +4,7 @@ import { useAuth } from 'react-oidc-context';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
-import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, connectToSpacetimeDB, getProfileByEmail, promoteToCoLeader, demoteCoLeader, transferLeadership } from '../utils/spacetime';
 
 function OrgProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -92,6 +92,25 @@ function OrgProfilePage() {
 
   const isMember = members.some(m => m.identity === currentIdentity);
   const isOwnOrg = activeOrg !== null && activeOrg.id === orgId;
+  const viewerRole = members.find(m => m.identity === currentIdentity)?.role || null;
+  const viewerCanManage = viewerRole === 'leader' || viewerRole === 'co_leader';
+
+  const handleRoleChange = async (m: any, newRole: string) => {
+    if (newRole === m.role) return;
+    try {
+      if (newRole === 'leader') {
+        const ok = window.confirm(`Transfer leadership to ${m.fullName}? You will be instantly demoted to co-leader.`);
+        if (!ok) return;
+        await transferLeadership(orgId, m.identity);
+      } else if (newRole === 'co_leader') {
+        await promoteToCoLeader(orgId, m.identity);
+      } else if (newRole === 'member' && m.role === 'co_leader') {
+        await demoteCoLeader(orgId, m.identity);
+      }
+    } catch (e: any) {
+      alert(e.message || 'Failed');
+    }
+  };
 
   return (
     <div className="org-page">
@@ -135,7 +154,21 @@ function OrgProfilePage() {
                   {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
                   <span className="member-name">{m.fullName}</span>
                 </Link>
-                <span className={`role-badge role-${m.role}`}>{m.role}</span>
+                {m.role === 'leader' ? (
+                  <span className={`role-badge role-leader`}>Leader</span>
+                ) : viewerCanManage ? (
+                  <select
+                    value={m.role}
+                    onChange={e => handleRoleChange(m, e.target.value)}
+                    className="role-select"
+                  >
+                    <option value="member">Member</option>
+                    <option value="co_leader">Co-Leader</option>
+                    {viewerRole === 'leader' && <option value="leader">Leader</option>}
+                  </select>
+                ) : (
+                  <span className={`role-badge role-${m.role}`}>{m.role}</span>
+                )}
               </div>
             ))}
           </div>
@@ -167,6 +200,7 @@ function OrgProfilePage() {
         .role-leader { background: #fef3c7; color: #92400e; }
         .role-co_leader { background: #dbeafe; color: #1e40af; }
         .role-member { background: #f3f4f6; color: #374151; }
+        .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
         .back-to-account-btn { padding: 10px 24px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .profile-note { font-size: 13px; color: #666; }
       `}</style>

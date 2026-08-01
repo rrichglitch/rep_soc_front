@@ -47,6 +47,7 @@ import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
+import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
 import FollowReducer from "./follow_reducer";
 import ManualCreateProfileReducer from "./manual_create_profile_reducer";
 import PromoteToCoLeaderReducer from "./promote_to_co_leader_reducer";
@@ -225,6 +226,7 @@ const reducersSchema = __reducers(
   __reducerSchema("decline_friend_request", DeclineFriendRequestReducer),
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
+  __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
   __reducerSchema("follow", FollowReducer),
   __reducerSchema("manual_create_profile", ManualCreateProfileReducer),
   __reducerSchema("promote_to_co_leader", PromoteToCoLeaderReducer),

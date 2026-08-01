@@ -602,6 +602,80 @@ export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
   }
 }
 
+// Feed for an organization account: posts on profiles the org follows + posts on the org's own story
+export function getOrgFeedStories(orgIdentity: string, orderOldToNew: boolean = true): FeedStory[] {
+  if (!dbConnection) return [];
+  try {
+    const followingSet = new Set<string>();
+    for (const f of dbConnection.db.following.iter()) {
+      if (f.followerIdentity.toHexString() === orgIdentity) {
+        followingSet.add(f.followingIdentity.toHexString());
+      }
+    }
+    const accounts = buildAccountCache();
+    const orgCache = new Map<bigint, { name: string; picture: string }>();
+    for (const o of dbConnection.db.organization.iter()) {
+      orgCache.set(o.id, { name: o.name, picture: o.picture || '' });
+    }
+    const stories: FeedStory[] = [];
+    for (const post of dbConnection.db.story_post.iter()) {
+      const ownerHex = post.profileOwnerIdentity.toHexString();
+      // feed = posts on followed profiles + the org's own story
+      if (!followingSet.has(ownerHex) && ownerHex !== orgIdentity) continue;
+      if (post.posterIdentity.toHexString() === ownerHex) continue;
+      // Poster display: posts made by an org show the org
+      let posterName = 'Unknown';
+      let posterPicture = '';
+      if (post.actingAsOrgId !== undefined) {
+        const o = orgCache.get(post.actingAsOrgId);
+        if (o) { posterName = o.name; posterPicture = o.picture; }
+      } else {
+        const poster = accounts.get(post.posterIdentity.toHexString());
+        if (poster) { posterName = poster.name; posterPicture = poster.picture; }
+      }
+      const owner = accounts.get(ownerHex);
+      stories.push({
+        id: post.id,
+        profileOwnerIdentity: post.profileOwnerIdentity,
+        posterIdentity: post.posterIdentity,
+        content: post.content,
+        mediaData: post.mediaData,
+        mediaTypes: post.mediaTypes,
+        createdAt: post.createdAt.toDate(),
+        posterName,
+        posterPicture,
+        profileOwnerIdentityHex: ownerHex,
+        profileOwnerName: owner?.name || 'Unknown',
+        profileOwnerPicture: owner?.picture || '',
+      });
+    }
+    return stories.sort((a, b) => {
+      const aTime = a.createdAt.getTime();
+      const bTime = b.createdAt.getTime();
+      if (orderOldToNew) return aTime > bTime ? 1 : aTime < bTime ? -1 : 0;
+      return aTime > bTime ? -1 : aTime < bTime ? 1 : 0;
+    });
+  } catch (e) {
+    console.error('Error getting org feed stories:', e);
+    return [];
+  }
+}
+
+export function getPaginatedOrgFeedStories(
+  orgIdentity: string,
+  orderOldToNew: boolean = true,
+  page: number = 0,
+  perPage: number = PAGE_SIZE
+): { stories: FeedStory[]; hasMore: boolean } {
+  const allStories = getOrgFeedStories(orgIdentity, orderOldToNew);
+  const start = page * perPage;
+  const end = start + perPage;
+  return {
+    stories: allStories.slice(start, end),
+    hasMore: end < allStories.length,
+  };
+}
+
 export function getPaginatedFeedStories(
   orderOldToNew: boolean = true,
   page: number = 0,
@@ -788,6 +862,14 @@ export async function declineOrgMember(requestId: bigint): Promise<void> {
 export async function promoteToCoLeader(orgId: bigint, memberIdentity: string): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.promoteToCoLeader({
+    orgId,
+    memberIdentity: Identity.fromString(memberIdentity),
+  });
+}
+
+export async function demoteCoLeader(orgId: bigint, memberIdentity: string): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.demoteCoLeader({
     orgId,
     memberIdentity: Identity.fromString(memberIdentity),
   });

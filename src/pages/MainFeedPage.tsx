@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, getPaginatedOrgFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import SearchBar from '../components/SearchBar';
@@ -10,6 +11,7 @@ import SearchBar from '../components/SearchBar';
 function MainFeedPage() {
   const navigate = useNavigate();
   const { email } = useApp();
+  const { activeOrg } = useOrg();
 
   const [isLoading, setIsLoading] = useState(true);
   const [myStories, setMyStories] = useState<any[]>([]);
@@ -31,6 +33,18 @@ function MainFeedPage() {
     }
     
     try {
+      if (activeOrg) {
+        // Org account: feed = org's story + org's follows
+        const myFeed = await getMyStoryPosts(activeOrg.identity);
+        setMyStories(myFeed);
+        const { stories, hasMore: more } = getPaginatedOrgFeedStories(activeOrg.identity, orderOldToNew, 0);
+        allStoriesRef.current = stories;
+        setFollowedStories(stories);
+        setHasMore(more);
+        setCurrentPage(0);
+        setIsLoading(false);
+        return;
+      }
       const profile = await getProfileByEmail(email);
       if (profile) {
         const identityHex = profile.identity.toHexString();
@@ -53,7 +67,7 @@ function MainFeedPage() {
       console.error('Error loading profile:', e);
     }
     setIsLoading(false);
-  }, [email, orderOldToNew]);
+  }, [email, orderOldToNew, activeOrg]);
 
   useEffect(() => {
     if (email) {
@@ -66,14 +80,16 @@ function MainFeedPage() {
     
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
-    const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, nextPage);
+    const { stories, hasMore: more } = activeOrg
+      ? getPaginatedOrgFeedStories(activeOrg.identity, orderOldToNew, nextPage)
+      : getPaginatedFeedStories(orderOldToNew, nextPage);
     
     allStoriesRef.current = [...allStoriesRef.current, ...stories];
     setFollowedStories(allStoriesRef.current);
     setHasMore(more);
     setCurrentPage(nextPage);
     setIsLoadingMore(false);
-  }, [currentPage, hasMore, isLoadingMore, orderOldToNew]);
+  }, [currentPage, hasMore, isLoadingMore, orderOldToNew, activeOrg]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -85,7 +101,9 @@ function MainFeedPage() {
     const newOrder = !orderOldToNew;
     setOrderOldToNew(newOrder);
     allStoriesRef.current = [];
-    const { stories, hasMore: more } = getPaginatedFeedStories(newOrder, 0);
+    const { stories, hasMore: more } = activeOrg
+      ? getPaginatedOrgFeedStories(activeOrg.identity, newOrder, 0)
+      : getPaginatedFeedStories(newOrder, 0);
     allStoriesRef.current = stories;
     setFollowedStories(stories);
     setHasMore(more);
