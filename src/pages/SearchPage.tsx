@@ -238,9 +238,7 @@ function SearchPage() {
                       {isOwn && ' (You)'}
                     </h3>
                     {result.city && <p className="result-city">{result.city}</p>}
-                    {result.email !== email && result.email && (
-                      <p className="result-email">{result.email}</p>
-                    )}
+                    {result.description && <p className="result-desc">{result.description}</p>}
                     {result.distance !== undefined && (
                       <p className="result-distance">{formatMiles(result.distance)} away</p>
                     )}
@@ -258,6 +256,8 @@ function SearchPage() {
                   orgId: r.orgId,
                   fullName: r.fullName,
                   profilePicture: r.profilePicture,
+                  description: r.description,
+                  city: r.city,
                   locationLat: r.locationLat!,
                   locationLng: r.locationLng!,
                 }))}
@@ -418,33 +418,49 @@ function SearchPage() {
         }
 
         .result-avatar {
-          width: 56px;
-          height: 56px;
+          width: 72px;
+          height: 72px;
           border-radius: 50%;
           object-fit: cover;
+          flex-shrink: 0;
         }
 
         .result-avatar-placeholder {
-          width: 56px;
-          height: 56px;
+          width: 72px;
+          height: 72px;
           border-radius: 50%;
           background: #e0e0e0;
+          flex-shrink: 0;
         }
 
         .result-info {
           flex: 1;
+          min-width: 0;
         }
 
         .result-name {
-          margin: 0 0 4px;
-          font-size: 16px;
+          margin: 0 0 2px;
+          font-size: 18px;
+          font-weight: 700;
           color: #333;
         }
 
         .result-city {
-          margin: 0 0 2px;
+          margin: 0 0 4px;
           font-size: 14px;
+          color: #667eea;
+          font-weight: 500;
+        }
+
+        .result-desc {
+          margin: 0;
+          font-size: 13px;
           color: #666;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
 
         .result-email {

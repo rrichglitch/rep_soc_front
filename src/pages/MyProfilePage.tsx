@@ -264,7 +264,7 @@ function MyProfilePage() {
                     <button onClick={handleCancel} className="cancel-btn">
                       ✕
                     </button>
-                    <p className="city-loc-note">Saving your city also updates your approximate location on Veri Social (accurate within 5 miles) and turns Precise Location off.</p>
+                    <p className="city-loc-note">Setting your city also updates your approximate location (accurate within 5 miles).</p>
                   </div>
                 ) : (
                   <div className="field-display">
@@ -647,6 +647,7 @@ function MyProfilePage() {
           display: flex;
           align-items: center;
           gap: 8px;
+          flex-wrap: wrap;
         }
         .city-loc-note { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: #888; line-height: 1.4; }
 

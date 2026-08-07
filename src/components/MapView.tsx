@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -8,6 +8,8 @@ export interface MapResult {
   orgId?: bigint;
   fullName: string;
   profilePicture: string;
+  description: string;
+  city: string;
   locationLat: number;
   locationLng: number;
 }
@@ -25,8 +27,53 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const markersByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const onResultClickRef = useRef(onResultClick);
   onResultClickRef.current = onResultClick;
+  const [activeCard, setActiveCard] = useState<{ result: MapResult; x: number; y: number } | null>(null);
+  const activeCardRef = useRef(activeCard);
+  activeCardRef.current = activeCard;
+
+  const closeCard = () => {
+    // Restore the icon the card replaced
+    const card = activeCardRef.current;
+    if (card) {
+      const key = card.result.type === 'org' ? `org-${card.result.orgId}` : card.result.identity;
+      const mk = markersByKeyRef.current.get(key);
+      if (mk) mk.setOpacity(1);
+    }
+    setActiveCard(null);
+  };
+
+  const openCard = (r: MapResult, map: L.Map, lat: number, lng: number) => {
+    // Hide the icon this card replaces
+    const key = r.type === 'org' ? `org-${r.orgId}` : r.identity;
+    const mk = markersByKeyRef.current.get(key);
+    if (mk) mk.setOpacity(0);
+
+    // Position: centered on the icon, just above it; clamp so it never clips the screen
+    const wrap = containerRef.current;
+    if (!wrap) return;
+    const pt = map.latLngToContainerPoint([lat, lng]);
+    const CARD_W = 264;
+    const CARD_H = 120;
+    const pad = 8;
+    let x = pt.x - CARD_W / 2;
+    let y = pt.y - CARD_H - 14;
+    x = Math.max(pad, Math.min(x, wrap.clientWidth - CARD_W - pad));
+    y = Math.max(pad, Math.min(y, wrap.clientHeight - CARD_H - pad));
+    setActiveCard({ result: r, x, y });
+  };
+
+  // Tap anywhere on the map closes the card (mobile)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const onMapClick = () => closeCard();
+    map.on('click', onMapClick);
+    return () => { map.off('click', onMapClick); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Init map once
   useEffect(() => {
@@ -49,6 +96,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
+      markersByKeyRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -60,6 +108,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     if (!map || !layer) return;
 
     layer.clearLayers();
+    markersByKeyRef.current.clear();
     const withCoords = results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined);
     if (withCoords.length === 0) return;
 
@@ -96,10 +145,11 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           iconSize: [30, 30],
           iconAnchor: [15, 15],
         });
-        L.marker([lat, lng], { icon })
-          .bindTooltip(r.fullName, { direction: 'top' })
-          .on('click', () => onResultClickRef.current(r))
+        const mk = L.marker([lat, lng], { icon })
+          .on('mouseover', () => openCard(r, map, lat, lng))
+          .on('click', () => openCard(r, map, lat, lng))
           .addTo(layer);
+        markersByKeyRef.current.set(r.type === 'org' ? `org-${r.orgId}` : r.identity, mk);
       } else {
         const icon = L.divIcon({
           className: '',
@@ -113,11 +163,33 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           .addTo(layer);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [results, center]);
 
   return (
     <div className="map-view-wrap">
       <div ref={containerRef} className="map-view" />
+      {activeCard && (
+        <div
+          className="map-profile-card"
+          style={{ left: activeCard.x, top: activeCard.y }}
+          onMouseLeave={closeCard}
+          onClick={() => onResultClickRef.current(activeCard.result)}
+        >
+          {activeCard.result.profilePicture ? (
+            <img src={activeCard.result.profilePicture} alt={activeCard.result.fullName} className="mpc-pic" />
+          ) : (
+            <div className="mpc-pic mpc-pic-placeholder" />
+          )}
+          <div className="mpc-info">
+            <h4 className="mpc-name">
+              {activeCard.result.fullName}
+              {activeCard.result.type === 'org' && <span className="mpc-org-badge">Organization</span>}
+            </h4>
+            {activeCard.result.description && <p className="mpc-desc">{activeCard.result.description}</p>}
+          </div>
+        </div>
+      )}
       <style>{`
         .map-view-wrap { position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .map-view { height: 60vh; width: 100%; z-index: 1; }
@@ -135,6 +207,30 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           display: flex; align-items: center; justify-content: center;
           border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
           box-sizing: border-box;
+        }
+        .map-profile-card {
+          position: absolute;
+          width: 264px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 6px 24px rgba(0,0,0,0.25);
+          z-index: 500;
+          cursor: pointer;
+          border: 1px solid #e5e7eb;
+          box-sizing: border-box;
+        }
+        .mpc-pic { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .mpc-pic-placeholder { background: #e0e0e0; }
+        .mpc-info { flex: 1; min-width: 0; }
+        .mpc-name { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #333; }
+        .mpc-org-badge { margin-left: 6px; padding: 1px 7px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 10px; font-weight: 600; vertical-align: middle; }
+        .mpc-desc {
+          margin: 0; font-size: 12px; color: #666; line-height: 1.35;
+          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
         }
       `}</style>
     </div>
