@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { updateLocation } from '../utils/spacetime';
-import { getBrowserLocation, jitterLocation } from '../utils/geo';
+import { updateLocation, jitterToApprox } from '../utils/spacetime';
+import { getBrowserLocation } from '../utils/geo';
 
 export type LocationPrecision = 'off' | 'approx' | 'exact';
 
@@ -19,8 +19,7 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
     setIsBusy(true);
     try {
       const pos = await getBrowserLocation();
-      const toSend = precision === 'approx' ? jitterLocation(pos.lat, pos.lng, 15) : pos;
-      await updateLocation(toSend.lat, toSend.lng, precision);
+      await updateLocation(pos.lat, pos.lng, precision);
       onChanged(precision);
     } catch (e: any) {
       alert(e?.message === 'Geolocation not supported on this device'
@@ -31,13 +30,23 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
     }
   };
 
-  const handleToggle = (checked: boolean) => {
+  const handleToggle = async (checked: boolean) => {
     if (checked === isExact) return;
     if (checked) {
+      // Toggle ON: fetch a fresh precise location and send it
       setShowFullWarning(true);
       return;
     }
-    applyPrecision('approx');
+    // Toggle OFF: no new fetch — the backend jitters the last stored precise location
+    setIsBusy(true);
+    try {
+      await jitterToApprox();
+      onChanged('approx');
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update location');
+    } finally {
+      setIsBusy(false);
+    }
   };
 
   const handleConfirmFull = () => {

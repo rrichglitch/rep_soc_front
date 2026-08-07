@@ -49,6 +49,7 @@ import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
 import FollowReducer from "./follow_reducer";
+import JitterToApproxReducer from "./jitter_to_approx_reducer";
 import ManualCreateProfileReducer from "./manual_create_profile_reducer";
 import PromoteToCoLeaderReducer from "./promote_to_co_leader_reducer";
 import RefreshFeedReducer from "./refresh_feed_reducer";
@@ -229,6 +230,7 @@ const reducersSchema = __reducers(
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
   __reducerSchema("follow", FollowReducer),
+  __reducerSchema("jitter_to_approx", JitterToApproxReducer),
   __reducerSchema("manual_create_profile", ManualCreateProfileReducer),
   __reducerSchema("promote_to_co_leader", PromoteToCoLeaderReducer),
   __reducerSchema("refresh_feed", RefreshFeedReducer),
