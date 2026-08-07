@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { updateLocation } from '../utils/spacetime';
-import { getBrowserLocation } from '../utils/geo';
+import { getBrowserLocation, jitterLocation } from '../utils/geo';
 
 export type LocationPrecision = 'off' | 'approx' | 'exact';
 
@@ -24,7 +24,9 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
       }
       // approx or exact — need the device location
       const pos = await getBrowserLocation();
-      await updateLocation(pos.lat, pos.lng, precision);
+      // Approximate precision is jittered ON DEVICE so the exact position never leaves
+      const toSend = precision === 'approx' ? jitterLocation(pos.lat, pos.lng, 15) : pos;
+      await updateLocation(toSend.lat, toSend.lng, precision);
       onChanged(precision);
     } catch (e: any) {
       alert(e?.message === 'Geolocation not supported on this device'

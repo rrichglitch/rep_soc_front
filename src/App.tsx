@@ -12,7 +12,7 @@ import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, claimProfile, disconnectFromSpacetimeDB, getProfileByEmail, updateLocation } from './utils/spacetime';
-import { getBrowserLocation } from './utils/geo';
+import { getBrowserLocation, jitterLocation } from './utils/geo';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
@@ -171,7 +171,9 @@ function AuthCallback({ children }: AuthCallbackProps) {
     setIsSettingLocation(true);
     try {
       const pos = await getBrowserLocation();
-      await updateLocation(pos.lat, pos.lng, 'approx');
+      // Approximate precision is jittered ON DEVICE so the exact position never leaves
+      const jittered = jitterLocation(pos.lat, pos.lng, 15);
+      await updateLocation(jittered.lat, jittered.lng, 'approx');
     } catch {
       try { await updateLocation(0, 0, 'off'); } catch { /* non-fatal */ }
     }
