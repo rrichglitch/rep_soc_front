@@ -34,12 +34,16 @@ function SearchPage() {
   const [inputValue, setInputValue] = useState(query);
   const [isConnected, setIsConnected] = useState(false);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
-  const [nearbyFirst, setNearbyFirst] = useState(false);
-  const [showMap, setShowMap] = useState(false);
+  const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
+  const [showMap, setShowMap] = useState<boolean>(() => localStorage.getItem('veri_showMap') === '1');
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [locInput, setLocInput] = useState('');
   const [isGeocoding, setIsGeocoding] = useState(false);
+
+  // Persist map-view + nearby-first state across navigation and browser restarts
+  useEffect(() => { localStorage.setItem('veri_showMap', showMap ? '1' : '0'); }, [showMap]);
+  useEffect(() => { localStorage.setItem('veri_nearbyFirst', nearbyFirst ? '1' : '0'); }, [nearbyFirst]);
 
   // Background: try to connect
   useEffect(() => {
@@ -193,6 +197,7 @@ function SearchPage() {
             </div>
           )
         ) : (
+          <>
           <div className="results">
             <div className="results-header">
               <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
@@ -202,7 +207,7 @@ function SearchPage() {
                     onClick={() => setNearbyFirst(!nearbyFirst)}
                     className={`nearby-toggle ${nearbyFirst ? 'active' : ''}`}
                   >
-                    {nearbyFirst ? '✓ Nearby first' : 'Nearby first'}
+                    {nearbyFirst ? '✓ Nearby First' : 'Nearby First'}
                   </button>
                 )}
                 <button onClick={() => { setLocInput(''); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
@@ -212,27 +217,10 @@ function SearchPage() {
                   onClick={() => setShowMap(!showMap)}
                   className={`nearby-toggle ${showMap ? 'active' : ''}`}
                 >
-                  {showMap ? '✓ Map view' : 'Map view'}
+                  {showMap ? '✓ Map View' : 'Map View'}
                 </button>
               </div>
             </div>
-            {showMap && (
-              <div className="map-section">
-                <MapView
-                  results={results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined).map(r => ({
-                    type: r.type,
-                    identity: r.identity,
-                    orgId: r.orgId,
-                    fullName: r.fullName,
-                    profilePicture: r.profilePicture,
-                    locationLat: r.locationLat!,
-                    locationLng: r.locationLng!,
-                  }))}
-                  center={activePos ?? undefined}
-                  onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
-                />
-              </div>
-            )}
             {!showMap && results.map((result) => {
               const isOwn = result.email === email;
               const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
@@ -261,6 +249,24 @@ function SearchPage() {
               );
             })}
           </div>
+          {showMap && (
+            <div className="map-section">
+              <MapView
+                results={results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined).map(r => ({
+                  type: r.type,
+                  identity: r.identity,
+                  orgId: r.orgId,
+                  fullName: r.fullName,
+                  profilePicture: r.profilePicture,
+                  locationLat: r.locationLat!,
+                  locationLng: r.locationLng!,
+                }))}
+                center={activePos ?? undefined}
+                onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
+              />
+            </div>
+          )}
+          </>
         )}
       </main>
 
@@ -365,7 +371,8 @@ function SearchPage() {
           margin: 0;
         }
 
-        .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; position: relative; z-index: 45; }
+        .results-count { background: white; padding: 4px 12px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); display: inline-block; }
         .results-tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
         .loc-search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
         .loc-search-modal { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
@@ -377,9 +384,10 @@ function SearchPage() {
         .loc-search-cancel { padding: 8px 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .loc-search-set { padding: 8px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .loc-search-set:disabled { opacity: 0.6; }
-        .map-section { width: 100vw; margin-left: calc(50% - 50vw); height: calc(100vh - 140px); }
+        .map-section { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 40; }
         .map-section .map-view-wrap { height: 100%; border-radius: 0; box-shadow: none; }
         .map-section .map-view { height: 100%; }
+        .map-section .leaflet-container { height: 100%; width: 100%; }
         .nearby-toggle { padding: 6px 14px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .nearby-toggle.active { background: #667eea; color: white; }
         .result-type-badge { margin-left: 8px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }

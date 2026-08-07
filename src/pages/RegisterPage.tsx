@@ -244,7 +244,7 @@ function RegisterPage() {
     try {
       const pos = await getBrowserLocation();
       // Approximate precision: jittered ON DEVICE — exact position never leaves
-      const jittered = jitterLocation(pos.lat, pos.lng, 10);
+      const jittered = jitterLocation(pos.lat, pos.lng, 5);
       setLocCoords(jittered);
       setLocStatus('done');
     } catch (e: any) {
@@ -456,7 +456,7 @@ function RegisterPage() {
               <div className="location-box">
                 <h4>Location required</h4>
                 <p>
-                  Your <strong>approximate</strong> location (accurate within 10 miles) is needed
+                  Your <strong>approximate</strong> location (accurate within 5 miles) is needed
                   once, when you create your account or set your city, to help people and
                   organizations near you find you. Your exact position is never shared — it is
                   jittered on your device before it is stored.
