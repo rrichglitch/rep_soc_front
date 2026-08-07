@@ -152,12 +152,7 @@ function SearchPage() {
     <div className="search-page">
       <TopBar
         left={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        center={<h1 className="page-title">Find People</h1>}
-        right={<AuthActions />}
-      />
-
-      <div className="search-sticky">
-        <SearchBar
+        center={<div className="topbar-search-wrap"><SearchBar
           onSearch={(q) => {
             if (q.trim()) {
               navigate(`/search?q=${encodeURIComponent(q)}`);
@@ -166,8 +161,10 @@ function SearchPage() {
           value={inputValue}
           onChange={setInputValue}
           autoFocus
-        />
-      </div>
+        /></div>}
+        right={<AuthActions />}
+        absoluteCenter
+      />
 
       <main className="search-content">
 
@@ -178,7 +175,7 @@ function SearchPage() {
         ) : results.length === 0 ? (
           query ? (
             <div className="no-results">
-              <p>No people found matching "{query}"</p>
+              <p>No results found matching "{query}"</p>
             </div>
           ) : (
             <div className="no-results">
@@ -221,14 +218,9 @@ function SearchPage() {
                   center={myPos ?? undefined}
                   onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
                 />
-                <p className="map-note">
-                  {results.filter(r => r.locationLat === undefined).length > 0
-                    ? `${results.filter(r => r.locationLat === undefined).length} result(s) have no location and are not shown on the map.`
-                    : 'Showing all results on the map.'}
-                </p>
               </div>
             )}
-            {results.map((result) => {
+            {!showMap && results.map((result) => {
               const isOwn = result.email === email;
               const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
               return (
@@ -263,29 +255,6 @@ function SearchPage() {
         .search-page {
           min-height: 100vh;
           background: #f5f5f5;
-        }
-
-        .page-title {
-          margin: 0;
-          font-size: 20px;
-          color: #667eea;
-          width: 100%;
-          text-align: center;
-        }
-
-        .search-sticky {
-          position: sticky;
-          top: 60px;
-          background: #f5f5f5;
-          padding: 16px 24px;
-          z-index: 50;
-        }
-
-        .search-sticky .search-bar {
-          max-width: 500px;
-          margin: 0 auto;
-          background: white;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .search-content {
@@ -327,8 +296,9 @@ function SearchPage() {
 
         .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .results-tools { display: flex; gap: 8px; }
-        .map-section { margin-bottom: 16px; }
-        .map-note { font-size: 12px; color: #999; margin: 8px 2px 0; }
+        .map-section { width: 100vw; margin-left: calc(50% - 50vw); height: calc(100vh - 140px); }
+        .map-section .map-view-wrap { height: 100%; border-radius: 0; box-shadow: none; }
+        .map-section .map-view { height: 100%; }
         .nearby-toggle { padding: 6px 14px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .nearby-toggle.active { background: #667eea; color: white; }
         .result-type-badge { margin-left: 8px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }

@@ -19,11 +19,12 @@ export function formatMiles(miles: number): string {
   return `${Math.round(miles)} mi`;
 }
 
-// Jitter coordinates by up to maxMiles in a random direction (frontend-side approximation)
+// Jitter coordinates by up to maxMiles in a random direction (frontend-side approximation).
+// Perfect circular jitter: uniform disk sampling (sqrt radius) — not an X/Y box.
 export function jitterLocation(lat: number, lng: number, maxMiles: number): { lat: number; lng: number } {
   const maxDeg = maxMiles / 69;
   const theta = Math.random() * 2 * Math.PI;
-  const r = Math.random() * maxDeg;
+  const r = maxDeg * Math.sqrt(Math.random());
   const dLat = Math.cos(theta) * r;
   const dLng = (Math.sin(theta) * r) / Math.max(0.2, Math.cos((lat * Math.PI) / 180));
   return { lat: lat + dLat, lng: lng + dLng };

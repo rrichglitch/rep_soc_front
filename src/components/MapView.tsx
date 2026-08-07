@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { haversineMiles } from '../utils/geo';
 
 export interface MapResult {
   type: 'person' | 'org';
@@ -61,7 +62,22 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     const withCoords = results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined);
     if (withCoords.length === 0) return;
 
+    // Default to the user's saved location at a comfortable zoom; if the search
+    // points elsewhere (nothing near the user), fit the results instead.
+    if (center) {
+      const nearUser = withCoords.some(r => haversineMiles(center.lat, center.lng, r.locationLat, r.locationLng) < 50);
+      if (nearUser) {
+        map.setView([center.lat, center.lng], 10);
+      } else {
+        const bounds = L.latLngBounds(withCoords.map(r => [r.locationLat, r.locationLng] as [number, number]));
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+      }
+    } else {
+      const bounds = L.latLngBounds(withCoords.map(r => [r.locationLat, r.locationLng] as [number, number]));
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+    }
     const zoom = map.getZoom();
+
     // Cluster by world-pixel grid at the current zoom
     const cells = new Map<string, MapResult[]>();
     for (const r of withCoords) {
@@ -102,7 +118,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           .addTo(layer);
       }
     }
-  }, [results]);
+  }, [results, center]);
 
   return (
     <div className="map-view-wrap">

@@ -68,6 +68,7 @@ function DMChatPage() {
       <TopBar
         left={<button onClick={() => navigate('/friends')} className="topbar-back">← Back</button>}
         center={otherProfile?.profilePicture ? <Link to={`/profile/${otherProfile.identity}`}><img src={otherProfile.profilePicture} alt={otherProfile.fullName} style={{width:36,height:36,borderRadius:'50%',objectFit:'cover'}} /></Link> : <span style={{fontWeight:600}}>{otherProfile?.fullName || 'Chat'}</span>}
+        absoluteCenter
         right={<AuthActions hideChat />}
       />
       <main className="chat-main">

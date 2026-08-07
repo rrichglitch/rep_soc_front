@@ -135,7 +135,7 @@ function MyProfilePage() {
         let lat: number, lng: number;
         try {
           const pos = await getBrowserLocation();
-          const j = jitterLocation(pos.lat, pos.lng, 15);
+          const j = jitterLocation(pos.lat, pos.lng, 10);
           lat = j.lat; lng = j.lng;
         } catch {
           // Stay in edit mode so the user can retry — city is not saved
@@ -263,7 +263,7 @@ function MyProfilePage() {
                     <button onClick={handleCancel} className="cancel-btn">
                       ✕
                     </button>
-                    <p className="city-loc-note">Saving your city also updates your approximate location on Veri Social (accurate within 15 miles) and turns Precise Location off.</p>
+                    <p className="city-loc-note">Saving your city also updates your approximate location on Veri Social (accurate within 10 miles) and turns Precise Location off.</p>
                   </div>
                 ) : (
                   <div className="field-display">
