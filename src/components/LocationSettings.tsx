@@ -82,8 +82,7 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
               your city or enable Precise Location.
             </p>
             <p>
-              Enabling Precise Location will show exactly where you are at the moment you toggle
-              it on.
+              Enabling Precise Location will show exactly where you are right now.
             </p>
             <div className="loc-modal-actions">
               <button onClick={handleCancelFull} className="loc-cancel-btn">Cancel</button>
