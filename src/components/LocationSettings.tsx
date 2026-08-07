@@ -62,6 +62,7 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
     <div className="location-settings">
       <label className={`precise-toggle ${isExact ? 'on' : ''}`}>
         <span className="precise-toggle-label">Precise Location</span>
+        <span className="precise-toggle-desc">Show your exact location to people on Veri Social.</span>
         <input
           type="checkbox"
           checked={isExact}
@@ -70,7 +71,6 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
         />
         <span className="precise-switch" aria-hidden="true" />
       </label>
-      <p className="precise-toggle-desc">Show your exact location to people on Veri Social.</p>
       {isBusy && <p className="location-busy">Updating location…</p>}
 
       {showFullWarning && (
@@ -95,10 +95,10 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
 
       <style>{`
         .location-settings { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .precise-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .precise-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         .precise-toggle input { display: none; }
-        .precise-toggle-label { flex: 1; font-size: 17px; color: #333; font-weight: 700; }
-        .precise-toggle-desc { margin: 8px 0 0; font-size: 13px; color: #888; line-height: 1.4; }
+        .precise-toggle-label { font-size: 15px; color: #333; font-weight: 700; flex-shrink: 0; }
+        .precise-toggle-desc { flex: 1; font-size: 13px; color: #888; line-height: 1.3; }
         .precise-switch { position: relative; width: 46px; height: 26px; background: #d1d5db; border-radius: 13px; transition: background 0.2s; flex-shrink: 0; }
         .precise-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
         .precise-toggle.on .precise-switch { background: #667eea; }
