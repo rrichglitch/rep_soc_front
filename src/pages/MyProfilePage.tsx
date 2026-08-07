@@ -4,7 +4,8 @@ import { useAuth } from 'react-oidc-context';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation } from '../utils/spacetime';
+import { getBrowserLocation, jitterLocation, geocodeCity } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
@@ -131,6 +132,24 @@ function MyProfilePage() {
     try {
       if (editingField === 'city') {
         await updateProfile(undefined, editValue, undefined);
+        // Location is only fetched when creating an account or setting your city.
+        // If the user has no location yet, fetch it now (best effort).
+        if (locPrecision === 'off') {
+          try {
+            let lat: number, lng: number;
+            try {
+              const pos = await getBrowserLocation();
+              const j = jitterLocation(pos.lat, pos.lng, 15);
+              lat = j.lat; lng = j.lng;
+            } catch {
+              const geo = await geocodeCity(editValue);
+              if (!geo) throw new Error('No location available');
+              lat = geo.lat; lng = geo.lng;
+            }
+            await updateLocation(lat, lng, 'approx');
+            setLocPrecision('approx');
+          } catch { /* best effort — city still saved */ }
+        }
       } else if (editingField === 'description') {
         await updateProfile(undefined, undefined, editValue);
       }

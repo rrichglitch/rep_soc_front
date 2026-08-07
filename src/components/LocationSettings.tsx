@@ -69,7 +69,9 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
     <div className="location-settings">
       <h3>Location</h3>
       <p className="location-intro">
-        Your location is used to help people and organizations near you find you, and to find them.
+        Location is only fetched once — when you create your account or set your city — using a
+        temporary one-time permission. It helps people and organizations near you find each other.
+        You can change or turn it off at any time.
       </p>
       <div className="location-options">
         {options.map((opt) => (

@@ -11,8 +11,7 @@ import {
 import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, claimProfile, disconnectFromSpacetimeDB, getProfileByEmail, updateLocation } from './utils/spacetime';
-import { getBrowserLocation, jitterLocation } from './utils/geo';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, claimProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
@@ -62,8 +61,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [hasProfile, setHasProfileState] = useState(false);
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
-  const [isSettingLocation, setIsSettingLocation] = useState(false);
 
   const setHasProfile = (has: boolean) => {
     setHasProfileState(has);
@@ -114,16 +111,6 @@ function AuthCallback({ children }: AuthCallbackProps) {
             setHasProfileState(profileExists);
             if (profileExists) { try { await claimProfile(userEmail); } catch (e) { /* non-fatal */ } }
 
-            // First-login location permission flow (only if device supports it and never asked)
-            if (profileExists && 'geolocation' in navigator) {
-              try {
-                const prof = await getProfileByEmail(userEmail);
-                if (prof && !prof.locationAsked) {
-                  setShowLocationPrompt(true);
-                }
-              } catch { /* non-fatal */ }
-            }
-
             if (!profileExists && !window.location.pathname.includes('/register')) {
               console.log('No profile found, redirecting to register');
               setEmail(userEmail);
@@ -166,60 +153,9 @@ function AuthCallback({ children }: AuthCallbackProps) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
-  const handleLocationAllow = async () => {
-    setShowLocationPrompt(false);
-    setIsSettingLocation(true);
-    try {
-      const pos = await getBrowserLocation();
-      // Approximate precision is jittered ON DEVICE so the exact position never leaves
-      const jittered = jitterLocation(pos.lat, pos.lng, 15);
-      await updateLocation(jittered.lat, jittered.lng, 'approx');
-    } catch {
-      try { await updateLocation(0, 0, 'off'); } catch { /* non-fatal */ }
-    }
-    setIsSettingLocation(false);
-  };
-
-  const handleLocationDecline = async () => {
-    setShowLocationPrompt(false);
-    try { await updateLocation(0, 0, 'off'); } catch { /* non-fatal */ }
-  };
-
   return (
     <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile }}>
       {children(true)}
-      {showLocationPrompt && (
-        <div className="loc-prompt-overlay" onClick={() => {}}>
-          <div className="loc-prompt" onClick={(e) => e.stopPropagation()}>
-            <h3>Allow location?</h3>
-            <p>
-              Veri Social uses your location to help you find people and organizations near you,
-              and to help them find you.
-            </p>
-            <p>
-              <strong>Only your approximate location (accurate within 15 miles) will be used</strong>{' '}
-              — never your exact position. You can change this or turn location off completely at
-              any time in your profile settings.
-            </p>
-            <div className="loc-prompt-actions">
-              <button onClick={handleLocationDecline} className="loc-prompt-notnow" disabled={isSettingLocation}>Not now</button>
-              <button onClick={handleLocationAllow} className="loc-prompt-allow" disabled={isSettingLocation}>
-                {isSettingLocation ? 'Getting location…' : 'Allow'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <style>{`
-        .loc-prompt-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
-        .loc-prompt { background: white; border-radius: 12px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-        .loc-prompt h3 { margin: 0 0 12px; color: #333; font-size: 17px; }
-        .loc-prompt p { margin: 0 0 10px; color: #444; font-size: 14px; line-height: 1.5; }
-        .loc-prompt-actions { display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end; }
-        .loc-prompt-notnow { padding: 8px 16px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .loc-prompt-allow { padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .loc-prompt-allow:disabled { opacity: 0.6; cursor: default; }
-      `}</style>
     </AppContext.Provider>
   );
 }

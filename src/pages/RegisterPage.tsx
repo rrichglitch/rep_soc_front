@@ -5,7 +5,8 @@ import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, TURNSTILE_SITE_
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
-import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile } from '../utils/spacetime';
+import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation } from '../utils/spacetime';
+import { getBrowserLocation, jitterLocation } from '../utils/geo';
 
 const PENDING_REGISTRATION_KEY = 'pending_registration';
 
@@ -40,6 +41,9 @@ function RegisterPage() {
   const [nameTooltipPinned, setNameTooltipPinned] = useState(false);
   const [nameTooltipHover, setNameTooltipHover] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string>('');
+  const [locStatus, setLocStatus] = useState<'idle' | 'fetching' | 'done' | 'error'>('idle');
+  const [locCoords, setLocCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locError, setLocError] = useState<string | null>(null);
 
   // On mount: restore pending registration from localStorage if present
   useEffect(() => {
@@ -201,6 +205,16 @@ function RegisterPage() {
         displayName
       );
 
+      // Store the approximate location (best effort — the profile already exists)
+      const loc = locCoords;
+      if (loc) {
+        try {
+          await updateLocation(loc.lat, loc.lng, 'approx');
+        } catch (e) {
+          console.warn('Failed to store location after registration:', e);
+        }
+      }
+
       clearPendingRegistration();
 
       // Clean up URL query params now that we're done
@@ -221,6 +235,25 @@ function RegisterPage() {
         setNameTooltipPinned(true);
       }
       setIsLoading(false);
+    }
+  };
+
+  const handleAllowLocation = async () => {
+    setLocStatus('fetching');
+    setLocError(null);
+    try {
+      const pos = await getBrowserLocation();
+      // Approximate precision: jittered ON DEVICE — exact position never leaves
+      const jittered = jitterLocation(pos.lat, pos.lng, 15);
+      setLocCoords(jittered);
+      setLocStatus('done');
+    } catch (e: any) {
+      setLocStatus('error');
+      setLocError(
+        e?.message === 'Geolocation not supported on this device'
+          ? 'This device does not support location services, which are required to create an account.'
+          : 'Location permission was not granted. Location is required to create an account — please allow it and try again.'
+      );
     }
   };
 
@@ -420,7 +453,29 @@ function RegisterPage() {
 
           {diditVerified ? (
             <>
-              <button type="submit" className="submit-button" disabled={isLoading}>
+              <div className="location-box">
+                <h4>Location required</h4>
+                <p>
+                  Your <strong>approximate</strong> location (accurate within 15 miles) is needed
+                  once, when you create your account or set your city, to help people and
+                  organizations near you find you. Your exact position is never shared — it is
+                  jittered on your device before it is stored.
+                </p>
+                <p className="location-sub">You can turn location off completely later in your profile settings.</p>
+                {locStatus === 'done' ? (
+                  <p className="location-ok">✓ Approximate location set</p>
+                ) : locStatus === 'fetching' ? (
+                  <p className="location-busy">Getting your approximate location…</p>
+                ) : (
+                  <>
+                    <button type="button" onClick={handleAllowLocation} className="location-allow-btn">
+                      Allow location
+                    </button>
+                    {locStatus === 'error' && locError && <p className="location-error">{locError}</p>}
+                  </>
+                )}
+              </div>
+              <button type="submit" className="submit-button" disabled={isLoading || locStatus !== 'done'}>
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
               <button type="button" onClick={handleRetry} className="back-button">
@@ -620,6 +675,15 @@ function RegisterPage() {
           text-align: center;
         }
 
+        .location-box { background: #f5f7ff; border: 1px solid #c7d2fe; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+        .location-box h4 { margin: 0 0 8px; color: #3730a3; font-size: 15px; }
+        .location-box p { margin: 0 0 8px; color: #444; font-size: 13px; line-height: 1.5; }
+        .location-box .location-sub { color: #888; font-size: 12px; }
+        .location-allow-btn { padding: 10px 24px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .location-allow-btn:disabled { opacity: 0.6; cursor: default; }
+        .location-ok { color: #166534; font-weight: 600; }
+        .location-busy { color: #667eea; }
+        .location-error { color: #b91c1c; }
         .submit-button {
           padding: 14px;
           background: #667eea;
