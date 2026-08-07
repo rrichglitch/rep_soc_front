@@ -8,7 +8,7 @@ import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileB
 
 function DMChatPage() {
   const { activeOrg } = useOrg();
-  const { partnerId: otherId } = useParams<{ partnerId: string }>();
+  const { identity: otherId } = useParams<{ identity: string }>();
   const auth = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<any[]>([]);
