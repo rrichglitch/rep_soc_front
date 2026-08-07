@@ -60,9 +60,8 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
 
   return (
     <div className="location-settings">
-      <h3>Location</h3>
       <label className={`precise-toggle ${isExact ? 'on' : ''}`}>
-        <span className="precise-toggle-text">Show your exact location to people on veri social.</span>
+        <span className="precise-toggle-text">Precise Location</span>
         <input
           type="checkbox"
           checked={isExact}
@@ -71,7 +70,6 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
         />
         <span className="precise-switch" aria-hidden="true" />
       </label>
-      <p className="location-sub">Your approximate location (accurate within 15 miles) is used unless this is on.</p>
       {isBusy && <p className="location-busy">Updating location…</p>}
 
       {showFullWarning && (
@@ -96,7 +94,6 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
 
       <style>{`
         .location-settings { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .location-settings h3 { margin: 0 0 14px; color: #333; font-size: 15px; }
         .precise-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
         .precise-toggle input { display: none; }
         .precise-toggle-text { flex: 1; font-size: 14px; color: #333; font-weight: 500; }
@@ -105,7 +102,6 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
         .precise-toggle.on .precise-switch { background: #667eea; }
         .precise-toggle.on .precise-switch::after { transform: translateX(20px); }
         .precise-toggle input:disabled + .precise-switch { opacity: 0.6; }
-        .location-sub { margin: 10px 0 0; font-size: 12px; color: #888; }
         .location-busy { margin-top: 8px; font-size: 12px; color: #667eea; }
         .loc-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .loc-modal { background: white; border-radius: 12px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
