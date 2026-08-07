@@ -84,7 +84,7 @@ function OrgProfilePage() {
   if (!org) {
     return (
       <div className="org-page">
-        <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={<AuthActions />} />
+        <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={<AuthActions />} absoluteCenter />
         <main className="main-content"><p>Organization not found</p></main>
       </div>
     );

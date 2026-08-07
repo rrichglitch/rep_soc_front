@@ -337,7 +337,7 @@ function SearchPage() {
         .search-content {
           max-width: 600px;
           margin: 0 auto;
-          padding: 24px;
+          padding: 12px 24px 24px;
         }
 
         .loading {

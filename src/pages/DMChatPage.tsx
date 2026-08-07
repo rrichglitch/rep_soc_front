@@ -54,6 +54,7 @@ function DMChatPage() {
         <TopBar
           left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
           center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+          absoluteCenter
           right={<AuthActions />}
         />
         <main className="main-content" style={{ padding: 40, textAlign: 'center', color: '#666' }}>

@@ -220,6 +220,7 @@ function MyProfilePage() {
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         right={<AuthActions profileReplacement={<button onClick={() => auth.signoutRedirect()} className="topbar-signin" style={{background:"#dc2626"}}>Logout</button>} />}
+        absoluteCenter
       />
 
       <main className="main-content">

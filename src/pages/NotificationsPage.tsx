@@ -67,7 +67,7 @@ function NotificationsPage() {
 
   return (
     <div className="notif-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} right={<AuthActions />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>} right={<AuthActions />} absoluteCenter />
       <main className="main-content">
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <h3 style={{margin:0}}>Notifications</h3>

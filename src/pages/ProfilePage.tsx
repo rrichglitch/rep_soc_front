@@ -215,6 +215,7 @@ function ProfilePage() {
         <TopBar
           left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
           center={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+          absoluteCenter
           right={<div style={{ width: 36 }} />}
         />
         <main className="main-content">
@@ -232,6 +233,7 @@ function ProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        absoluteCenter
         right={<AuthActions />}
       />
 

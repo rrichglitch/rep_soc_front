@@ -35,11 +35,13 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     const map = L.map(containerRef.current, {
       center: initCenter,
       zoom: center ? 9 : 4,
-      zoomControl: true,
+      zoomControl: false,
     });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // CARTO Positron: minimal basemap — keeps city labels, drops POI clutter.
+    // This map is for discovery, not navigation; zoom via scroll/pinch.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map);
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
