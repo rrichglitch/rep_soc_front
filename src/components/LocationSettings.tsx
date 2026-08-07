@@ -78,7 +78,7 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
           <div className="loc-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Show your exact location?</h3>
             <p>
-              We never track your location — your location is only used at the moment you change
+              We never track your location. Your location is only saved at the moment you change
               your city or enable Precise Location.
             </p>
             <p>
@@ -87,7 +87,7 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
             </p>
             <div className="loc-modal-actions">
               <button onClick={handleCancelFull} className="loc-cancel-btn">Cancel</button>
-              <button onClick={handleConfirmFull} className="loc-confirm-btn">I understand — show my exact location</button>
+              <button onClick={handleConfirmFull} className="loc-confirm-btn">Show My Exact Location</button>
             </div>
           </div>
         </div>
