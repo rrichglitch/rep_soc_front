@@ -2,18 +2,25 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
-import { getDbConnection, connectToSpacetimeDB } from '../utils/spacetime';
+import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import { haversineMiles, formatMiles } from '../utils/geo';
+import MapView from '../components/MapView';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 import AuthActions from '../components/AuthActions';
 
 interface SearchResult {
+  type: 'person' | 'org';
   identity: string;
+  orgId?: bigint;
   email: string;
   fullName: string;
   profilePicture: string;
   city: string;
   description: string;
+  locationLat?: number;
+  locationLng?: number;
+  distance?: number;
 }
 
 function SearchPage() {
@@ -26,6 +33,9 @@ function SearchPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
   const [isConnected, setIsConnected] = useState(false);
+  const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearbyFirst, setNearbyFirst] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   // Background: try to connect
   useEffect(() => {
@@ -39,6 +49,16 @@ function SearchPage() {
     };
     init();
   }, []);
+
+  // Load my stored location (only if not 'off')
+  useEffect(() => {
+    if (!email) return;
+    getProfileByEmail(email).then(p => {
+      if (p && p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
+        setMyPos({ lat: p.locationLat, lng: p.locationLng });
+      }
+    }).catch(() => {});
+  }, [email, isConnected]);
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -68,15 +88,54 @@ function SearchPage() {
             city.includes(searchLower) ||
             profileEmail.includes(searchLower)
           ) {
+            const lat = profile.locationLat !== undefined ? profile.locationLat : undefined;
+            const lng = profile.locationLng !== undefined ? profile.locationLng : undefined;
+            const hasLoc = profile.locationPrecision !== 'off' && lat !== undefined && lng !== undefined;
             foundProfiles.push({
+              type: 'person',
               identity: profile.identity?.toHexString() || '',
               email: profile.email,
               fullName: profile.fullName,
               profilePicture: profile.profilePicture || '',
               city: profile.city,
               description: profile.description,
+              locationLat: hasLoc ? lat : undefined,
+              locationLng: hasLoc ? lng : undefined,
+              distance: myPos && hasLoc ? haversineMiles(myPos.lat, myPos.lng, lat!, lng!) : undefined,
             });
           }
+        }
+
+        // Search organizations too
+        for (const org of db.db.organization.iter()) {
+          const orgName = org.name?.toLowerCase() || '';
+          const orgCity = org.city?.toLowerCase() || '';
+          if (orgName.includes(searchLower) || orgCity.includes(searchLower)) {
+            const lat = org.locationLat !== undefined ? org.locationLat : undefined;
+            const lng = org.locationLng !== undefined ? org.locationLng : undefined;
+            foundProfiles.push({
+              type: 'org',
+              identity: '',
+              orgId: org.id,
+              email: '',
+              fullName: org.name,
+              profilePicture: org.picture || '',
+              city: org.city,
+              description: org.description,
+              locationLat: lat,
+              locationLng: lng,
+              distance: myPos && lat !== undefined && lng !== undefined ? haversineMiles(myPos.lat, myPos.lng, lat, lng) : undefined,
+            });
+          }
+        }
+
+        // Nearby-first sorting
+        if (nearbyFirst) {
+          foundProfiles.sort((a, b) => {
+            const da = a.distance ?? Infinity;
+            const db = b.distance ?? Infinity;
+            return da - db;
+          });
         }
 
         setResults(foundProfiles);
@@ -87,7 +146,7 @@ function SearchPage() {
     };
 
     searchQuery();
-  }, [query, isConnected]);
+  }, [query, isConnected, myPos, nearbyFirst]);
 
   return (
     <div className="search-page">
@@ -128,21 +187,69 @@ function SearchPage() {
           )
         ) : (
           <div className="results">
-            <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
+            <div className="results-header">
+              <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
+              <div className="results-tools">
+                {myPos && (
+                  <button
+                    onClick={() => setNearbyFirst(!nearbyFirst)}
+                    className={`nearby-toggle ${nearbyFirst ? 'active' : ''}`}
+                  >
+                    {nearbyFirst ? '✓ Nearby first' : 'Nearby first'}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowMap(!showMap)}
+                  className={`nearby-toggle ${showMap ? 'active' : ''}`}
+                >
+                  {showMap ? '✓ Map view' : 'Map view'}
+                </button>
+              </div>
+            </div>
+            {showMap && (
+              <div className="map-section">
+                <MapView
+                  results={results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined).map(r => ({
+                    type: r.type,
+                    identity: r.identity,
+                    orgId: r.orgId,
+                    fullName: r.fullName,
+                    profilePicture: r.profilePicture,
+                    locationLat: r.locationLat!,
+                    locationLng: r.locationLng!,
+                  }))}
+                  center={myPos ?? undefined}
+                  onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
+                />
+                <p className="map-note">
+                  {results.filter(r => r.locationLat === undefined).length > 0
+                    ? `${results.filter(r => r.locationLat === undefined).length} result(s) have no location and are not shown on the map.`
+                    : 'Showing all results on the map.'}
+                </p>
+              </div>
+            )}
             {results.map((result) => {
               const isOwn = result.email === email;
+              const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
               return (
-                <Link to={`/profile/${result.identity}`} key={result.identity} className="result-card">
+                <Link to={linkTo} key={result.type === 'org' ? `org-${result.orgId}` : result.identity} className="result-card">
                   {result.profilePicture ? (
                     <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
                   ) : (
                     <div className="result-avatar-placeholder" />
                   )}
                   <div className="result-info">
-                    <h3 className="result-name">{result.fullName}{isOwn && ' (You)'}</h3>
+                    <h3 className="result-name">
+                      {result.fullName}
+                      {result.type === 'org' && <span className="result-type-badge">Organization</span>}
+                      {isOwn && ' (You)'}
+                    </h3>
                     {result.city && <p className="result-city">{result.city}</p>}
-                    {result.email !== email && (
+                    {result.email !== email && result.email && (
                       <p className="result-email">{result.email}</p>
+                    )}
+                    {result.distance !== undefined && (
+                      <p className="result-distance">{formatMiles(result.distance)} away</p>
                     )}
                   </div>
                 </Link>
@@ -218,6 +325,14 @@ function SearchPage() {
           margin: 0;
         }
 
+        .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .results-tools { display: flex; gap: 8px; }
+        .map-section { margin-bottom: 16px; }
+        .map-note { font-size: 12px; color: #999; margin: 8px 2px 0; }
+        .nearby-toggle { padding: 6px 14px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .nearby-toggle.active { background: #667eea; color: white; }
+        .result-type-badge { margin-left: 8px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
+        .result-distance { margin: 4px 0 0; color: #667eea; font-size: 13px; font-weight: 600; }
         .results-count {
           color: #666;
           font-size: 14px;

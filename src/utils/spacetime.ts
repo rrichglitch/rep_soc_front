@@ -788,17 +788,25 @@ export async function getFollowedStories(currentIdentityHex: string) {
 // ─── Organization APIs ───────────────────────────────────────────
 
 export async function createOrganization(
-  name: string, picture: string, city: string, description: string
+  name: string, picture: string, city: string, description: string, locationLat?: number, locationLng?: number
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.createOrganization({ name, picture, city, description });
+  await dbConnection.reducers.createOrganization({
+    name, picture, city, description,
+    locationLat: locationLat ?? undefined,
+    locationLng: locationLng ?? undefined,
+  });
 }
 
 export async function updateOrganization(
-  orgId: bigint, picture?: string, city?: string, description?: string
+  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.updateOrganization({ orgId, picture, city, description });
+  await dbConnection.reducers.updateOrganization({
+    orgId, picture, city, description,
+    locationLat: locationLat ?? undefined,
+    locationLng: locationLng ?? undefined,
+  });
 }
 
 export function getMyOrganizations(identity: string) {
@@ -1108,6 +1116,11 @@ export function getUnreadNotificationCount(identity: string): number {
     }
   }
   return count;
+}
+
+export async function updateLocation(lat: number, lng: number, precision: 'off' | 'approx' | 'exact'): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.updateLocation({ lat, lng, precision });
 }
 
 export async function resolveNotification(notificationId: bigint): Promise<void> {

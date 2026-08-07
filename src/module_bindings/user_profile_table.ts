@@ -22,4 +22,8 @@ export default __t.row({
   profilePicture: __t.string().name("profile_picture"),
   isPro: __t.bool().name("is_pro"),
   manuallyCreated: __t.bool().name("manually_created"),
+  locationLat: __t.option(__t.f64()).name("location_lat"),
+  locationLng: __t.option(__t.f64()).name("location_lng"),
+  locationPrecision: __t.string().name("location_precision"),
+  locationAsked: __t.bool().name("location_asked"),
 });

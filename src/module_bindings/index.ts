@@ -64,6 +64,7 @@ import UnfollowReducer from "./unfollow_reducer";
 import UnfriendReducer from "./unfriend_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
 import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
+import UpdateLocationReducer from "./update_location_reducer";
 import UpdateOrganizationReducer from "./update_organization_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
 import UpgradeToProReducer from "./upgrade_to_pro_reducer";
@@ -243,6 +244,7 @@ const reducersSchema = __reducers(
   __reducerSchema("unfriend", UnfriendReducer),
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
   __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
+  __reducerSchema("update_location", UpdateLocationReducer),
   __reducerSchema("update_organization", UpdateOrganizationReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
   __reducerSchema("upgrade_to_pro", UpgradeToProReducer),

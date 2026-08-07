@@ -19,4 +19,6 @@ export default __t.row({
   leaderIdentity: __t.identity().name("leader_identity"),
   createdAt: __t.timestamp().name("created_at"),
   isPro: __t.bool().name("is_pro"),
+  locationLat: __t.option(__t.f64()).name("location_lat"),
+  locationLng: __t.option(__t.f64()).name("location_lng"),
 });

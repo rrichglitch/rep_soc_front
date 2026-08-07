@@ -141,6 +141,8 @@ export const Organization = __t.object("Organization", {
   leaderIdentity: __t.identity(),
   createdAt: __t.timestamp(),
   isPro: __t.bool(),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
 });
 export type Organization = __Infer<typeof Organization>;
 
@@ -200,6 +202,10 @@ export const UserProfile = __t.object("UserProfile", {
   profilePicture: __t.string(),
   isPro: __t.bool(),
   manuallyCreated: __t.bool(),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
+  locationPrecision: __t.string(),
+  locationAsked: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

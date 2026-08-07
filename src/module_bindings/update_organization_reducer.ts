@@ -15,4 +15,6 @@ export default {
   picture: __t.option(__t.string()),
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
 };

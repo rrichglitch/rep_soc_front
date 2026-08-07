@@ -9,6 +9,7 @@ import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
+import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
 import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
@@ -50,6 +51,7 @@ function MyProfilePage() {
   const [showPictureSelect, setShowPictureSelect] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<any | null>(null);
+  const [locPrecision, setLocPrecision] = useState<LocationPrecision>('off');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +110,7 @@ function MyProfilePage() {
 
         const userPosts = await getMyPosts(identityHex);
         setMyPosts(userPosts);
+        setLocPrecision((profileData.locationPrecision as LocationPrecision) || 'off');
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -300,6 +303,8 @@ function MyProfilePage() {
             </div>
           </div>
         </div>
+
+        <LocationSettings currentPrecision={locPrecision} onChanged={setLocPrecision} />
 
         <input
           type="file"

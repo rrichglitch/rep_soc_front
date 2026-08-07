@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization } from '../utils/spacetime';
+import { geocodeCity } from '../utils/geo';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
@@ -85,6 +86,18 @@ function OrgAccountView() {
 
   const canManage = myRole === 'leader' || myRole === 'co_leader';
 
+  const handleRefreshLocation = async () => {
+    if (!org.city) { alert('This organization has no city set.'); return; }
+    try {
+      const geo = await geocodeCity(org.city);
+      if (!geo) { alert('Could not find a location for this city.'); return; }
+      await updateOrganization(org.id, undefined, undefined, undefined, geo.lat, geo.lng);
+      alert('Location updated from city.');
+    } catch (e: any) {
+      alert(e.message || 'Failed to update location');
+    }
+  };
+
   return (
     <div className="my-profile-page">
       <TopBar
@@ -114,6 +127,9 @@ function OrgAccountView() {
               <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
                 ← Back to my account
               </button>
+              {canManage && org.city && (
+                <button onClick={handleRefreshLocation} className="refresh-loc-btn">Set location from city</button>
+              )}
             </div>
           </div>
         </div>
@@ -236,6 +252,7 @@ function OrgAccountView() {
         .join-date { margin: 12px 0 0; font-size: 13px; color: #999; }
         .back-to-account-btn { margin-top: 12px; padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .back-to-account-btn:hover { background: #e5e7eb; }
+        .refresh-loc-btn { margin-top: 8px; padding: 8px 16px; background: #eef2ff; color: #3730a3; border: 1px solid #c7d2fe; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }

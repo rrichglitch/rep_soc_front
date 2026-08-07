@@ -11,10 +11,7 @@ import {
 } from "spacetimedb";
 
 export default {
-  name: __t.string(),
-  picture: __t.string(),
-  city: __t.string(),
-  description: __t.string(),
-  locationLat: __t.option(__t.f64()),
-  locationLng: __t.option(__t.f64()),
+  lat: __t.f64(),
+  lng: __t.f64(),
+  precision: __t.string(),
 };

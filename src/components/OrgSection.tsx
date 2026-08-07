@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
 import { getMyOrganizations, createOrganization, isPro, upgradeToPro } from '../utils/spacetime';
+import { geocodeCity } from '../utils/geo';
 
 function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   const navigate = useNavigate();
@@ -43,7 +44,9 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
     e.preventDefault();
     if (!form.name) return;
     try {
-      await createOrganization(form.name, form.picture || '/veri.png', form.city, form.description);
+      // Geocode the city so the org appears on location-based search (best effort)
+      const geo = await geocodeCity(form.city);
+      await createOrganization(form.name, form.picture || '/veri.png', form.city, form.description, geo?.lat, geo?.lng);
       setShowCreate(false);
       setForm({ name: '', picture: '', city: '', description: '' });
       setOrgs(getMyOrganizations(profileIdentity));
