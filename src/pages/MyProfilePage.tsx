@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation } from '../utils/spacetime';
-import { getBrowserLocation, jitterLocation, geocodeCity } from '../utils/geo';
+import { getBrowserLocation, jitterLocation } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
@@ -131,35 +131,36 @@ function MyProfilePage() {
     setIsSaving(true);
     try {
       if (editingField === 'city') {
+        // Mandatory location fetch on EVERY city update (frontend gate)
+        let lat: number, lng: number;
+        try {
+          const pos = await getBrowserLocation();
+          const j = jitterLocation(pos.lat, pos.lng, 15);
+          lat = j.lat; lng = j.lng;
+        } catch {
+          // Stay in edit mode so the user can retry — city is not saved
+          alert('Location is required when setting your city. Please allow location access and try again.');
+          setIsSaving(false);
+          return;
+        }
         await updateProfile(undefined, editValue, undefined);
-        // Location is only fetched when creating an account or setting your city.
-        // If the user has no location yet, fetch it now (best effort).
-        if (locPrecision === 'off') {
-          try {
-            let lat: number, lng: number;
-            try {
-              const pos = await getBrowserLocation();
-              const j = jitterLocation(pos.lat, pos.lng, 15);
-              lat = j.lat; lng = j.lng;
-            } catch {
-              const geo = await geocodeCity(editValue);
-              if (!geo) throw new Error('No location available');
-              lat = geo.lat; lng = geo.lng;
-            }
-            await updateLocation(lat, lng, 'approx');
-            setLocPrecision('approx');
-          } catch { /* best effort — city still saved */ }
+        try {
+          await updateLocation(lat, lng, 'approx');
+          setLocPrecision('approx');
+        } catch {
+          console.warn('Failed to store location after city update');
         }
       } else if (editingField === 'description') {
         await updateProfile(undefined, undefined, editValue);
       }
       await loadProfile();
-    } catch (e) {
-      console.error('Error updating profile:', e);
-    } finally {
-      setIsSaving(false);
       setEditingField(null);
       setEditValue('');
+    } catch (e) {
+      console.error('Error updating profile:', e);
+      alert('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
