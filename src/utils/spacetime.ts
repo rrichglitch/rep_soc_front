@@ -1126,7 +1126,7 @@ export async function updateLocation(lat: number, lng: number, precision: 'off' 
 // Downgrade to approximate: backend jitters the last stored precise location (no new fetch)
 export async function jitterToApprox(): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.jitterToApprox();
+  await dbConnection.reducers.jitterToApprox({});
 }
 
 export async function resolveNotification(notificationId: bigint): Promise<void> {
