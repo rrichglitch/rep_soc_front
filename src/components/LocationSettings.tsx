@@ -79,13 +79,12 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
           <div className="loc-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Show your exact location?</h3>
             <p>
-              Turning on <strong>Precise Location</strong> will store and display your{' '}
-              <strong>exact location</strong> to other people and organizations.
+              We never track your location — your location is only used at the moment you change
+              your city or enable Precise Location.
             </p>
             <p>
-              This only exposes <strong>where you are at that moment</strong> — it is a snapshot,
-              not live tracking. Still, it can reveal where you live, work, or spend time, so only
-              turn it on if you are comfortable with others knowing your precise whereabouts.
+              Enabling Precise Location will show exactly where you are, but only at the moment
+              you toggle it on.
             </p>
             <div className="loc-modal-actions">
               <button onClick={handleCancelFull} className="loc-cancel-btn">Cancel</button>
