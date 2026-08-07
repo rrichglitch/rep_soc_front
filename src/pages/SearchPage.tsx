@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
-import { haversineMiles, formatMiles } from '../utils/geo';
+import { haversineMiles, formatMiles, geocodeCity } from '../utils/geo';
 import MapView from '../components/MapView';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
@@ -36,6 +36,10 @@ function SearchPage() {
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState(false);
   const [showMap, setShowMap] = useState(false);
+  const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
+  const [showLocModal, setShowLocModal] = useState(false);
+  const [locInput, setLocInput] = useState('');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   // Background: try to connect
   useEffect(() => {
@@ -59,6 +63,12 @@ function SearchPage() {
       }
     }).catch(() => {});
   }, [email, isConnected]);
+
+  // The active reference point: an explicitly set search location wins over the saved one
+  const activePos = useMemo(
+    () => (searchLoc ? { lat: searchLoc.lat, lng: searchLoc.lng } : myPos),
+    [searchLoc, myPos]
+  );
 
   useEffect(() => {
     const searchQuery = async () => {
@@ -101,7 +111,7 @@ function SearchPage() {
               description: profile.description,
               locationLat: hasLoc ? lat : undefined,
               locationLng: hasLoc ? lng : undefined,
-              distance: myPos && hasLoc ? haversineMiles(myPos.lat, myPos.lng, lat!, lng!) : undefined,
+              distance: activePos && hasLoc ? haversineMiles(activePos.lat, activePos.lng, lat!, lng!) : undefined,
             });
           }
         }
@@ -124,7 +134,7 @@ function SearchPage() {
               description: org.description,
               locationLat: lat,
               locationLng: lng,
-              distance: myPos && lat !== undefined && lng !== undefined ? haversineMiles(myPos.lat, myPos.lng, lat, lng) : undefined,
+              distance: activePos && lat !== undefined && lng !== undefined ? haversineMiles(activePos.lat, activePos.lng, lat, lng) : undefined,
             });
           }
         }
@@ -146,7 +156,7 @@ function SearchPage() {
     };
 
     searchQuery();
-  }, [query, isConnected, myPos, nearbyFirst]);
+  }, [query, isConnected, activePos, nearbyFirst]);
 
   return (
     <div className="search-page">
@@ -187,7 +197,7 @@ function SearchPage() {
             <div className="results-header">
               <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
               <div className="results-tools">
-                {myPos && (
+                {activePos && (
                   <button
                     onClick={() => setNearbyFirst(!nearbyFirst)}
                     className={`nearby-toggle ${nearbyFirst ? 'active' : ''}`}
@@ -195,6 +205,9 @@ function SearchPage() {
                     {nearbyFirst ? '✓ Nearby first' : 'Nearby first'}
                   </button>
                 )}
+                <button onClick={() => { setLocInput(''); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
+                  {searchLoc ? `📍 ${searchLoc.label}` : '📍 Set search location'}
+                </button>
                 <button
                   onClick={() => setShowMap(!showMap)}
                   className={`nearby-toggle ${showMap ? 'active' : ''}`}
@@ -215,7 +228,7 @@ function SearchPage() {
                     locationLat: r.locationLat!,
                     locationLng: r.locationLng!,
                   }))}
-                  center={myPos ?? undefined}
+                  center={activePos ?? undefined}
                   onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
                 />
               </div>
@@ -250,6 +263,64 @@ function SearchPage() {
           </div>
         )}
       </main>
+
+      {showLocModal && (
+        <div className="loc-search-overlay" onClick={() => setShowLocModal(false)}>
+          <div className="loc-search-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Search location</h3>
+            <p>Search and map distances will be measured from this place. Leave empty to clear.</p>
+            <input
+              type="text"
+              value={locInput}
+              onChange={(e) => setLocInput(e.target.value)}
+              placeholder="City or place (e.g. Tokyo)"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  (document.getElementById('loc-search-set') as HTMLButtonElement)?.click();
+                }
+              }}
+            />
+            <div className="loc-search-actions">
+              {searchLoc && (
+                <button
+                  className="loc-search-clear"
+                  onClick={() => {
+                    setSearchLoc(null);
+                    setShowLocModal(false);
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+              <button className="loc-search-cancel" onClick={() => setShowLocModal(false)}>Cancel</button>
+              <button
+                id="loc-search-set"
+                className="loc-search-set"
+                disabled={isGeocoding}
+                onClick={async () => {
+                  const q = locInput.trim();
+                  if (!q) return;
+                  setIsGeocoding(true);
+                  try {
+                    const geo = await geocodeCity(q);
+                    if (!geo) {
+                      alert('Could not find that place.');
+                      return;
+                    }
+                    setSearchLoc({ label: q, lat: geo.lat, lng: geo.lng });
+                    setShowLocModal(false);
+                  } finally {
+                    setIsGeocoding(false);
+                  }
+                }}
+              >
+                {isGeocoding ? 'Finding…' : 'Set location'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .search-page {
@@ -295,7 +366,17 @@ function SearchPage() {
         }
 
         .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .results-tools { display: flex; gap: 8px; }
+        .results-tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .loc-search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
+        .loc-search-modal { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .loc-search-modal h3 { margin: 0 0 8px; color: #333; font-size: 16px; }
+        .loc-search-modal p { margin: 0 0 12px; color: #666; font-size: 13px; line-height: 1.4; }
+        .loc-search-modal input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+        .loc-search-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .loc-search-clear { padding: 8px 14px; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .loc-search-cancel { padding: 8px 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .loc-search-set { padding: 8px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .loc-search-set:disabled { opacity: 0.6; }
         .map-section { width: 100vw; margin-left: calc(50% - 50vw); height: calc(100vh - 140px); }
         .map-section .map-view-wrap { height: 100%; border-radius: 0; box-shadow: none; }
         .map-section .map-view { height: 100%; }
