@@ -5,13 +5,14 @@ interface TopBarProps {
   center?: ReactNode;
   right?: ReactNode;
   className?: string;
+  absoluteCenter?: boolean;
 }
 
-function TopBar({ left, center, right, className = '' }: TopBarProps) {
+function TopBar({ left, center, right, className = '', absoluteCenter = false }: TopBarProps) {
   return (
     <header className={`topbar ${className}`}>
       <div className="topbar-left">{left}</div>
-      <div className="topbar-center">{center}</div>
+      <div className={`topbar-center ${absoluteCenter ? 'topbar-center-absolute' : ''}`}>{center}</div>
       <div className="topbar-right">{right}</div>
 
       <style>{`
@@ -43,6 +44,17 @@ function TopBar({ left, center, right, className = '' }: TopBarProps) {
           justify-content: center;
           padding: 0;
           min-width: 0;
+        }
+        /* Desktop: absolutely center the search bar on the screen */
+        .topbar-center-absolute { position: static; }
+        @media (min-width: 768px) {
+          .topbar-center-absolute {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(420px, 45vw);
+            flex: none;
+          }
         }
         .topbar-right {
           display: flex;
