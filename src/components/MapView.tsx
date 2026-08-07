@@ -87,8 +87,8 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     const wrap = containerRef.current;
     if (!wrap) return;
     const pt = map.latLngToContainerPoint([lat, lng]);
-    const CARD_W = 264;
-    const CARD_H = 120;
+    const CARD_W = 340;
+    const CARD_H = 160;
     const pad = 8;
     let x = pt.x - CARD_W / 2;
     let y = pt.y - CARD_H / 2;
@@ -254,11 +254,11 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
         }
         .map-profile-card {
           position: absolute;
-          width: 264px;
+          width: 340px;
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
+          gap: 16px;
+          padding: 16px;
           background: white;
           border-radius: 12px;
           box-shadow: 0 6px 24px rgba(0,0,0,0.25);
@@ -267,14 +267,14 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           border: 1px solid #e5e7eb;
           box-sizing: border-box;
         }
-        .mpc-pic { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .mpc-pic { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         .mpc-pic-placeholder { background: #e0e0e0; }
         .mpc-info { flex: 1; min-width: 0; }
-        .mpc-name { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: #333; }
-        .mpc-org-badge { margin-left: 6px; padding: 1px 7px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 10px; font-weight: 600; vertical-align: middle; }
+        .mpc-name { margin: 0 0 6px; font-size: 20px; font-weight: 700; color: #333; }
+        .mpc-org-badge { margin-left: 6px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
         .mpc-desc {
-          margin: 0; font-size: 12px; color: #666; line-height: 1.35;
-          display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+          margin: 0; font-size: 14px; color: #666; line-height: 1.4;
+          display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
         }
       `}</style>
     </div>
