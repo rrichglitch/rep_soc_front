@@ -46,6 +46,7 @@ function OrgChatPage() {
 
   const handleSend = async () => {
     if (!input.trim() || !orgId) return;
+    if (input.length > 2000) { alert('Message too long (max 2000 characters)'); return; }
     await sendOrgMessage(orgId, input.trim());
     setInput('');
   };
@@ -85,7 +86,7 @@ function OrgChatPage() {
         )}
         {!activeOrg && (
         <form onSubmit={e => { e.preventDefault(); handleSend(); }} className="msg-form">
-          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Type a message..." className="msg-input" autoFocus />
+          <input value={input} onChange={e => setInput(e.target.value)} placeholder="Type a message..." className="msg-input" autoFocus maxLength={2000} />
           <button type="submit" className="msg-send"><svg width="28" height="28" viewBox="0 0 20 20" fill="white"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.288z"/></svg></button>
         </form>
         )}
