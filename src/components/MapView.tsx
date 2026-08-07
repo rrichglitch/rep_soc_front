@@ -35,23 +35,38 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
   activeCardRef.current = activeCard;
   const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressUntilRef = useRef(0);
+  const hiddenKeysRef = useRef<Set<string>>(new Set());
 
-  const restoreMarker = (card: { result: MapResult; x: number; y: number }) => {
-    const key = card.result.type === 'org' ? `org-${card.result.orgId}` : card.result.identity;
+  const keyOf = (r: MapResult) => (r.type === 'org' ? `org-${r.orgId}` : r.identity);
+
+  // Restore every hidden marker except the one belonging to the currently open card
+  const restoreAllHidden = () => {
+    const activeKey = activeCardRef.current ? keyOf(activeCardRef.current.result) : null;
+    for (const key of hiddenKeysRef.current) {
+      if (key === activeKey) continue;
+      const mk = markersByKeyRef.current.get(key);
+      if (mk) mk.setOpacity(1);
+    }
+    hiddenKeysRef.current.clear();
+    if (activeKey) hiddenKeysRef.current.add(activeKey);
+  };
+
+  const hideMarker = (key: string) => {
     const mk = markersByKeyRef.current.get(key);
-    if (mk) mk.setOpacity(1);
+    if (mk) mk.setOpacity(0);
+    hiddenKeysRef.current.add(key);
   };
 
   const closeCard = () => {
     const card = activeCardRef.current;
     if (!card) return;
-    // Restore the icon a moment later: restoring it while the cursor is still over the
-    // marker spot would immediately re-fire mouseover and reopen the card (stuck loop).
+    // Restore hidden markers a beat later: restoring while the cursor is still over
+    // the marker spot would immediately re-fire mouseover and reopen the card.
     if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
     restoreTimerRef.current = setTimeout(() => {
-      restoreMarker(card);
+      restoreAllHidden();
       restoreTimerRef.current = null;
-    }, 700);
+    }, 500);
     setActiveCard(null);
   };
 
@@ -60,14 +75,13 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     // markers during a drag would otherwise leave a card stuck open.
     if (Date.now() < suppressUntilRef.current) return;
 
-    // Hide the icon this card replaces
-    const key = r.type === 'org' ? `org-${r.orgId}` : r.identity;
-    const mk = markersByKeyRef.current.get(key);
-    if (mk) mk.setOpacity(0);
+    // Opening a new card: restore everything else, then hide this marker
+    restoreAllHidden();
     if (restoreTimerRef.current) {
       clearTimeout(restoreTimerRef.current);
       restoreTimerRef.current = null;
     }
+    hideMarker(keyOf(r));
 
     // Position: centered exactly on the icon; clamp so it never clips the screen
     const wrap = containerRef.current;
@@ -138,6 +152,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
 
     layer.clearLayers();
     markersByKeyRef.current.clear();
+    hiddenKeysRef.current.clear();
     const withCoords = results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined);
     if (withCoords.length === 0) return;
 
