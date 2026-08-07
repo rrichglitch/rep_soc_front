@@ -27,61 +27,21 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
-  const markersByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const onResultClickRef = useRef(onResultClick);
   onResultClickRef.current = onResultClick;
+  const draggingRef = useRef(false);
   const [activeCard, setActiveCard] = useState<{ result: MapResult; x: number; y: number } | null>(null);
   const activeCardRef = useRef(activeCard);
   activeCardRef.current = activeCard;
-  const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const suppressUntilRef = useRef(0);
-  const hiddenKeysRef = useRef<Set<string>>(new Set());
 
-  const keyOf = (r: MapResult) => (r.type === 'org' ? `org-${r.orgId}` : r.identity);
-
-  // Restore every hidden marker except the one belonging to the currently open card
-  const restoreAllHidden = () => {
-    const activeKey = activeCardRef.current ? keyOf(activeCardRef.current.result) : null;
-    for (const key of hiddenKeysRef.current) {
-      if (key === activeKey) continue;
-      const mk = markersByKeyRef.current.get(key);
-      if (mk) mk.setOpacity(1);
-    }
-    hiddenKeysRef.current.clear();
-    if (activeKey) hiddenKeysRef.current.add(activeKey);
-  };
-
-  const hideMarker = (key: string) => {
-    const mk = markersByKeyRef.current.get(key);
-    if (mk) mk.setOpacity(0);
-    hiddenKeysRef.current.add(key);
-  };
-
-  const closeCard = () => {
-    const card = activeCardRef.current;
-    if (!card) return;
-    // Restore hidden markers a beat later: restoring while the cursor is still over
-    // the marker spot would immediately re-fire mouseover and reopen the card.
-    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
-    restoreTimerRef.current = setTimeout(() => {
-      restoreAllHidden();
-      restoreTimerRef.current = null;
-    }, 500);
-    setActiveCard(null);
-  };
+  // Simple model: card is open while hovered/tapped, marker present when not.
+  // The card is centered exactly on its marker, so it covers the icon — no marker
+  // opacity juggling needed. Closing is just clearing the card state.
+  const closeCard = () => setActiveCard(null);
 
   const openCard = (r: MapResult, map: L.Map, lat: number, lng: number) => {
-    // Ignore hover-open while the user is panning the map (drag) — cursor crossing
-    // markers during a drag would otherwise leave a card stuck open.
-    if (Date.now() < suppressUntilRef.current) return;
-
-    // Opening a new card: restore everything else, then hide this marker
-    restoreAllHidden();
-    if (restoreTimerRef.current) {
-      clearTimeout(restoreTimerRef.current);
-      restoreTimerRef.current = null;
-    }
-    hideMarker(keyOf(r));
+    // Don't open cards mid-pan: cursor sweeps across markers while dragging
+    if (draggingRef.current) return;
 
     // Position: centered exactly on the icon; clamp so it never clips the screen
     const wrap = containerRef.current;
@@ -96,16 +56,6 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     y = Math.max(pad, Math.min(y, wrap.clientHeight - CARD_H - pad));
     setActiveCard({ result: r, x, y });
   };
-
-  // Tap anywhere on the map closes the card (mobile)
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    const onMapClick = () => closeCard();
-    map.on('click', onMapClick);
-    return () => { map.off('click', onMapClick); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Init map once
   useEffect(() => {
@@ -125,21 +75,26 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // Panning the map: close any open card and suppress hover-open briefly
+    // Panning: close any open card and ignore hover-opens while dragging
     const onDragStart = () => {
-      suppressUntilRef.current = Date.now() + 600;
+      draggingRef.current = true;
       closeCard();
     };
+    const onDragEnd = () => {
+      draggingRef.current = false;
+    };
+    // Mobile: tapping anywhere on the map closes the card
     map.on('dragstart', onDragStart);
-    map.on('movestart', onDragStart);
+    map.on('dragend', onDragEnd);
+    map.on('click', closeCard);
 
     return () => {
       map.off('dragstart', onDragStart);
-      map.off('movestart', onDragStart);
+      map.off('dragend', onDragEnd);
+      map.off('click', closeCard);
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
-      markersByKeyRef.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -151,8 +106,6 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     if (!map || !layer) return;
 
     layer.clearLayers();
-    markersByKeyRef.current.clear();
-    hiddenKeysRef.current.clear();
     const withCoords = results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined);
     if (withCoords.length === 0) return;
 
@@ -189,11 +142,10 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           iconSize: [30, 30],
           iconAnchor: [15, 15],
         });
-        const mk = L.marker([lat, lng], { icon })
+        L.marker([lat, lng], { icon })
           .on('mouseover', () => openCard(r, map, lat, lng))
           .on('click', () => openCard(r, map, lat, lng))
           .addTo(layer);
-        markersByKeyRef.current.set(r.type === 'org' ? `org-${r.orgId}` : r.identity, mk);
       } else {
         const icon = L.divIcon({
           className: '',
