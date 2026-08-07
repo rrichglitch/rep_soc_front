@@ -30,6 +30,8 @@ export function jitterLocation(lat: number, lng: number, maxMiles: number): { la
 }
 
 // Browser geolocation as a promise
+// NOTE: default accuracy (not high) + short timeout + long cache — high-accuracy GPS
+// acquisition pegs the device radio and makes the whole app sluggish on mobile.
 export function getBrowserLocation(): Promise<{ lat: number; lng: number }> {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
@@ -39,7 +41,7 @@ export function getBrowserLocation(): Promise<{ lat: number; lng: number }> {
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => reject(err),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 600000 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
   });
 }
