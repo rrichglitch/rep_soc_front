@@ -12,19 +12,13 @@ interface LocationSettingsProps {
 function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps) {
   const [isBusy, setIsBusy] = useState(false);
   const [showFullWarning, setShowFullWarning] = useState(false);
-  const [pendingChoice, setPendingChoice] = useState<LocationPrecision | null>(null);
 
-  const applyPrecision = async (precision: LocationPrecision) => {
+  const isExact = currentPrecision === 'exact';
+
+  const applyPrecision = async (precision: 'approx' | 'exact') => {
     setIsBusy(true);
     try {
-      if (precision === 'off') {
-        await updateLocation(0, 0, 'off');
-        onChanged('off');
-        return;
-      }
-      // approx or exact — need the device location
       const pos = await getBrowserLocation();
-      // Approximate precision is jittered ON DEVICE so the exact position never leaves
       const toSend = precision === 'approx' ? jitterLocation(pos.lat, pos.lng, 15) : pos;
       await updateLocation(toSend.lat, toSend.lng, precision);
       onChanged(precision);
@@ -37,59 +31,38 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
     }
   };
 
-  const handleSelect = (precision: LocationPrecision) => {
-    if (precision === currentPrecision) return;
-    if (precision === 'exact') {
-      setPendingChoice('exact');
+  const handleToggle = (checked: boolean) => {
+    if (checked === isExact) return;
+    if (checked) {
       setShowFullWarning(true);
       return;
     }
-    applyPrecision(precision);
+    applyPrecision('approx');
   };
 
   const handleConfirmFull = () => {
     setShowFullWarning(false);
-    const p = pendingChoice;
-    setPendingChoice(null);
-    if (p) applyPrecision(p);
+    applyPrecision('exact');
   };
 
   const handleCancelFull = () => {
     setShowFullWarning(false);
-    setPendingChoice(null);
   };
-
-  const options: { value: LocationPrecision; label: string; desc: string }[] = [
-    { value: 'off', label: 'Off', desc: 'Your location is not stored or shown to anyone.' },
-    { value: 'approx', label: 'Approximate', desc: 'Only an approximate location, accurate within 15 miles, is stored.' },
-    { value: 'exact', label: 'Full precision', desc: 'Your exact location is stored and visible to others.' },
-  ];
 
   return (
     <div className="location-settings">
       <h3>Location</h3>
-      <p className="location-intro">
-        Location is only fetched once — when you create your account or set your city — using a
-        temporary one-time permission. It helps people and organizations near you find each other.
-        You can change or turn it off at any time.
-      </p>
-      <div className="location-options">
-        {options.map((opt) => (
-          <label key={opt.value} className={`location-option ${currentPrecision === opt.value ? 'selected' : ''}`}>
-            <input
-              type="radio"
-              name="location-precision"
-              checked={currentPrecision === opt.value}
-              onChange={() => handleSelect(opt.value)}
-              disabled={isBusy}
-            />
-            <div className="location-option-text">
-              <span className="location-option-label">{opt.label}</span>
-              <span className="location-option-desc">{opt.desc}</span>
-            </div>
-          </label>
-        ))}
-      </div>
+      <label className={`precise-toggle ${isExact ? 'on' : ''}`}>
+        <span className="precise-toggle-text">Show your exact location to people on veri social.</span>
+        <input
+          type="checkbox"
+          checked={isExact}
+          onChange={(e) => handleToggle(e.target.checked)}
+          disabled={isBusy}
+        />
+        <span className="precise-switch" aria-hidden="true" />
+      </label>
+      <p className="location-sub">Your approximate location (accurate within 15 miles) is used unless this is on.</p>
       {isBusy && <p className="location-busy">Updating location…</p>}
 
       {showFullWarning && (
@@ -97,12 +70,12 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
           <div className="loc-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Show your exact location?</h3>
             <p>
-              Choosing <strong>Full precision</strong> will store and display your <strong>exact
-              location</strong> to other people and organizations. Anyone who can see your profile
-              will be able to see where you are.
+              Turning on <strong>Precise Location</strong> will store and display your{' '}
+              <strong>exact location</strong> to other people and organizations. Anyone who can see
+              your profile will be able to see where you are.
             </p>
             <p>
-              This can reveal where you live, work, or spend time. Only choose this if you are
+              This can reveal where you live, work, or spend time. Only turn this on if you are
               comfortable with others knowing your precise whereabouts.
             </p>
             <div className="loc-modal-actions">
@@ -115,16 +88,17 @@ function LocationSettings({ currentPrecision, onChanged }: LocationSettingsProps
 
       <style>{`
         .location-settings { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .location-settings h3 { margin: 0 0 8px; color: #333; font-size: 15px; }
-        .location-intro { margin: 0 0 14px; color: #666; font-size: 13px; line-height: 1.5; }
-        .location-options { display: flex; flex-direction: column; gap: 8px; }
-        .location-option { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
-        .location-option.selected { border-color: #667eea; background: #f5f7ff; }
-        .location-option input { margin-top: 3px; accent-color: #667eea; }
-        .location-option-text { display: flex; flex-direction: column; }
-        .location-option-label { font-weight: 600; font-size: 14px; color: #333; }
-        .location-option-desc { font-size: 12px; color: #888; margin-top: 2px; }
-        .location-busy { margin-top: 10px; font-size: 12px; color: #667eea; }
+        .location-settings h3 { margin: 0 0 14px; color: #333; font-size: 15px; }
+        .precise-toggle { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .precise-toggle input { display: none; }
+        .precise-toggle-text { flex: 1; font-size: 14px; color: #333; font-weight: 500; }
+        .precise-switch { position: relative; width: 46px; height: 26px; background: #d1d5db; border-radius: 13px; transition: background 0.2s; flex-shrink: 0; }
+        .precise-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .precise-toggle.on .precise-switch { background: #667eea; }
+        .precise-toggle.on .precise-switch::after { transform: translateX(20px); }
+        .precise-toggle input:disabled + .precise-switch { opacity: 0.6; }
+        .location-sub { margin: 10px 0 0; font-size: 12px; color: #888; }
+        .location-busy { margin-top: 8px; font-size: 12px; color: #667eea; }
         .loc-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .loc-modal { background: white; border-radius: 12px; padding: 24px; max-width: 420px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .loc-modal h3 { margin: 0 0 12px; color: #b91c1c; font-size: 17px; }
