@@ -33,25 +33,43 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
   const [activeCard, setActiveCard] = useState<{ result: MapResult; x: number; y: number } | null>(null);
   const activeCardRef = useRef(activeCard);
   activeCardRef.current = activeCard;
+  const restoreTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressUntilRef = useRef(0);
+
+  const restoreMarker = (card: { result: MapResult; x: number; y: number }) => {
+    const key = card.result.type === 'org' ? `org-${card.result.orgId}` : card.result.identity;
+    const mk = markersByKeyRef.current.get(key);
+    if (mk) mk.setOpacity(1);
+  };
 
   const closeCard = () => {
-    // Restore the icon the card replaced
     const card = activeCardRef.current;
-    if (card) {
-      const key = card.result.type === 'org' ? `org-${card.result.orgId}` : card.result.identity;
-      const mk = markersByKeyRef.current.get(key);
-      if (mk) mk.setOpacity(1);
-    }
+    if (!card) return;
+    // Restore the icon a moment later: restoring it while the cursor is still over the
+    // marker spot would immediately re-fire mouseover and reopen the card (stuck loop).
+    if (restoreTimerRef.current) clearTimeout(restoreTimerRef.current);
+    restoreTimerRef.current = setTimeout(() => {
+      restoreMarker(card);
+      restoreTimerRef.current = null;
+    }, 700);
     setActiveCard(null);
   };
 
   const openCard = (r: MapResult, map: L.Map, lat: number, lng: number) => {
+    // Ignore hover-open while the user is panning the map (drag) — cursor crossing
+    // markers during a drag would otherwise leave a card stuck open.
+    if (Date.now() < suppressUntilRef.current) return;
+
     // Hide the icon this card replaces
     const key = r.type === 'org' ? `org-${r.orgId}` : r.identity;
     const mk = markersByKeyRef.current.get(key);
     if (mk) mk.setOpacity(0);
+    if (restoreTimerRef.current) {
+      clearTimeout(restoreTimerRef.current);
+      restoreTimerRef.current = null;
+    }
 
-    // Position: centered on the icon, just above it; clamp so it never clips the screen
+    // Position: centered exactly on the icon; clamp so it never clips the screen
     const wrap = containerRef.current;
     if (!wrap) return;
     const pt = map.latLngToContainerPoint([lat, lng]);
@@ -59,7 +77,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
     const CARD_H = 120;
     const pad = 8;
     let x = pt.x - CARD_W / 2;
-    let y = pt.y - CARD_H - 14;
+    let y = pt.y - CARD_H / 2;
     x = Math.max(pad, Math.min(x, wrap.clientWidth - CARD_W - pad));
     y = Math.max(pad, Math.min(y, wrap.clientHeight - CARD_H - pad));
     setActiveCard({ result: r, x, y });
@@ -84,15 +102,26 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
       zoom: center ? 9 : 4,
       zoomControl: false,
     });
-    // CARTO Positron: minimal basemap — keeps city labels, drops POI clutter.
-    // This map is for discovery, not navigation; zoom via scroll/pinch.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    // CARTO Voyager: colorful basemap (green parks, blue water) with city labels,
+    // less POI clutter than raw OSM. This map is for discovery, not navigation.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(map);
     markersRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
+
+    // Panning the map: close any open card and suppress hover-open briefly
+    const onDragStart = () => {
+      suppressUntilRef.current = Date.now() + 600;
+      closeCard();
+    };
+    map.on('dragstart', onDragStart);
+    map.on('movestart', onDragStart);
+
     return () => {
+      map.off('dragstart', onDragStart);
+      map.off('movestart', onDragStart);
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
