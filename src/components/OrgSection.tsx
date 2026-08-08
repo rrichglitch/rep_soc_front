@@ -65,29 +65,29 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   };
 
   return (
-    <div className="org-section">
-      <h3>Your Organizations</h3>
-
-      {orgs.length === 0 ? (
-        <p className="no-orgs">No organizations yet.</p>
-      ) : (
-        <div className="orgs-list">
-          {orgs.map(org => (
-            <div key={org.id.toString()} className="org-row">
-              <Link to={`/org/${org.id}`} className="org-link">
-                {org.picture ? <img src={org.picture} alt={org.name} className="org-avatar" /> : <div className="org-avatar-placeholder" />}
-                <div className="org-info">
-                  <span className="org-name">{org.name}</span>
-                  <span className="org-role">{org.role}</span>
-                </div>
-              </Link>
-              <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
-                {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="org-section-wrap">
+      <div className="org-section">
+        {orgs.length === 0 ? (
+          <p className="no-orgs">No organizations yet.</p>
+        ) : (
+          <div className="orgs-list">
+            {orgs.map(org => (
+              <div key={org.id.toString()} className="org-row">
+                <Link to={`/org/${org.id}`} className="org-link">
+                  {org.picture ? <img src={org.picture} alt={org.name} className="org-avatar" /> : <div className="org-avatar-placeholder" />}
+                  <div className="org-info">
+                    <span className="org-name">{org.name}</span>
+                    <span className="org-role">{org.role}</span>
+                  </div>
+                </Link>
+                <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
+                  {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {!proStatus ? (
         <div className="pro-prompt">
@@ -95,7 +95,9 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
           <button onClick={handleUpgrade} className="upgrade-btn">Upgrade to Pro</button>
         </div>
       ) : !showCreate ? (
-        <button onClick={() => setShowCreate(true)} className="create-org-btn">+ Create Organization</button>
+        <div className="create-org-row">
+          <button onClick={() => setShowCreate(true)} className="create-org-btn">+ Create an Organization</button>
+        </div>
       ) : (
         <form onSubmit={handleCreate} className="create-org-form">
           <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Organization name" required className="org-input" />
@@ -117,24 +119,26 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
       )}
 
       <style>{`
-        .org-section { background: white; border-radius: 12px; padding: 24px; margin-top: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .org-section h3 { margin: 0 0 16px; color: #333; font-size: 16px; }
-        .no-orgs { color: #999; font-size: 14px; }
-        .orgs-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
-        .org-row { display: flex; align-items: center; justify-content: space-between; padding: 8px; border: 1px solid #f0f0f0; border-radius: 8px; }
-        .org-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; flex: 1; }
-        .org-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-        .org-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; }
-        .org-info { display: flex; flex-direction: column; }
-        .org-name { font-weight: 600; font-size: 14px; }
-        .org-role { font-size: 11px; color: #999; text-transform: capitalize; }
+        .org-section { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .no-orgs { color: #999; font-size: 14px; padding: 12px 0; }
+        .orgs-list { display: flex; flex-direction: column; }
+        .org-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .org-row:last-child { border-bottom: none; }
+        .org-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #333; flex: 1; min-width: 0; }
+        .org-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .org-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; }
+        .org-info { display: flex; flex-direction: column; min-width: 0; }
+        .org-name { font-weight: 600; font-size: 15px; color: #333; }
+        .org-role { font-size: 12px; color: #999; text-transform: capitalize; }
         .use-org-btn { padding: 6px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
         .use-org-btn:hover { background: #667eea; color: white; }
-        .pro-prompt { background: #fff8e1; padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 12px; }
+        .pro-prompt { background: #fff8e1; padding: 16px; border-radius: 8px; text-align: center; margin-top: 16px; }
         .pro-prompt p { margin: 0 0 8px; color: #92400e; font-size: 14px; }
         .upgrade-btn { padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
-        .create-org-btn { padding: 10px 20px; background: #22c55e; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
-        .create-org-form { display: flex; flex-direction: column; gap: 8px; }
+        .create-org-row { display: flex; justify-content: center; margin-top: 20px; }
+        .create-org-btn { padding: 10px 28px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .create-org-btn:hover { background: #16a34a; }
+        .create-org-form { display: flex; flex-direction: column; gap: 8px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .org-input { padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; }
         .org-input:focus { border-color: #667eea; }
         .org-pic-upload { padding: 16px; border: 2px dashed #e0e0e0; border-radius: 8px; text-align: center; cursor: pointer; color: #999; font-size: 14px; display: flex; align-items: center; justify-content: center; min-height: 60px; }
