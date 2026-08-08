@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { getFriends } from '../utils/spacetime';
+import AccountRow from './AccountRow';
 import HideToggle from './HideToggle';
 
 interface FriendEntry {
@@ -38,17 +38,13 @@ function FriendsList({ identity, emptyText, hideToggle }: FriendsListProps) {
         ) : (
           <div className="friends-list">
             {friends.map((f) => (
-              <Link to={`/profile/${f.identity}`} key={f.identity} className="friend-row">
-                {f.picture ? (
-                  <img src={f.picture} alt={f.name} className="friend-avatar" />
-                ) : (
-                  <div className="friend-avatar-placeholder" />
-                )}
-                <div className="friend-info">
-                  <span className="friend-name">{f.name}</span>
-                  {f.city && <span className="friend-city">{f.city}</span>}
-                </div>
-              </Link>
+              <AccountRow
+                key={f.identity}
+                to={`/profile/${f.identity}`}
+                picture={f.picture}
+                name={f.name}
+                subtitle={f.city || undefined}
+              />
             ))}
           </div>
         )}
@@ -59,13 +55,6 @@ function FriendsList({ identity, emptyText, hideToggle }: FriendsListProps) {
       <style>{`
         .friends-card { background: white; border-radius: 12px; padding: 8px 20px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .friends-list { display: flex; flex-direction: column; }
-        .friend-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; text-decoration: none; }
-        .friend-row:last-child { border-bottom: none; }
-        .friend-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-        .friend-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; }
-        .friend-info { display: flex; flex-direction: column; min-width: 0; }
-        .friend-name { font-size: 15px; font-weight: 600; color: #333; }
-        .friend-city { font-size: 12px; color: #999; }
       `}</style>
     </div>
   );

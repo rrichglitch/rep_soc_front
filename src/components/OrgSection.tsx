@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
 import { getMyOrganizations, createOrganization, isPro, upgradeToPro } from '../utils/spacetime';
+import AccountRow from './AccountRow';
 import { geocodeCity } from '../utils/geo';
 
 function OrgSection({ profileIdentity }: { profileIdentity: string }) {
@@ -72,18 +73,18 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         ) : (
           <div className="orgs-list">
             {orgs.map(org => (
-              <div key={org.id.toString()} className="org-row">
-                <Link to={`/org/${org.id}`} className="org-link">
-                  {org.picture ? <img src={org.picture} alt={org.name} className="org-avatar" /> : <div className="org-avatar-placeholder" />}
-                  <div className="org-info">
-                    <span className="org-name">{org.name}</span>
-                    <span className="org-role">{org.role}</span>
-                  </div>
-                </Link>
-                <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
-                  {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
-                </button>
-              </div>
+              <AccountRow
+                key={org.id.toString()}
+                to={`/org/${org.id}`}
+                picture={org.picture || ''}
+                name={org.name}
+                subtitle={org.role}
+                right={
+                  <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
+                    {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
+                  </button>
+                }
+              />
             ))}
           </div>
         )}
@@ -122,14 +123,6 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .org-section { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .no-orgs { color: #999; font-size: 14px; padding: 12px 0; }
         .orgs-list { display: flex; flex-direction: column; }
-        .org-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .org-row:last-child { border-bottom: none; }
-        .org-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #333; flex: 1; min-width: 0; }
-        .org-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-        .org-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; }
-        .org-info { display: flex; flex-direction: column; min-width: 0; }
-        .org-name { font-weight: 600; font-size: 15px; color: #333; }
-        .org-role { font-size: 12px; color: #999; text-transform: capitalize; }
         .use-org-btn { padding: 6px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
         .use-org-btn:hover { background: #667eea; color: white; }
         .pro-prompt { background: #fff8e1; padding: 16px; border-radius: 8px; text-align: center; margin-top: 16px; }
