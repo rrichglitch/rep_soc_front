@@ -66,9 +66,9 @@ function AboutPage() {
         <div className="about-section">
           <h2>How It Works</h2>
           <ul>
-            <li>We verify all users on our platform.</li>
-            <li>You use our state of the art search to find exactly what you're looking for.</li>
-            <li>Our community guarantees the legitimacy of who you find through their reputation.</li>
+            <li><strong>We</strong> verify every user is <u>who</u> they say they are.</li>
+            <li><strong>You</strong> use our state of the art search to find exactly what you're looking for.</li>
+            <li><strong>Our Community</strong> verifies users are <u>what</u> they say they are.</li>
           </ul>
         </div>
 
