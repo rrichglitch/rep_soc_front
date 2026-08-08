@@ -137,7 +137,7 @@ function ProfileDetails({
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 8px; padding: 1px 6px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 8px; padding: 1px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
         .description-field .field-value { font-size: 13px; color: #888; line-height: 1.4; }
         .edit-btn { background: none; border: none; cursor: pointer; color: #999; opacity: 0; transition: opacity 0.2s; padding: 4px; }

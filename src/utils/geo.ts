@@ -57,8 +57,13 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
     const a = data?.address || {};
     const city = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null;
     if (!city) return null;
-    const state = a.state && a.state !== city ? `, ${a.state}` : '';
-    return `${city}${state}`;
+    // Use the state code (ISO3166-2-lvl4 like "US-NY") instead of the full state name
+    let stateCode = '';
+    if (a.state && a.state !== city) {
+      const iso = a['ISO3166-2-lvl4'];
+      stateCode = iso ? `, ${iso.split('-').pop()}` : `, ${a.state}`;
+    }
+    return `${city}${stateCode}`;
   } catch {
     return null;
   }

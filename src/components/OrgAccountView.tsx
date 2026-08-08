@@ -300,7 +300,7 @@ function OrgAccountView() {
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 8px; padding: 1px 6px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 8px; padding: 1px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
