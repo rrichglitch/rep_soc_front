@@ -114,7 +114,7 @@ function OrgProfilePage() {
 
   return (
     <div className="org-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={<AuthActions />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={isOwnOrg ? <button onClick={() => { logoutOrg(); navigate('/me'); }} className="back-to-account-btn">Back to my account</button> : <AuthActions />} />
       <main className="main-content">
         <div className="org-header">
           <div className="org-picture-container">
@@ -125,10 +125,7 @@ function OrgProfilePage() {
           {org.description && <p className="org-description">{org.description}</p>}
           <div className="org-actions">
             {isOwnOrg ? (
-              <>
-                <span className="active-badge">Using this account</span>
-                <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">Back to my account</button>
-              </>
+              <span className="active-badge">Using this account</span>
             ) : isMember && !activeOrg ? (
               <>
                 <button onClick={handleSwitchToOrg} className="switch-org-btn">Use as {org.name}</button>
