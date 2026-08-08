@@ -73,14 +73,9 @@ function AboutPage() {
           </ul>
         </div>
 
-        <div className="about-section">
-          <p>
-            In a world drowning in information but starving for truth, 
-            <strong> reputation is the antidote</strong>. Join us in building a social 
-            network where character counts and trust is earned.
-          </p>
+        <div className="about-section cta-section">
           {isLoggedIn ? (
-            <Link to="/home" className="cta-button">Go to Feed</Link>
+            <Link to="/home" className="cta-button">Go to Home</Link>
           ) : (
             <button onClick={handleSignIn} className="cta-button">Get Started</button>
           )}
@@ -172,20 +167,29 @@ function AboutPage() {
           color: #667eea;
         }
 
+        .cta-section {
+          display: flex;
+          justify-content: center;
+          padding: 24px;
+        }
+
         .cta-button {
           display: inline-block;
-          margin-top: 16px;
-          padding: 12px 32px;
-          background: #667eea;
-          color: white;
-          text-decoration: none;
-          border-radius: 8px;
+          padding: 10px 32px;
+          background: white;
+          color: #667eea;
+          border: 1px solid #667eea;
+          border-radius: 24px;
           font-weight: 600;
-          font-size: 16px;
+          font-size: 15px;
+          text-decoration: none;
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
         }
 
         .cta-button:hover {
-          background: #5a6fd6;
+          background: #667eea;
+          color: white;
         }
 
         .about-footer {
