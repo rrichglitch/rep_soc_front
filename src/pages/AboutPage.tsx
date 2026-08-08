@@ -47,29 +47,6 @@ function AboutPage() {
         </div>
 
         <div className="about-section">
-          <h2>How It Works</h2>
-          <ul>
-            <li>
-              <strong>Create Your Profile</strong> – Sign up and build your reputation page. 
-              This is where others will post about their experiences with you.
-            </li>
-            <li>
-              <strong>Post About Others</strong> – Share your honest experiences with people 
-              you've interacted with. Did they deliver? Were they reliable? Would you recommend them?
-            </li>
-            <li>
-              <strong>Build Your Network</strong> – Follow friends, family, and acquaintances to see 
-              what others are saying about them. Discover who others recommend.
-            </li>
-            <li>
-              <strong>Grow Your Reputation</strong> – As others post about their positive 
-              experiences with you, your reputation grows. Future connections can see 
-              your track record at a glance.
-            </li>
-          </ul>
-        </div>
-
-        <div className="about-section">
           <h2>What Can It Do For You?</h2>
           <ul>
             <li>
@@ -84,6 +61,15 @@ function AboutPage() {
               <strong>For Communities</strong> – Create networks of verified, reliable 
               individuals. Build trust from the ground up.
             </li>
+          </ul>
+        </div>
+
+        <div className="about-section">
+          <h2>How It Works</h2>
+          <ul>
+            <li>We verify all users on our platform.</li>
+            <li>You use our state of the art search to find exactly what you're looking for.</li>
+            <li>Our community guarantees the legitimacy of who you find through their reputation.</li>
           </ul>
         </div>
 
