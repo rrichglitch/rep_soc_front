@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation } from '../utils/spacetime';
-import { getBrowserLocation, jitterLocation } from '../utils/geo';
+import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
@@ -53,6 +53,7 @@ function MyProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<any | null>(null);
   const [locPrecision, setLocPrecision] = useState<LocationPrecision>('off');
+  const [isLocUpdating, setIsLocUpdating] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editInputRef = useRef<HTMLInputElement>(null);
@@ -130,27 +131,7 @@ function MyProfilePage() {
     
     setIsSaving(true);
     try {
-      if (editingField === 'city') {
-        // Mandatory location fetch on EVERY city update (frontend gate)
-        let lat: number, lng: number;
-        try {
-          const pos = await getBrowserLocation();
-          const j = jitterLocation(pos.lat, pos.lng, 5);
-          lat = j.lat; lng = j.lng;
-        } catch {
-          // Stay in edit mode so the user can retry — city is not saved
-          alert('Location is required when setting your city. Please allow location access and try again.');
-          setIsSaving(false);
-          return;
-        }
-        await updateProfile(undefined, editValue, undefined);
-        try {
-          await updateLocation(lat, lng, 'approx');
-          setLocPrecision('approx');
-        } catch {
-          console.warn('Failed to store location after city update');
-        }
-      } else if (editingField === 'description') {
+      if (editingField === 'description') {
         await updateProfile(undefined, undefined, editValue);
       }
       await loadProfile();
@@ -161,6 +142,30 @@ function MyProfilePage() {
       alert('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // "Update" next to Location: fetch a fresh accurate fix, derive the city from it,
+  // and store the coords at the current precision (exact when Precise Location is on).
+  const handleLocationUpdate = async () => {
+    setIsLocUpdating(true);
+    try {
+      const pos = await getBrowserLocation();
+      const city = await reverseGeocode(pos.lat, pos.lng);
+      if (city) {
+        await updateProfile(undefined, city, undefined);
+      }
+      const isExact = locPrecision === 'exact';
+      const toSend = isExact ? pos : jitterLocation(pos.lat, pos.lng, 5);
+      await updateLocation(toSend.lat, toSend.lng, isExact ? 'exact' : 'approx');
+      setLocPrecision(isExact ? 'exact' : 'approx');
+      await loadProfile();
+    } catch (e: any) {
+      alert(e?.message === 'Geolocation not supported on this device'
+        ? 'This device does not support location services.'
+        : 'Could not get your location. Check that location permissions are enabled for this site.');
+    } finally {
+      setIsLocUpdating(false);
     }
   };
 
@@ -247,40 +252,13 @@ function MyProfilePage() {
             <div className="profile-info">
               <h2 className="profile-name">{profile?.full_name}</h2>
               <div className="profile-field">
-                {editingField === 'city' ? (
-                  <div className="edit-inline">
-                    <input
-                      ref={editInputRef}
-                      type="text"
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      className="edit-input"
-                      placeholder="City"
-                    />
-                    <button onClick={handleSave} className="save-btn" disabled={isSaving}>
-                      ✓
-                    </button>
-                    <button onClick={handleCancel} className="cancel-btn">
-                      ✕
-                    </button>
-                    <p className="city-loc-note">Setting your city also updates your approximate location (accurate within 5 miles).</p>
-                  </div>
-                ) : (
-                  <div className="field-display">
-                    <span className="field-value">{profile?.city || 'Add city'}</span>
-                    <button 
-                      className="edit-btn" 
-                      onClick={() => handleEditClick('city', profile?.city || '')}
-                      disabled={isSaving}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
+                <div className="field-display">
+                  <span className="field-label">Location</span>
+                  <span className="field-value">{profile?.city || '—'}</span>
+                  <button className="loc-update-btn" onClick={handleLocationUpdate} disabled={isLocUpdating}>
+                    {isLocUpdating ? 'Updating…' : 'Update'}
+                  </button>
+                </div>
               </div>
               <div className="profile-field description-field">
                 {editingField === 'description' ? (
@@ -618,6 +596,12 @@ function MyProfilePage() {
           gap: 8px;
         }
 
+        .field-label {
+          color: #999;
+          font-size: 13px;
+          font-weight: 600;
+        }
+
         .field-value {
           color: #666;
           font-size: 14px;
@@ -649,7 +633,8 @@ function MyProfilePage() {
           gap: 8px;
           flex-wrap: wrap;
         }
-        .city-loc-note { flex-basis: 100%; margin: 4px 0 0; font-size: 12px; color: #888; line-height: 1.4; }
+        .loc-update-btn { margin-left: auto; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
 
         .edit-input {
           flex: 1;

@@ -143,6 +143,7 @@ export const Organization = __t.object("Organization", {
   isPro: __t.bool(),
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
+  locationPrecision: __t.string(),
 });
 export type Organization = __Infer<typeof Organization>;
 

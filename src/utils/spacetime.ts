@@ -1129,6 +1129,18 @@ export async function jitterToApprox(): Promise<void> {
   await dbConnection.reducers.jitterToApprox({});
 }
 
+export async function updateOrgLocation(
+  orgId: bigint, lat: number, lng: number, precision: 'off' | 'approx' | 'exact'
+): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.updateOrgLocation({ orgId, lat, lng, precision });
+}
+
+export async function jitterOrgToApprox(orgId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.jitterOrgToApprox({ orgId });
+}
+
 export async function resolveNotification(notificationId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.resolveNotification({ notificationId });

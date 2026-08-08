@@ -49,6 +49,7 @@ import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
 import FollowReducer from "./follow_reducer";
+import JitterOrgToApproxReducer from "./jitter_org_to_approx_reducer";
 import JitterToApproxReducer from "./jitter_to_approx_reducer";
 import ManualCreateProfileReducer from "./manual_create_profile_reducer";
 import PromoteToCoLeaderReducer from "./promote_to_co_leader_reducer";
@@ -66,6 +67,7 @@ import UnfriendReducer from "./unfriend_reducer";
 import UnregisterPushSubscriptionReducer from "./unregister_push_subscription_reducer";
 import UpdateFeedScrollPositionReducer from "./update_feed_scroll_position_reducer";
 import UpdateLocationReducer from "./update_location_reducer";
+import UpdateOrgLocationReducer from "./update_org_location_reducer";
 import UpdateOrganizationReducer from "./update_organization_reducer";
 import UpdateProfileReducer from "./update_profile_reducer";
 import UpgradeToProReducer from "./upgrade_to_pro_reducer";
@@ -230,6 +232,7 @@ const reducersSchema = __reducers(
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
   __reducerSchema("follow", FollowReducer),
+  __reducerSchema("jitter_org_to_approx", JitterOrgToApproxReducer),
   __reducerSchema("jitter_to_approx", JitterToApproxReducer),
   __reducerSchema("manual_create_profile", ManualCreateProfileReducer),
   __reducerSchema("promote_to_co_leader", PromoteToCoLeaderReducer),
@@ -247,6 +250,7 @@ const reducersSchema = __reducers(
   __reducerSchema("unregister_push_subscription", UnregisterPushSubscriptionReducer),
   __reducerSchema("update_feed_scroll_position", UpdateFeedScrollPositionReducer),
   __reducerSchema("update_location", UpdateLocationReducer),
+  __reducerSchema("update_org_location", UpdateOrgLocationReducer),
   __reducerSchema("update_organization", UpdateOrganizationReducer),
   __reducerSchema("update_profile", UpdateProfileReducer),
   __reducerSchema("upgrade_to_pro", UpgradeToProReducer),

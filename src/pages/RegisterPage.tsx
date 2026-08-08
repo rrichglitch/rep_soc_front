@@ -6,7 +6,7 @@ import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
 import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation } from '../utils/spacetime';
-import { getBrowserLocation, jitterLocation } from '../utils/geo';
+import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 
 const PENDING_REGISTRATION_KEY = 'pending_registration';
 
@@ -246,6 +246,15 @@ function RegisterPage() {
       // Approximate precision: jittered ON DEVICE — exact position never leaves
       const jittered = jitterLocation(pos.lat, pos.lng, 5);
       setLocCoords(jittered);
+      // City is derived from the location fix (no manual city entry)
+      const geocodedCity = await reverseGeocode(pos.lat, pos.lng);
+      if (geocodedCity) {
+        setCity(geocodedCity);
+      } else {
+        setLocStatus('error');
+        setLocError('Could not determine your city from your location. Please try again.');
+        return;
+      }
       setLocStatus('done');
     } catch (e: any) {
       setLocStatus('error');
@@ -412,19 +421,6 @@ function RegisterPage() {
           )}
 
           <div className="form-group">
-            <label htmlFor="city">City</label>
-            <input
-              type="text"
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              maxLength={CHAR_LIMITS.city}
-              placeholder="Enter your city"
-            />
-            <span className="char-count">{city.length}/{CHAR_LIMITS.city}</span>
-          </div>
-
-          <div className="form-group">
             <label htmlFor="description">About You</label>
             <textarea
               id="description"
@@ -457,13 +453,13 @@ function RegisterPage() {
                 <h4>Location required</h4>
                 <p>
                   Your <strong>approximate</strong> location (accurate within 5 miles) is needed
-                  once, when you create your account or set your city, to help people and
-                  organizations near you find you. Your exact position is never shared — it is
-                  jittered on your device before it is stored.
+                  once, when you create your account, to help people and organizations near you
+                  find you. Your exact position is never shared — it is jittered on your device
+                  before it is stored, and your city is set from your location.
                 </p>
                 <p className="location-sub">You can turn location off completely later in your profile settings.</p>
                 {locStatus === 'done' ? (
-                  <p className="location-ok">✓ Approximate location set</p>
+                  <p className="location-ok">✓ Approximate location set — {city}</p>
                 ) : locStatus === 'fetching' ? (
                   <p className="location-busy">Getting your approximate location…</p>
                 ) : (

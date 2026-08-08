@@ -47,6 +47,22 @@ export function getBrowserLocation(): Promise<{ lat: number; lng: number }> {
   });
 }
 
+// Reverse geocode coordinates to a city name via OpenStreetMap Nominatim (no API key)
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const a = data?.address || {};
+    return (
+      a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null
+    );
+  } catch {
+    return null;
+  }
+}
+
 // Geocode a city name to coordinates via OpenStreetMap Nominatim (no API key)
 export async function geocodeCity(city: string): Promise<{ lat: number; lng: number } | null> {
   if (!city.trim()) return null;

@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
-import { haversineMiles, formatMiles, geocodeCity } from '../utils/geo';
+import { haversineMiles, formatMiles } from '../utils/geo';
 import MapView from '../components/MapView';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
@@ -39,11 +39,32 @@ function SearchPage() {
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [locInput, setLocInput] = useState('');
-  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [locSuggestions, setLocSuggestions] = useState<{ place_id: number; display_name: string; lat: string; lon: string }[]>([]);
+  const locFetchSeqRef = useRef(0);
 
   // Persist map-view + nearby-first state across navigation and browser restarts
   useEffect(() => { localStorage.setItem('veri_showMap', showMap ? '1' : '0'); }, [showMap]);
   useEffect(() => { localStorage.setItem('veri_nearbyFirst', nearbyFirst ? '1' : '0'); }, [nearbyFirst]);
+
+  // Dynamic suggestions for the search-location dropdown (Nominatim typeahead, debounced)
+  useEffect(() => {
+    const q = locInput.trim();
+    if (q.length < 2) { setLocSuggestions([]); return; }
+    const seq = ++locFetchSeqRef.current;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(q)}`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (seq !== locFetchSeqRef.current) return; // stale response
+        setLocSuggestions(Array.isArray(data) ? data : []);
+      } catch { /* ignore suggestion failures */ }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [locInput]);
 
   // Background: try to connect
   useEffect(() => {
@@ -210,7 +231,7 @@ function SearchPage() {
                     {nearbyFirst ? '✓ Nearby First' : 'Nearby First'}
                   </button>
                 )}
-                <button onClick={() => { setLocInput(''); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
+                <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
                   {searchLoc ? `📍 ${searchLoc.label}` : '📍 Set search location'}
                 </button>
                 <button
@@ -274,19 +295,34 @@ function SearchPage() {
         <div className="loc-search-overlay" onClick={() => setShowLocModal(false)}>
           <div className="loc-search-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Search location</h3>
-            <p>Search and map distances will be measured from this place. Leave empty to clear.</p>
-            <input
-              type="text"
-              value={locInput}
-              onChange={(e) => setLocInput(e.target.value)}
-              placeholder="City or place (e.g. Tokyo)"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  (document.getElementById('loc-search-set') as HTMLButtonElement)?.click();
-                }
-              }}
-            />
+            <p>Search and map distances will be measured from this place.</p>
+            <div className="loc-search-typeahead">
+              <input
+                type="text"
+                value={locInput}
+                onChange={(e) => setLocInput(e.target.value)}
+                placeholder="City or place (e.g. Tokyo)"
+                autoFocus
+              />
+              {locSuggestions.length > 0 && (
+                <ul className="loc-suggestions">
+                  {locSuggestions.map((s) => (
+                    <li
+                      key={s.place_id}
+                      onMouseDown={() => {
+                        setSearchLoc({ label: s.display_name.split(',')[0], lat: parseFloat(s.lat), lng: parseFloat(s.lon) });
+                        setLocSuggestions([]);
+                        setLocInput('');
+                        setShowLocModal(false);
+                      }}
+                    >
+                      <span className="loc-sug-name">{s.display_name.split(',')[0]}</span>
+                      <span className="loc-sug-region">{s.display_name.split(',').slice(1, 4).join(',').trim()}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <div className="loc-search-actions">
               {searchLoc && (
                 <button
@@ -300,29 +336,6 @@ function SearchPage() {
                 </button>
               )}
               <button className="loc-search-cancel" onClick={() => setShowLocModal(false)}>Cancel</button>
-              <button
-                id="loc-search-set"
-                className="loc-search-set"
-                disabled={isGeocoding}
-                onClick={async () => {
-                  const q = locInput.trim();
-                  if (!q) return;
-                  setIsGeocoding(true);
-                  try {
-                    const geo = await geocodeCity(q);
-                    if (!geo) {
-                      alert('Could not find that place.');
-                      return;
-                    }
-                    setSearchLoc({ label: q, lat: geo.lat, lng: geo.lng });
-                    setShowLocModal(false);
-                  } finally {
-                    setIsGeocoding(false);
-                  }
-                }}
-              >
-                {isGeocoding ? 'Finding…' : 'Set location'}
-              </button>
             </div>
           </div>
         </div>
@@ -378,7 +391,13 @@ function SearchPage() {
         .loc-search-modal { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .loc-search-modal h3 { margin: 0 0 8px; color: #333; font-size: 16px; }
         .loc-search-modal p { margin: 0 0 12px; color: #666; font-size: 13px; line-height: 1.4; }
-        .loc-search-modal input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 14px; }
+        .loc-search-modal input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; margin-bottom: 0; }
+        .loc-search-typeahead { position: relative; margin-bottom: 14px; }
+        .loc-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; list-style: none; margin: 0; padding: 0; max-height: 220px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,0.15); z-index: 10; }
+        .loc-suggestions li { display: flex; flex-direction: column; padding: 8px 12px; cursor: pointer; }
+        .loc-suggestions li:hover { background: #f5f7ff; }
+        .loc-sug-name { font-size: 14px; font-weight: 600; color: #333; }
+        .loc-sug-region { font-size: 12px; color: #888; }
         .loc-search-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .loc-search-clear { padding: 8px 14px; background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .loc-search-cancel { padding: 8px 14px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }

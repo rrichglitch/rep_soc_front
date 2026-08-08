@@ -21,4 +21,5 @@ export default __t.row({
   isPro: __t.bool().name("is_pro"),
   locationLat: __t.option(__t.f64()).name("location_lat"),
   locationLng: __t.option(__t.f64()).name("location_lng"),
+  locationPrecision: __t.string().name("location_precision"),
 });
