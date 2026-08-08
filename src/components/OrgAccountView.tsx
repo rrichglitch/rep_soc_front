@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
 import { geocodeCity, getBrowserLocation, jitterLocation } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
+import ProfileDetails from './ProfileDetails';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
@@ -15,12 +16,26 @@ function OrgAccountView() {
   const org = activeOrg as ActiveOrg;
 
   const [members, setMembers] = useState<any[]>([]);
+  const [orgData, setOrgData] = useState<any>(org || null);
   const [orgPrecision, setOrgPrecision] = useState<'off' | 'approx' | 'exact'>('off');
   const [myRole, setMyRole] = useState<string | null>(null);
   const [stories, setStories] = useState<any[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'story' | 'posts'>('story');
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
+
+  const refreshOrg = async () => {
+    if (!org) return;
+    setMembers(getOrganizationMembers(org.id));
+    setStories(await getMyStoryPosts(org.identity));
+    setMyPosts(await getMyPosts(org.identity));
+    const orgRow = getOrganizationById(org.id);
+    if (orgRow) {
+      setOrgData({ ...orgRow } as any);
+      setCreatedAt(new Date(Number((orgRow as any).createdAt?.microsSinceUnixEpoch || 0) / 1000));
+      setOrgPrecision((orgRow.locationPrecision as 'off' | 'approx' | 'exact') || 'off');
+    }
+  };
 
   useEffect(() => {
     if (!org) return;
@@ -35,15 +50,7 @@ function OrgAccountView() {
     if (!userEmail) return;
     const load = async () => {
       await connectToSpacetimeDB(userEmail!, auth.user!.access_token).catch(() => {});
-      const update = async () => {
-        const ms = getOrganizationMembers(org.id);
-        setMembers(ms);
-        setStories(await getMyStoryPosts(org.identity));
-        setMyPosts(await getMyPosts(org.identity));
-        const orgRow = getOrganizationById(org.id);
-        if (orgRow) setCreatedAt(new Date(Number((orgRow as any).createdAt?.microsSinceUnixEpoch || 0) / 1000));
-      };
-      update();
+      refreshOrg();
       // Resolve my role from my user identity
       const profile = await getProfileByEmail(userEmail!);
       if (profile) {
@@ -51,7 +58,7 @@ function OrgAccountView() {
         const mine = getOrganizationMembers(org.id).find((m: any) => m.identity === myHex);
         setMyRole(mine ? mine.role : null);
       }
-      const interval = setInterval(update, 3000);
+      const interval = setInterval(refreshOrg, 3000);
       return () => clearInterval(interval);
     };
     load();
@@ -126,36 +133,26 @@ function OrgAccountView() {
       />
       <main className="main-content">
         <div className="profile-section">
-          <div className="profile-header">
-            <div className="profile-pic-wrapper">
-              <div className="profile-picture-container">
-                {org.picture ? (
-                  <img src={org.picture} alt={org.name} className="profile-picture" />
-                ) : (
-                  <div className="profile-picture-placeholder" />
-                )}
-              </div>
-            </div>
-            <div className="profile-info">
-              <h2 className="profile-name">{org.name}</h2>
-              <div className="profile-field">
-                <div className="field-display">
-                  <span className="field-label">Location:</span>
-                  <span className="field-value">{org.city || '—'}</span>
-                  {canManage && (
-                    <button onClick={handleRefreshLocation} className="loc-update-btn">Update</button>
-                  )}
-                </div>
-              </div>
-              {org.description && <p className="profile-description">{org.description}</p>}
-              <p className="join-date">
-                {createdAt ? `Founded ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
-              </p>
-              <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
-                ← Back to my account
-              </button>
-            </div>
-          </div>
+          <ProfileDetails
+            picture={orgData?.picture || org.picture || ''}
+            name={orgData?.name || org.name}
+            city={orgData?.city || org.city || ''}
+            description={orgData?.description || ''}
+            onUpdateLocation={handleRefreshLocation}
+            isLocationUpdating={false}
+            showLocationUpdate={canManage}
+            onSaveDescription={async (v) => {
+              await updateOrganization(org.id, undefined, undefined, v);
+              await refreshOrg();
+            }}
+          >
+            <p className="join-date">
+              {createdAt ? `Founded ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
+            </p>
+            <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
+              ← Back to my account
+            </button>
+          </ProfileDetails>
         </div>
 
         {canManage && (
@@ -288,7 +285,7 @@ function OrgAccountView() {
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 10px; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 10px; padding: 2px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }

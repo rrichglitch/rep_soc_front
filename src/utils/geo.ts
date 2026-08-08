@@ -55,9 +55,10 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
     if (!res.ok) return null;
     const data = await res.json();
     const a = data?.address || {};
-    return (
-      a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null
-    );
+    const city = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null;
+    if (!city) return null;
+    const state = a.state && a.state !== city ? `, ${a.state}` : '';
+    return `${city}${state}`;
   } catch {
     return null;
   }

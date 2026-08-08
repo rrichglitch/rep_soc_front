@@ -11,6 +11,7 @@ import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
 import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
+import ProfileDetails from '../components/ProfileDetails';
 import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
@@ -45,9 +46,6 @@ function MyProfilePage() {
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'orgs'>('story');
    
-  const [editingField, setEditingField] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -56,7 +54,6 @@ function MyProfilePage() {
   const [isLocUpdating, setIsLocUpdating] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const editInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (email) {
@@ -70,12 +67,6 @@ function MyProfilePage() {
       setShowPictureSelect(false);
     }
   }, [showPictureSelect]);
-
-  useEffect(() => {
-    if (editingField === 'city' || editingField === 'description') {
-      setTimeout(() => editInputRef.current?.focus(), 0);
-    }
-  }, [editingField]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -121,30 +112,6 @@ function MyProfilePage() {
     }
   };
 
-  const handleEditClick = (field: string, currentValue: string) => {
-    setEditingField(field);
-    setEditValue(currentValue);
-  };
-
-  const handleSave = async () => {
-    if (!editingField) return;
-    
-    setIsSaving(true);
-    try {
-      if (editingField === 'description') {
-        await updateProfile(undefined, undefined, editValue);
-      }
-      await loadProfile();
-      setEditingField(null);
-      setEditValue('');
-    } catch (e) {
-      console.error('Error updating profile:', e);
-      alert('Failed to save. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   // "Update" next to Location: fetch a fresh accurate fix, derive the city from it,
   // and store the coords at the current precision (exact when Precise Location is on).
   const handleLocationUpdate = async () => {
@@ -169,19 +136,6 @@ function MyProfilePage() {
     }
   };
 
-  const handleCancel = () => {
-    setEditingField(null);
-    setEditValue('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
-  };
-
   const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -189,14 +143,12 @@ function MyProfilePage() {
     const reader = new FileReader();
     reader.onload = async () => {
       const base64 = reader.result as string;
-      setIsSaving(true);
       try {
         await updateProfile(base64, undefined, undefined);
         await loadProfile();
       } catch (e) {
         console.error('Error updating profile picture:', e);
       } finally {
-        setIsSaving(false);
         setShowPictureSelect(false);
       }
     };
@@ -230,78 +182,24 @@ function MyProfilePage() {
 
       <main className="main-content">
         <div className="profile-section">
-          <div className="profile-header">
-            <div className="profile-pic-wrapper">
-              <div className="profile-picture-container">
-                {profile?.profile_picture ? (
-                  <img 
-                    src={profile.profile_picture} 
-                    alt={profile.full_name} 
-                    className="profile-picture clickable"
-                    onClick={() => setShowPictureModal(true)}
-                  />
-                ) : (
-                  <div 
-                    className="profile-picture-placeholder clickable"
-                    onClick={() => setShowPictureModal(true)}
-                  />
-                )}
-              </div>
-              <button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>
-            </div>
-            <div className="profile-info">
-              <h2 className="profile-name">{profile?.full_name}</h2>
-              <div className="profile-field">
-                <div className="field-display">
-                  <span className="field-label">Location:</span>
-                  <span className="field-value">{profile?.city || '—'}</span>
-                  <button className="loc-update-btn" onClick={handleLocationUpdate} disabled={isLocUpdating}>
-                    {isLocUpdating ? 'Updating…' : 'Update'}
-                  </button>
-                </div>
-              </div>
-              <div className="profile-field description-field">
-                {editingField === 'description' ? (
-                  <div className="edit-inline">
-                    <textarea
-                      ref={editInputRef as any}
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      className="edit-textarea"
-                      placeholder="Description"
-                      rows={3}
-                    />
-                    <div className="edit-actions">
-                      <button onClick={handleSave} className="save-btn" disabled={isSaving}>
-                        ✓
-                      </button>
-                      <button onClick={handleCancel} className="cancel-btn">
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="field-display">
-                    <span className="field-value">{profile?.description || 'Add description'}</span>
-                    <button 
-                      className="edit-btn" 
-                      onClick={() => handleEditClick('description', profile?.description || '')}
-                      disabled={isSaving}
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <p className="join-date">
-                Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
+          <ProfileDetails
+            picture={profile?.profile_picture || ''}
+            name={profile?.full_name || ''}
+            city={profile?.city || ''}
+            description={profile?.description || ''}
+            onUpdateLocation={handleLocationUpdate}
+            isLocationUpdating={isLocUpdating}
+            onSaveDescription={async (v) => {
+              await updateProfile(undefined, undefined, v);
+              await loadProfile();
+            }}
+            onPictureClick={() => setShowPictureModal(true)}
+            pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
+          >
+            <p className="join-date">
+              Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
+          </ProfileDetails>
         </div>
 
         <LocationSettings currentPrecision={locPrecision} onChanged={setLocPrecision} />
@@ -633,7 +531,7 @@ function MyProfilePage() {
           gap: 8px;
           flex-wrap: wrap;
         }
-        .loc-update-btn { margin-left: 10px; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 10px; padding: 2px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
 
         .edit-input {
