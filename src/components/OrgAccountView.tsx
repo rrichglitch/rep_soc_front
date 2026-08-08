@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
-import { geocodeCity, getBrowserLocation, jitterLocation } from '../utils/geo';
+import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
 import ProfileDetails from './ProfileDetails';
 import TopBar from '../components/TopBar';
@@ -35,6 +35,22 @@ function OrgAccountView() {
       setCreatedAt(new Date(Number((orgRow as any).createdAt?.microsSinceUnixEpoch || 0) / 1000));
       setOrgPrecision((orgRow.locationPrecision as 'off' | 'approx' | 'exact') || 'off');
     }
+    // Re-resolve my role each refresh (the member subscription may lag on first load)
+    try {
+      let userEmail: string | undefined;
+      if (auth.user?.id_token) {
+        const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
+        userEmail = payload.email;
+      }
+      if (userEmail) {
+        const profile = await getProfileByEmail(userEmail);
+        if (profile) {
+          const myHex = profile.identity.toHexString();
+          const mine = getOrganizationMembers(org.id).find((m: any) => m.identity === myHex);
+          setMyRole(mine ? mine.role : null);
+        }
+      }
+    } catch { /* non-fatal */ }
   };
 
   useEffect(() => {
@@ -51,13 +67,6 @@ function OrgAccountView() {
     const load = async () => {
       await connectToSpacetimeDB(userEmail!, auth.user!.access_token).catch(() => {});
       refreshOrg();
-      // Resolve my role from my user identity
-      const profile = await getProfileByEmail(userEmail!);
-      if (profile) {
-        const myHex = profile.identity.toHexString();
-        const mine = getOrganizationMembers(org.id).find((m: any) => m.identity === myHex);
-        setMyRole(mine ? mine.role : null);
-      }
       const interval = setInterval(refreshOrg, 3000);
       return () => clearInterval(interval);
     };
@@ -109,17 +118,23 @@ function OrgAccountView() {
   };
 
   const handleRefreshLocation = async () => {
-    if (!org.city) { alert('This organization has no city set.'); return; }
+    // Same as the individual profile: fetch a fresh accurate fix, derive the city,
+    // and store the coords at the current precision (exact when Precise Location is on).
     try {
-      const geo = await geocodeCity(org.city);
-      if (!geo) { alert('Could not find a location for this city.'); return; }
-      // Respect the precision toggle: exact when on, jittered when off
+      const pos = await getBrowserLocation();
+      const city = await reverseGeocode(pos.lat, pos.lng);
+      if (city) {
+        await updateOrganization(org.id, undefined, city, undefined);
+      }
       const isExact = orgPrecision === 'exact';
-      const toSend = isExact ? geo : jitterLocation(geo.lat, geo.lng, 5);
+      const toSend = isExact ? pos : jitterLocation(pos.lat, pos.lng, 5);
       await updateOrgLocation(org.id, toSend.lat, toSend.lng, isExact ? 'exact' : 'approx');
       setOrgPrecision(isExact ? 'exact' : 'approx');
+      await refreshOrg();
     } catch (e: any) {
-      alert(e.message || 'Failed to update location');
+      alert(e?.message === 'Geolocation not supported on this device'
+        ? 'This device does not support location services.'
+        : 'Could not get your location. Check that location permissions are enabled for this site.');
     }
   };
 
@@ -147,7 +162,7 @@ function OrgAccountView() {
             }}
           >
             <p className="join-date">
-              {createdAt ? `Founded ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
+              {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
             </p>
             <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
               ← Back to my account
@@ -285,7 +300,7 @@ function OrgAccountView() {
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 10px; padding: 2px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 8px; padding: 1px 6px; background: #667eea; color: white; border: none; border-radius: 5px; font-size: 11px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
