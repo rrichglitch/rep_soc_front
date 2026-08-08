@@ -842,6 +842,10 @@ export function getOrganizationMembers(orgId: bigint) {
   if (!dbConnection) return [];
   const members: any[] = [];
   const profileCache = buildAccountCache();
+  const cities = new Map<string, string>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    cities.set(p.identity.toHexString(), p.city || '');
+  }
   for (const m of dbConnection.db.organization_member.iter()) {
     if (m.orgId === orgId) {
       const profile = profileCache.get(m.memberIdentity.toHexString());
@@ -850,6 +854,7 @@ export function getOrganizationMembers(orgId: bigint) {
         role: m.role,
         fullName: profile?.name || 'Unknown',
         picture: profile?.picture || '',
+        city: cities.get(m.memberIdentity.toHexString()) || '',
         joinedAt: m.joinedAt?.toDate() ?? new Date(),
       });
     }

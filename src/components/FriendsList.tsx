@@ -57,7 +57,7 @@ function FriendsList({ identity, emptyText, hideToggle }: FriendsListProps) {
         <HideToggle label={hideToggle.label} checked={hideToggle.checked} onChange={hideToggle.onChange} busy={hideToggle.busy} />
       )}
       <style>{`
-        .friends-card { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .friends-card { background: white; border-radius: 12px; padding: 8px 20px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .friends-list { display: flex; flex-direction: column; }
         .friend-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; text-decoration: none; }
         .friend-row:last-child { border-bottom: none; }

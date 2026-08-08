@@ -473,7 +473,7 @@ function MyProfilePage() {
         .profile-tabs {
           display: flex;
           gap: 8px;
-          margin-bottom: 16px;
+          margin-bottom: 20px;
           border-bottom: 1px solid #e0e0e0;
         }
 

@@ -235,7 +235,10 @@ function OrgAccountView() {
                       <div key={m.identity} className="member-row">
                         <Link to={`/profile/${m.identity}`} className="member-link">
                           {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
-                          <span className="member-name">{m.fullName}</span>
+                          <div className="member-info">
+                            <span className="member-name">{m.fullName}</span>
+                            {m.city && <span className="member-city">{m.city}</span>}
+                          </div>
                         </Link>
                         {m.role === 'leader' ? (
                           <span className={`role-badge role-leader`}>Leader</span>
@@ -337,7 +340,7 @@ function OrgAccountView() {
         .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
         .join-date { margin: 0; font-size: 13px; color: #999; }
         .back-to-account-btn { display: block; margin: 0 0 20px; padding: 8px 16px; }
-        .members-tab-card { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .members-tab-card { background: white; border-radius: 12px; padding: 8px 20px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .qr-content { background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .qr-content h3 { margin: 0 0 16px; color: #333; font-size: 17px; }
@@ -345,12 +348,14 @@ function OrgAccountView() {
         .qr-instruction { margin: 0 0 16px; color: #666; font-size: 13px; }
         .close-button { padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
-        .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .member-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
         .member-row:last-child { border-bottom: none; }
-        .member-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #333; flex: 1; min-width: 0; }
-        .member-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
-        .member-avatar-placeholder { width: 36px; height: 36px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; }
-        .member-name { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .member-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: #333; flex: 1; min-width: 0; }
+        .member-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+        .member-avatar-placeholder { width: 44px; height: 44px; border-radius: 50%; background: #e0e0e0; flex-shrink: 0; }
+        .member-info { display: flex; flex-direction: column; min-width: 0; }
+        .member-name { font-size: 15px; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .member-city { font-size: 12px; color: #999; }
         .role-badge { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
         .role-leader { background: #fef3c7; color: #92400e; }
         .role-co_leader { background: #dbeafe; color: #1e40af; }
@@ -358,7 +363,7 @@ function OrgAccountView() {
         .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
         .role-select:disabled { background: #f3f4f6; color: #9ca3af; cursor: default; }
         .story-section h2 { font-size: 16px; color: #666; margin: 0 0 16px; }
-        .profile-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+        .profile-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
         .profile-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 15px; font-weight: 600; color: #666; cursor: pointer; }
         .profile-tab:hover { color: #667eea; }
         .profile-tab.active { color: #667eea; border-bottom-color: #667eea; }

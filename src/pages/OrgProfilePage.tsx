@@ -153,7 +153,10 @@ function OrgProfilePage() {
               <div key={m.identity} className="member-row">
                 <Link to={`/profile/${m.identity}`} className="member-link">
                   {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
-                  <span className="member-name">{m.fullName}</span>
+                  <div className="member-info">
+                    <span className="member-name">{m.fullName}</span>
+                    {m.city && <span className="member-city">{m.city}</span>}
+                  </div>
                 </Link>
                 {m.role === 'leader' ? (
                   <span className={`role-badge role-leader`}>Leader</span>

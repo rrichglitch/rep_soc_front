@@ -412,7 +412,7 @@ function ProfilePage() {
           border-radius: 8px;
         }
 
-        .profile-tabs { display: flex; gap: 8px; margin-bottom: 16px; background: white; border-radius: 12px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .profile-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .profile-tab { flex: 1; padding: 8px 0; background: transparent; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer; transition: background 0.2s, color 0.2s; }
         .profile-tab.active { background: #667eea; color: white; }
         .story-form {
