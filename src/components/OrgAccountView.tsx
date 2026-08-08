@@ -138,7 +138,15 @@ function OrgAccountView() {
             </div>
             <div className="profile-info">
               <h2 className="profile-name">{org.name}</h2>
-              {org.city && <p className="profile-city">{org.city}</p>}
+              <div className="profile-field">
+                <div className="field-display">
+                  <span className="field-label">Location</span>
+                  <span className="field-value">{org.city || '—'}</span>
+                  {canManage && (
+                    <button onClick={handleRefreshLocation} className="loc-update-btn">Update</button>
+                  )}
+                </div>
+              </div>
               {org.description && <p className="profile-description">{org.description}</p>}
               <p className="join-date">
                 {createdAt ? `Founded ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
@@ -151,20 +159,11 @@ function OrgAccountView() {
         </div>
 
         {canManage && (
-          <div className="org-location-section">
-            <div className="field-display">
-              <span className="field-label">Location</span>
-              <span className="field-value">{org.city || '—'}</span>
-              {org.city && (
-                <button onClick={handleRefreshLocation} className="loc-update-btn">Update</button>
-              )}
-            </div>
-            <PreciseLocationToggle
-              isExact={orgPrecision === 'exact'}
-              onEnable={handleOrgToggleEnable}
-              onDisable={handleOrgToggleDisable}
-            />
-          </div>
+          <PreciseLocationToggle
+            isExact={orgPrecision === 'exact'}
+            onEnable={handleOrgToggleEnable}
+            onDisable={handleOrgToggleDisable}
+          />
         )}
 
         {canManage && (
@@ -285,10 +284,10 @@ function OrgAccountView() {
         .join-date { margin: 12px 0 0; font-size: 13px; color: #999; }
         .back-to-account-btn { margin-top: 12px; padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .back-to-account-btn:hover { background: #e5e7eb; }
-        .org-location-section { margin-bottom: 20px; }
-        .org-location-section .field-display { display: flex; align-items: center; gap: 8px; background: white; border-radius: 12px; padding: 14px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .org-location-section .field-label { color: #999; font-size: 13px; font-weight: 600; }
-        .org-location-section .field-value { color: #666; font-size: 14px; }
+        .profile-field { margin: 4px 0; }
+        .field-display { display: flex; align-items: center; gap: 8px; }
+        .field-label { color: #666; font-size: 14px; font-weight: 500; }
+        .field-value { color: #666; font-size: 14px; }
         .loc-update-btn { margin-left: auto; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
