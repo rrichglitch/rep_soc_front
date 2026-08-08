@@ -531,7 +531,7 @@ function MyProfilePage() {
           gap: 8px;
           flex-wrap: wrap;
         }
-        .loc-update-btn { margin-left: 8px; padding: 1px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 8px; padding: 3px 5px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
 
         .edit-input {
