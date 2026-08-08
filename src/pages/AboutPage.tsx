@@ -47,19 +47,18 @@ function AboutPage() {
         </div>
 
         <div className="about-section">
-          <h2>What Can It Do For You?</h2>
+          <h2>What Can Veri Social Do For You?</h2>
           <ul>
             <li>
-              <strong>For Individuals</strong> – Build a reputation that speaks for itself. 
-              Stand out in a world where anyone can claim anything about themselves.
+              <strong>For Everyone</strong> – Find new friends. Find the best nearby pizza, 
+              contracting services, custom art, etc.
             </li>
             <li>
-              <strong>For Businesses</strong> – Find trustworthy partners, contractors, and 
-              collaborators. See real recommendations from real people.
+              <strong>For Freelancers and Businesses</strong> – Find trustworthy partners and 
+              contractors. Insure potential customers find you and know your track record.
             </li>
             <li>
-              <strong>For Communities</strong> – Create networks of verified, reliable 
-              individuals. Build trust from the ground up.
+              <strong>For Groups</strong> – Easily find others with your niche shared interests.
             </li>
           </ul>
         </div>
