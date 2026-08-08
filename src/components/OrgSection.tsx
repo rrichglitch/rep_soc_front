@@ -82,7 +82,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
                 </div>
               </Link>
               <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
-                {activeOrg?.id === org.id ? 'Active' : 'Use'}
+                {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
               </button>
             </div>
           ))}
@@ -128,7 +128,8 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .org-info { display: flex; flex-direction: column; }
         .org-name { font-weight: 600; font-size: 14px; }
         .org-role { font-size: 11px; color: #999; text-transform: capitalize; }
-        .use-org-btn { padding: 6px 14px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .use-org-btn { padding: 6px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .use-org-btn:hover { background: #667eea; color: white; }
         .pro-prompt { background: #fff8e1; padding: 16px; border-radius: 8px; text-align: center; margin-bottom: 12px; }
         .pro-prompt p { margin: 0 0 8px; color: #92400e; font-size: 14px; }
         .upgrade-btn { padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
