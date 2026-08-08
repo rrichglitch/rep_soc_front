@@ -164,12 +164,14 @@ function OrgAccountView() {
             }}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
           >
-            <p className="join-date">
-              {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
-            </p>
-            <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
-              ← Back to my account
-            </button>
+            <div className="join-row">
+              <p className="join-date">
+                {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
+              </p>
+              <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
+                ← Back to my account
+              </button>
+            </div>
           </ProfileDetails>
         </div>
 
@@ -313,8 +315,9 @@ function OrgAccountView() {
         .profile-name { margin: 0 0 12px; font-size: 22px; color: #333; }
         .profile-city { margin: 0 0 8px; color: #666; font-size: 14px; }
         .profile-description { margin: 0; color: #444; font-size: 14px; line-height: 1.5; max-width: 400px; white-space: pre-wrap; }
-        .join-date { margin: 12px 0 0; font-size: 13px; color: #999; }
-        .back-to-account-btn { margin-top: 12px; padding: 8px 16px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .join-row { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
+        .join-date { margin: 0; font-size: 13px; color: #999; }
+        .back-to-account-btn { padding: 4px 12px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
         .back-to-account-btn:hover { background: #e5e7eb; }
         .profile-field { margin: 4px 0; }
         .field-display { display: flex; align-items: center; gap: 8px; }
