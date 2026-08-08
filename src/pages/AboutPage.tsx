@@ -73,7 +73,7 @@ function AboutPage() {
           </ul>
         </div>
 
-        <div className="about-section cta-section">
+        <div className="cta-section">
           {isLoggedIn ? (
             <Link to="/home" className="cta-button">Go to Home</Link>
           ) : (
@@ -170,26 +170,24 @@ function AboutPage() {
         .cta-section {
           display: flex;
           justify-content: center;
-          padding: 24px;
+          margin: 8px 0 24px;
         }
 
         .cta-button {
           display: inline-block;
-          padding: 10px 32px;
-          background: white;
-          color: #667eea;
-          border: 1px solid #667eea;
-          border-radius: 24px;
+          padding: 12px 32px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 8px;
           font-weight: 600;
-          font-size: 15px;
+          font-size: 16px;
           text-decoration: none;
           cursor: pointer;
-          transition: background 0.15s, color 0.15s;
         }
 
         .cta-button:hover {
-          background: #667eea;
-          color: white;
+          background: #5a6fd6;
         }
 
         .about-footer {
