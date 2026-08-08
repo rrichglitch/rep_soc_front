@@ -301,6 +301,11 @@ function SearchPage() {
                 type="text"
                 value={locInput}
                 onChange={(e) => setLocInput(e.target.value)}
+                onBlur={() => {
+                  // Close the dropdown when the field is deselected (suggestions
+                  // register on mousedown, which fires before blur)
+                  setTimeout(() => setLocSuggestions([]), 150);
+                }}
                 placeholder="City or place (e.g. Tokyo)"
                 autoFocus
               />
