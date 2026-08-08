@@ -206,7 +206,7 @@ function OrgProfilePage() {
         .role-co_leader { background: #dbeafe; color: #1e40af; }
         .role-member { background: #f3f4f6; color: #374151; }
         .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
-        .back-to-account-btn { padding: 10px 24px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .back-to-account-btn { padding: 6px 14px; background: #dc2626; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .profile-note { font-size: 13px; color: #666; }
       `}</style>
     </div>
