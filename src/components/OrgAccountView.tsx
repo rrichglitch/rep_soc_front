@@ -163,15 +163,15 @@ function OrgAccountView() {
               await refreshOrg();
             }}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
-          >
-            <div className="join-row">
-              <p className="join-date">
-                {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
-              </p>
+            footer={
               <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
                 ← Back to my account
               </button>
-            </div>
+            }
+          >
+            <p className="join-date">
+              {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
+            </p>
           </ProfileDetails>
         </div>
 
@@ -306,24 +306,7 @@ function OrgAccountView() {
       <style>{`
         .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }
         .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
-        .profile-header { display: flex; gap: 20px; }
-        .profile-pic-wrapper { display: flex; flex-direction: column; align-items: center; }
-        .profile-picture-container { position: relative; flex-shrink: 0; }
-        .profile-picture { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
-        .profile-picture-placeholder { width: 100px; height: 100px; border-radius: 50%; background: #e0e0e0; }
-        .profile-info { flex: 1; }
-        .profile-name { margin: 0 0 12px; font-size: 22px; color: #333; }
-        .profile-city { margin: 0 0 8px; color: #666; font-size: 14px; }
-        .profile-description { margin: 0; color: #444; font-size: 14px; line-height: 1.5; max-width: 400px; white-space: pre-wrap; }
-        .join-row { display: flex; align-items: center; gap: 16px; margin-top: 12px; }
-        .join-date { margin: 0; font-size: 13px; color: #999; }
-        .back-to-account-btn { padding: 4px 12px; background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-        .back-to-account-btn:hover { background: #e5e7eb; }
-        .profile-field { margin: 4px 0; }
-        .field-display { display: flex; align-items: center; gap: 8px; }
-        .field-label { color: #666; font-size: 14px; font-weight: 500; }
-        .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 8px; padding: 3px 5px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .join-date { margin: 8px 0 0; font-size: 13px; color: #999; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .qr-content { background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
@@ -331,7 +314,6 @@ function OrgAccountView() {
         .qr-code { display: flex; justify-content: center; margin-bottom: 16px; }
         .qr-instruction { margin: 0 0 16px; color: #666; font-size: 13px; }
         .close-button { padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .share-btn-under-pic { padding: 6px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
         .member-row:last-child { border-bottom: none; }

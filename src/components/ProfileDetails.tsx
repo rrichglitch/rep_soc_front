@@ -11,15 +11,17 @@ interface ProfileDetailsProps {
   onPictureClick?: () => void;
   pictureExtra?: ReactNode; // e.g. the Share button under the picture
   showLocationUpdate?: boolean; // default true
-  children?: ReactNode;     // extra lines under the description (join date, back button, badges)
+  children?: ReactNode;     // extra lines between Location and the description (join date, badges)
+  footer?: ReactNode;       // extra items at the very bottom of the info section (back button)
 }
 
-// Shared profile header for individual and org accounts: picture | name,
-// location field + Update button, editable description, plus extra lines.
+// Shared profile header for individual and org accounts — the SINGLE source of
+// truth for the top info section: picture | name, Location + Update, extra
+// children, editable description, footer. Both profile pages render exactly this.
 function ProfileDetails({
   picture, name, city, description,
   onUpdateLocation, isLocationUpdating, onSaveDescription,
-  onPictureClick, pictureExtra, showLocationUpdate = true, children,
+  onPictureClick, pictureExtra, showLocationUpdate = true, children, footer,
 }: ProfileDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -71,7 +73,7 @@ function ProfileDetails({
               onClick={onPictureClick}
             />
           ) : (
-            <div className="profile-picture-placeholder" />
+            <div className={`profile-picture-placeholder${onPictureClick ? ' clickable' : ''}`} onClick={onPictureClick} />
           )}
         </div>
         {pictureExtra}
@@ -123,33 +125,58 @@ function ProfileDetails({
             </div>
           )}
         </div>
+        {footer}
       </div>
       <style>{`
+        /* ── Top info section — shared by individual AND org profiles ── */
         .profile-header { display: flex; gap: 20px; align-items: flex-start; }
         .profile-pic-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .profile-picture-container { flex-shrink: 0; }
+        .profile-picture-container { position: relative; flex-shrink: 0; }
         .profile-picture { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; }
-        .profile-picture.clickable { cursor: pointer; }
+        .profile-picture.clickable, .profile-picture-placeholder.clickable { cursor: pointer; transition: transform 0.2s; }
+        .profile-picture.clickable:hover, .profile-picture-placeholder.clickable:hover { transform: scale(1.05); }
         .profile-picture-placeholder { width: 100px; height: 100px; border-radius: 50%; background: #e0e0e0; }
         .profile-info { flex: 1; min-width: 0; }
-        .profile-name { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: #333; }
-        .profile-field { margin: 4px 0; }
+        .profile-name { margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #333; }
+        .profile-field { margin: 4px 0 8px; }
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: 8px; padding: 3px 5px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
-        .description-field .field-value { font-size: 13px; color: #888; line-height: 1.4; }
-        .edit-btn { background: none; border: none; cursor: pointer; color: #999; opacity: 0; transition: opacity 0.2s; padding: 4px; }
+        .description-field .field-value { display: block; white-space: pre-wrap; font-size: 13px; color: #888; line-height: 1.4; }
+        .edit-btn { background: none; border: none; color: #999; cursor: pointer; padding: 2px; display: flex; align-items: center; opacity: 0; transition: opacity 0.2s; }
         .profile-field:hover .edit-btn { opacity: 1; }
         .edit-btn:hover { color: #667eea; }
         .edit-inline { display: flex; flex-direction: column; gap: 8px; width: 100%; }
-        .edit-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; font-family: inherit; resize: vertical; }
+        .edit-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #667eea; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
         .edit-actions { display: flex; gap: 8px; }
-        .save-btn { padding: 6px 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-        .save-btn:disabled { opacity: 0.6; }
-        .cancel-btn { padding: 6px 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .save-btn { padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .save-btn:hover { background: #5a6fd6; }
+        .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cancel-btn { padding: 4px 8px; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .cancel-btn:hover { background: #777; }
+
+        /* ── Outline pill buttons (Share / Update / Back to my account) ──
+           White with blue border+text; fill solid blue on hover. */
+        .share-btn-under-pic, .loc-update-btn, .back-to-account-btn {
+          background: white;
+          color: #667eea;
+          border: 1px solid #667eea;
+          border-radius: 20px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 6px 16px;
+          white-space: nowrap;
+          transition: background 0.15s, color 0.15s;
+        }
+        .share-btn-under-pic:hover, .loc-update-btn:hover, .back-to-account-btn:hover { background: #667eea; color: white; }
+        .loc-update-btn { margin-left: 8px; padding: 3px 10px; }
+        .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
+
         @media (max-width: 767px) {
+          .profile-header { flex-direction: column; align-items: center; text-align: center; }
+          .profile-field { justify-content: center; }
+          .field-display { justify-content: center; flex-wrap: wrap; }
           .profile-picture, .profile-picture-placeholder { width: 80px; height: 80px; }
           .profile-name { font-size: 19px; }
         }
