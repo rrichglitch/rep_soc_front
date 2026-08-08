@@ -430,7 +430,7 @@ function MyProfilePage() {
         }
 
         .join-date {
-          margin: 12px 0 0;
+          margin: 0;
           font-size: 13px;
           color: #999;
         }
