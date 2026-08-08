@@ -114,7 +114,7 @@ function OrgProfilePage() {
 
   return (
     <div className="org-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={isOwnOrg ? <button onClick={() => { logoutOrg(); navigate('/me'); }} className="back-to-account-btn">Back to my account</button> : <AuthActions />} />
+      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={isOwnOrg ? <AuthActions profileReplacement={<button onClick={() => { logoutOrg(); navigate('/me'); }} className="back-to-account-btn">Back to my account</button>} /> : <AuthActions />} />
       <main className="main-content">
         <div className="org-header">
           <div className="org-picture-container">
