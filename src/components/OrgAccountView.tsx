@@ -170,7 +170,7 @@ function OrgAccountView() {
           </ProfileDetails>
         </div>
 
-        <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
+        <button onClick={() => { logoutOrg(); navigate('/me'); }} className="back-to-account-btn">
           ← Back to my account
         </button>
 
