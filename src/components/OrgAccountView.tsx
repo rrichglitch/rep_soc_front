@@ -140,7 +140,7 @@ function OrgAccountView() {
               <h2 className="profile-name">{org.name}</h2>
               <div className="profile-field">
                 <div className="field-display">
-                  <span className="field-label">Location</span>
+                  <span className="field-label">Location:</span>
                   <span className="field-value">{org.city || '—'}</span>
                   {canManage && (
                     <button onClick={handleRefreshLocation} className="loc-update-btn">Update</button>
@@ -288,7 +288,7 @@ function OrgAccountView() {
         .field-display { display: flex; align-items: center; gap: 8px; }
         .field-label { color: #666; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .loc-update-btn { margin-left: auto; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 10px; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }

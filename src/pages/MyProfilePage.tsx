@@ -253,7 +253,7 @@ function MyProfilePage() {
               <h2 className="profile-name">{profile?.full_name}</h2>
               <div className="profile-field">
                 <div className="field-display">
-                  <span className="field-label">Location</span>
+                  <span className="field-label">Location:</span>
                   <span className="field-value">{profile?.city || '—'}</span>
                   <button className="loc-update-btn" onClick={handleLocationUpdate} disabled={isLocUpdating}>
                     {isLocUpdating ? 'Updating…' : 'Update'}
@@ -633,7 +633,7 @@ function MyProfilePage() {
           gap: 8px;
           flex-wrap: wrap;
         }
-        .loc-update-btn { margin-left: auto; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-update-btn { margin-left: 10px; padding: 5px 14px; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .loc-update-btn:disabled { opacity: 0.6; cursor: default; }
 
         .edit-input {
