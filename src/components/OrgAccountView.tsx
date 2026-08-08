@@ -7,6 +7,7 @@ import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers,
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
 import ProfileDetails from './ProfileDetails';
+import HideToggle from './HideToggle';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
@@ -19,6 +20,8 @@ function OrgAccountView() {
   const [members, setMembers] = useState<any[]>([]);
   const [orgData, setOrgData] = useState<any>(org || null);
   const [orgPrecision, setOrgPrecision] = useState<'off' | 'approx' | 'exact'>('off');
+  const [hideMembers, setHideMembers] = useState(false);
+  const [isUpdatingHide, setIsUpdatingHide] = useState(false);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [stories, setStories] = useState<any[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
@@ -36,6 +39,7 @@ function OrgAccountView() {
       setOrgData({ ...orgRow } as any);
       setCreatedAt(new Date(Number((orgRow as any).createdAt?.microsSinceUnixEpoch || 0) / 1000));
       setOrgPrecision((orgRow.locationPrecision as 'off' | 'approx' | 'exact') || 'off');
+      setHideMembers(!!orgRow.hideMembers);
     }
     // Re-resolve my role each refresh (the member subscription may lag on first load)
     try {
@@ -105,6 +109,18 @@ function OrgAccountView() {
   };
 
   const canManage = myRole === 'leader' || myRole === 'co_leader';
+
+  const handleHideMembersToggle = async (checked: boolean) => {
+    setIsUpdatingHide(true);
+    try {
+      await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, checked);
+      setHideMembers(checked);
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
+    } finally {
+      setIsUpdatingHide(false);
+    }
+  };
 
   const handleOrgToggleEnable = async () => {
     // Toggle ON: fetch a fresh precise location for the org
@@ -226,6 +242,12 @@ function OrgAccountView() {
                 </div>
               ))}
             </div>
+            <HideToggle
+              label="Hide your members"
+              checked={hideMembers}
+              onChange={handleHideMembersToggle}
+              busy={isUpdatingHide}
+            />
           </div>
         )}
 

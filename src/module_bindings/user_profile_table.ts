@@ -26,4 +26,5 @@ export default __t.row({
   locationLng: __t.option(__t.f64()).name("location_lng"),
   locationPrecision: __t.string().name("location_precision"),
   locationAsked: __t.bool().name("location_asked"),
+  hideFriends: __t.bool().name("hide_friends"),
 });

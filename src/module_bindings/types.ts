@@ -144,6 +144,7 @@ export const Organization = __t.object("Organization", {
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
   locationPrecision: __t.string(),
+  hideMembers: __t.bool(),
 });
 export type Organization = __Infer<typeof Organization>;
 
@@ -207,6 +208,7 @@ export const UserProfile = __t.object("UserProfile", {
   locationLng: __t.option(__t.f64()),
   locationPrecision: __t.string(),
   locationAsked: __t.bool(),
+  hideFriends: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

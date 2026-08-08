@@ -145,6 +145,7 @@ function OrgProfilePage() {
           </div>
         </div>
 
+        {!org.hideMembers && (
         <div className="members-section">
           <h3>Members ({members.length})</h3>
           <div className="members-list">
@@ -173,6 +174,7 @@ function OrgProfilePage() {
             ))}
           </div>
         </div>
+        )}
       </main>
 
       <style>{`

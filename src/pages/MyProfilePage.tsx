@@ -12,6 +12,7 @@ import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
 import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
 import ProfileDetails from '../components/ProfileDetails';
+import FriendsList from '../components/FriendsList';
 import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
@@ -44,7 +45,9 @@ function MyProfilePage() {
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'orgs'>('story');
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs'>('story');
+  const [hideFriends, setHideFriends] = useState(false);
+  const [isUpdatingHide, setIsUpdatingHide] = useState(false);
    
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
@@ -104,6 +107,7 @@ function MyProfilePage() {
         const userPosts = await getMyPosts(identityHex);
         setMyPosts(userPosts);
         setLocPrecision((profileData.locationPrecision as LocationPrecision) || 'off');
+        setHideFriends(!!profileData.hideFriends);
       }
     } catch (e) {
       console.error('Error loading profile:', e);
@@ -133,6 +137,18 @@ function MyProfilePage() {
         : 'Could not get your location. Check that location permissions are enabled for this site.');
     } finally {
       setIsLocUpdating(false);
+    }
+  };
+
+  const handleHideFriendsToggle = async (checked: boolean) => {
+    setIsUpdatingHide(true);
+    try {
+      await updateProfile(undefined, undefined, undefined, checked);
+      setHideFriends(checked);
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
+    } finally {
+      setIsUpdatingHide(false);
     }
   };
 
@@ -227,6 +243,12 @@ function MyProfilePage() {
               Posts
             </button>
             <button
+              className={`profile-tab ${activeTab === 'friends' ? 'active' : ''}`}
+              onClick={() => setActiveTab('friends')}
+            >
+              Friends
+            </button>
+            <button
               className={`profile-tab ${activeTab === 'orgs' ? 'active' : ''}`}
               onClick={() => setActiveTab('orgs')}
             >
@@ -236,6 +258,17 @@ function MyProfilePage() {
 
           {activeTab === 'orgs' ? (
             <OrgSection profileIdentity={profile?.identity || ''} />
+          ) : activeTab === 'friends' ? (
+            <FriendsList
+              identity={profile?.identity || ''}
+              emptyText="You have no friends yet."
+              hideToggle={{
+                label: 'Hide your friends',
+                checked: hideFriends,
+                onChange: handleHideFriendsToggle,
+                busy: isUpdatingHide,
+              }}
+            />
           ) : activeTab === 'story' ? (
             <>
               <div className="no-post-own-story">

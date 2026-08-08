@@ -14,4 +14,5 @@ export default {
   profilePicture: __t.option(__t.string()),
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
+  hideFriends: __t.option(__t.bool()),
 };

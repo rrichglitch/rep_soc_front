@@ -199,18 +199,20 @@ export async function claimProfile(email: string): Promise<void> {
 export async function updateProfile(
   profilePicture?: string,
   city?: string,
-  description?: string
+  description?: string,
+  hideFriends?: boolean
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  console.log('Updating profile:', { profilePicture, city, description });
+  console.log('Updating profile:', { profilePicture, city, description, hideFriends });
   
   await dbConnection.reducers.updateProfile({
-    profilePicture,
-    city,
-    description,
+    profilePicture: profilePicture ?? undefined,
+    city: city ?? undefined,
+    description: description ?? undefined,
+    hideFriends: hideFriends ?? undefined,
   });
 }
 
@@ -799,13 +801,14 @@ export async function createOrganization(
 }
 
 export async function updateOrganization(
-  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number
+  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.updateOrganization({
     orgId, picture, city, description,
     locationLat: locationLat ?? undefined,
     locationLng: locationLng ?? undefined,
+    hideMembers: hideMembers ?? undefined,
   });
 }
 
@@ -1040,6 +1043,30 @@ export function getOrgMessages(orgId: bigint) {
     }
   }
   return msgs.sort((a, b) => (a.id < b.id ? -1 : 1));
+}
+
+// All friends of an identity (both directions of the friendship table)
+export function getFriends(identity: string): { identity: string; name: string; picture: string; city: string }[] {
+  if (!dbConnection) return [];
+  const friendIds = new Set<string>();
+  for (const f of dbConnection.db.friendship.iter()) {
+    const a = f.userA.toHexString();
+    const b = f.userB.toHexString();
+    if (a === identity) friendIds.add(b);
+    else if (b === identity) friendIds.add(a);
+  }
+  const cache = buildAccountCache();
+  const cities = new Map<string, string>();
+  for (const p of dbConnection.db.user_profile.iter()) {
+    cities.set(p.identity.toHexString(), p.city || '');
+  }
+  const out: { identity: string; name: string; picture: string; city: string }[] = [];
+  for (const id of friendIds) {
+    const acc = cache.get(id);
+    out.push({ identity: id, name: acc?.name || 'Unknown', picture: acc?.picture || '', city: cities.get(id) || '' });
+  }
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out;
 }
 
 export function getFriendChats(identity: string) {
