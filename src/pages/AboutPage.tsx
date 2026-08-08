@@ -38,7 +38,7 @@ function AboutPage() {
             interactions based in trust and staked on their own reputations. Veri Social will
             help you to find the people or organizations that you are looking for and build
             your reputation. Our platform features an expressive search which allows you to
-            describe exactly what you're looking for instead of using only keywords or
+            describe exactly what or who you're looking for instead of using only keywords or
             predetermined filters. And we emphasize what others have to say about you
             alongside how you describe yourself. We do not prioritize broadcasting corporate
             messaging to an audience and instead put all our focus into enabling our users
