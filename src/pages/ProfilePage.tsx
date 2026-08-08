@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import ProfileHeader from '../components/ProfileHeader';
+import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
@@ -256,22 +257,14 @@ function ProfilePage() {
           currentIdentityHex={currentIdentityHex || undefined}
         />
 
-        <div className="profile-tabs">
-          <button
-            className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`}
-            onClick={() => setActiveTab('story')}
-          >
-            Story
-          </button>
-          {!profile.hideFriends && (
-            <button
-              className={`profile-tab ${activeTab === 'friends' ? 'active' : ''}`}
-              onClick={() => setActiveTab('friends')}
-            >
-              Friends
-            </button>
-          )}
-        </div>
+        <ProfileTabs
+          tabs={[
+            { key: 'story', label: 'Story' },
+            ...(!profile.hideFriends ? [{ key: 'friends', label: 'Friends' }] : []),
+          ]}
+          active={activeTab}
+          onChange={(k) => setActiveTab(k as any)}
+        />
 
         {activeTab === 'friends' ? (
           <FriendsList identity={profileIdentity!} emptyText="No friends yet." />
@@ -412,9 +405,6 @@ function ProfilePage() {
           border-radius: 8px;
         }
 
-        .profile-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: white; border-radius: 12px; padding: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .profile-tab { flex: 1; padding: 8px 0; background: transparent; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; color: #666; cursor: pointer; transition: background 0.2s, color 0.2s; }
-        .profile-tab.active { background: #667eea; color: white; }
         .story-form {
           background: white;
           border-radius: 12px;

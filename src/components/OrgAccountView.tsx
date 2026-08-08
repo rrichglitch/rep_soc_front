@@ -7,6 +7,7 @@ import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers,
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
 import ProfileDetails from './ProfileDetails';
+import ProfileTabs from './ProfileTabs';
 import HideToggle from './HideToggle';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -216,11 +217,15 @@ function OrgAccountView() {
         )}
 
         <div className="story-section">
-          <div className="profile-tabs">
-            <button className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`} onClick={() => setActiveTab('story')}>Story</button>
-            <button className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Posts</button>
-            <button className={`profile-tab ${activeTab === 'members' ? 'active' : ''}`} onClick={() => setActiveTab('members')}>Members</button>
-          </div>
+          <ProfileTabs
+            tabs={[
+              { key: 'story', label: 'Story' },
+              { key: 'posts', label: 'Posts' },
+              { key: 'members', label: 'Members' },
+            ]}
+            active={activeTab}
+            onChange={(k) => setActiveTab(k as any)}
+          />
 
           {activeTab === 'members' ? (
             <div className="members-tab">
@@ -363,7 +368,7 @@ function OrgAccountView() {
         .role-select { padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; font-weight: 600; background: white; color: #374151; cursor: pointer; flex-shrink: 0; }
         .role-select:disabled { background: #f3f4f6; color: #9ca3af; cursor: default; }
         .story-section h2 { font-size: 16px; color: #666; margin: 0 0 16px; }
-        .profile-tabs { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; }
+
         .profile-tab { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; font-size: 15px; font-weight: 600; color: #666; cursor: pointer; }
         .profile-tab:hover { color: #667eea; }
         .profile-tab.active { color: #667eea; border-bottom-color: #667eea; }

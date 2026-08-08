@@ -12,6 +12,7 @@ import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
 import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
 import ProfileDetails from '../components/ProfileDetails';
+import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
 import { useOrg } from '../contexts/OrgContext';
 
@@ -229,32 +230,16 @@ function MyProfilePage() {
         />
 
         <div className="story-section">
-          <div className="profile-tabs">
-            <button
-              className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`}
-              onClick={() => setActiveTab('story')}
-            >
-              Story
-            </button>
-            <button
-              className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`}
-              onClick={() => setActiveTab('posts')}
-            >
-              Posts
-            </button>
-            <button
-              className={`profile-tab ${activeTab === 'friends' ? 'active' : ''}`}
-              onClick={() => setActiveTab('friends')}
-            >
-              Friends
-            </button>
-            <button
-              className={`profile-tab ${activeTab === 'orgs' ? 'active' : ''}`}
-              onClick={() => setActiveTab('orgs')}
-            >
-              Organizations
-            </button>
-          </div>
+          <ProfileTabs
+            tabs={[
+              { key: 'story', label: 'Story' },
+              { key: 'posts', label: 'Posts' },
+              { key: 'friends', label: 'Friends' },
+              { key: 'orgs', label: 'Organizations' },
+            ]}
+            active={activeTab}
+            onChange={(k) => setActiveTab(k as any)}
+          />
 
           {activeTab === 'orgs' ? (
             <OrgSection profileIdentity={profile?.identity || ''} />
@@ -469,34 +454,6 @@ function MyProfilePage() {
         }
 
                 }
-
-        .profile-tabs {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 20px;
-          border-bottom: 1px solid #e0e0e0;
-        }
-
-        .profile-tab {
-          padding: 10px 20px;
-          background: none;
-          border: none;
-          border-bottom: 2px solid transparent;
-          font-size: 15px;
-          font-weight: 600;
-          color: #666;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .profile-tab:hover {
-          color: #667eea;
-        }
-
-        .profile-tab.active {
-          color: #667eea;
-          border-bottom-color: #667eea;
-        }
 
         .story-section h2 {
           font-size: 16px;
