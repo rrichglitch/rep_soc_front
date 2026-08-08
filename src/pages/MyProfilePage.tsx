@@ -597,9 +597,9 @@ function MyProfilePage() {
         }
 
         .field-label {
-          color: #999;
-          font-size: 13px;
-          font-weight: 600;
+          color: #666;
+          font-size: 14px;
+          font-weight: 500;
         }
 
         .field-value {
