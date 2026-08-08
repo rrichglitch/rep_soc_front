@@ -25,7 +25,7 @@ function OrgAccountView() {
   const [myRole, setMyRole] = useState<string | null>(null);
   const [stories, setStories] = useState<any[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts'>('story');
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'members'>('story');
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
   const [showQR, setShowQR] = useState(false);
 
@@ -215,49 +215,57 @@ function OrgAccountView() {
           </div>
         )}
 
-        {canManage && (
-          <div className="members-section">
-            <h3>Members ({members.length})</h3>
-            <div className="members-list">
-              {members.map((m: any) => (
-                <div key={m.identity} className="member-row">
-                  <Link to={`/profile/${m.identity}`} className="member-link">
-                    {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
-                    <span className="member-name">{m.fullName}</span>
-                  </Link>
-                  {m.role === 'leader' ? (
-                    <span className={`role-badge role-leader`}>Leader</span>
-                  ) : (
-                    <select
-                      value={m.role}
-                      onChange={e => handleRoleChange(m, e.target.value)}
-                      disabled={!canManage}
-                      className="role-select"
-                    >
-                      <option value="member">Member</option>
-                      <option value="co_leader">Co-Leader</option>
-                      {myRole === 'leader' && <option value="leader">Leader</option>}
-                    </select>
-                  )}
-                </div>
-              ))}
-            </div>
-            <HideToggle
-              label="Hide your members"
-              checked={hideMembers}
-              onChange={handleHideMembersToggle}
-              busy={isUpdatingHide}
-            />
-          </div>
-        )}
-
         <div className="story-section">
           <div className="profile-tabs">
             <button className={`profile-tab ${activeTab === 'story' ? 'active' : ''}`} onClick={() => setActiveTab('story')}>Story</button>
             <button className={`profile-tab ${activeTab === 'posts' ? 'active' : ''}`} onClick={() => setActiveTab('posts')}>Posts</button>
+            <button className={`profile-tab ${activeTab === 'members' ? 'active' : ''}`} onClick={() => setActiveTab('members')}>Members</button>
           </div>
 
-          {activeTab === 'story' ? (
+          {activeTab === 'members' ? (
+            <div className="members-tab">
+              <div className="members-tab-card">
+                {members.length === 0 ? (
+                  <div className="empty-story">
+                    <p>No members yet.</p>
+                  </div>
+                ) : (
+                  <div className="members-list">
+                    {members.map((m: any) => (
+                      <div key={m.identity} className="member-row">
+                        <Link to={`/profile/${m.identity}`} className="member-link">
+                          {m.picture ? <img src={m.picture} alt={m.fullName} className="member-avatar" /> : <div className="member-avatar-placeholder" />}
+                          <span className="member-name">{m.fullName}</span>
+                        </Link>
+                        {m.role === 'leader' ? (
+                          <span className={`role-badge role-leader`}>Leader</span>
+                        ) : (
+                          <select
+                            value={m.role}
+                            onChange={e => handleRoleChange(m, e.target.value)}
+                            disabled={!canManage}
+                            className="role-select"
+                          >
+                            <option value="member">Member</option>
+                            <option value="co_leader">Co-Leader</option>
+                            {myRole === 'leader' && <option value="leader">Leader</option>}
+                          </select>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {canManage && (
+                <HideToggle
+                  label="Hide your members"
+                  checked={hideMembers}
+                  onChange={handleHideMembersToggle}
+                  busy={isUpdatingHide}
+                />
+              )}
+            </div>
+          ) : activeTab === 'story' ? (
             <>
               <div className="no-post-own-story">
                 <p>You cannot post on your own story. Others can share stories about you.</p>
@@ -329,7 +337,7 @@ function OrgAccountView() {
         .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
         .join-date { margin: 0; font-size: 13px; color: #999; }
         .back-to-account-btn { display: block; margin: 0 0 20px; padding: 8px 16px; }
-        .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .members-tab-card { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .qr-content { background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
         .qr-content h3 { margin: 0 0 16px; color: #333; font-size: 17px; }

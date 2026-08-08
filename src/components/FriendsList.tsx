@@ -30,31 +30,34 @@ function FriendsList({ identity, emptyText, hideToggle }: FriendsListProps) {
 
   return (
     <div className="friends-section">
-      {friends.length === 0 ? (
-        <div className="empty-story">
-          <p>{emptyText}</p>
-        </div>
-      ) : (
-        <div className="friends-list">
-          {friends.map((f) => (
-            <Link to={`/profile/${f.identity}`} key={f.identity} className="friend-row">
-              {f.picture ? (
-                <img src={f.picture} alt={f.name} className="friend-avatar" />
-              ) : (
-                <div className="friend-avatar-placeholder" />
-              )}
-              <div className="friend-info">
-                <span className="friend-name">{f.name}</span>
-                {f.city && <span className="friend-city">{f.city}</span>}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className="friends-card">
+        {friends.length === 0 ? (
+          <div className="empty-story">
+            <p>{emptyText}</p>
+          </div>
+        ) : (
+          <div className="friends-list">
+            {friends.map((f) => (
+              <Link to={`/profile/${f.identity}`} key={f.identity} className="friend-row">
+                {f.picture ? (
+                  <img src={f.picture} alt={f.name} className="friend-avatar" />
+                ) : (
+                  <div className="friend-avatar-placeholder" />
+                )}
+                <div className="friend-info">
+                  <span className="friend-name">{f.name}</span>
+                  {f.city && <span className="friend-city">{f.city}</span>}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
       {hideToggle && (
         <HideToggle label={hideToggle.label} checked={hideToggle.checked} onChange={hideToggle.onChange} busy={hideToggle.busy} />
       )}
       <style>{`
+        .friends-card { background: white; border-radius: 12px; padding: 8px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .friends-list { display: flex; flex-direction: column; }
         .friend-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; text-decoration: none; }
         .friend-row:last-child { border-bottom: none; }
