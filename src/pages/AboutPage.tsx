@@ -169,7 +169,7 @@ function AboutPage() {
         .cta-section {
           display: flex;
           justify-content: center;
-          margin: 8px 0 24px;
+          margin: 8px 0 12px;
         }
 
         .cta-button {
