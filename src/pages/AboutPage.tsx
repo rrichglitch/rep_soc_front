@@ -67,7 +67,7 @@ function AboutPage() {
           <h2>How It Works</h2>
           <ul>
             <li><strong>We</strong> verify every user is <u>who</u> they say they are.</li>
-            <li><strong>You</strong> use our state of the art search to find exactly what you're looking for.</li>
+            <li><strong>You</strong> describe exactly what or who you are looking for.</li>
             <li><strong>Our Community</strong> verifies users are <u>what</u> they say they are.</li>
           </ul>
         </div>
