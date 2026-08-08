@@ -89,6 +89,7 @@ function ProfileDetails({
             )}
           </div>
         </div>
+        {children}
         <div className="profile-field description-field">
           {isEditing ? (
             <div className="edit-inline">
@@ -122,7 +123,6 @@ function ProfileDetails({
             </div>
           )}
         </div>
-        {children}
       </div>
       <style>{`
         .profile-header { display: flex; gap: 20px; align-items: flex-start; }
