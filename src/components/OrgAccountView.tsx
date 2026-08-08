@@ -163,17 +163,16 @@ function OrgAccountView() {
               await refreshOrg();
             }}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
-            footer={
-              <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
-                ← Back to my account
-              </button>
-            }
           >
             <p className="join-date">
               {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
             </p>
           </ProfileDetails>
         </div>
+
+        <button onClick={() => { logoutOrg(); navigate('/home'); }} className="back-to-account-btn">
+          ← Back to my account
+        </button>
 
         {canManage && (
           <PreciseLocationToggle
@@ -307,6 +306,7 @@ function OrgAccountView() {
         .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }
         .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
         .join-date { margin: 8px 0 0; font-size: 13px; color: #999; }
+        .back-to-account-btn { display: block; margin: 0 0 20px; padding: 8px 16px; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
         .qr-content { background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
