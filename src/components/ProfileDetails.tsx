@@ -140,9 +140,9 @@ function ProfileDetails({
         .profile-name { margin: 0 0 12px; font-size: 22px; font-weight: 700; color: #333; }
         .profile-field { margin: 4px 0 8px; }
         .field-display { display: flex; align-items: center; gap: 8px; }
-        .field-label { color: #666; font-size: 14px; font-weight: 500; }
+        .field-label { color: #999; font-size: 14px; font-weight: 500; }
         .field-value { color: #666; font-size: 14px; }
-        .description-field .field-value { display: block; white-space: pre-wrap; font-size: 13px; color: #888; line-height: 1.4; }
+        .description-field .field-value { display: block; white-space: pre-wrap; font-size: 13px; color: #666; line-height: 1.4; }
         .edit-btn { background: none; border: none; color: #999; cursor: pointer; padding: 2px; display: flex; align-items: center; opacity: 0; transition: opacity 0.2s; }
         .profile-field:hover .edit-btn { opacity: 1; }
         .edit-btn:hover { color: #667eea; }

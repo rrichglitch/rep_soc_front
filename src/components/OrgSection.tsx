@@ -8,7 +8,8 @@ import { geocodeCity } from '../utils/geo';
 function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   const navigate = useNavigate();
   const { loginAsOrg, activeOrg } = useOrg();
-  const [orgs, setOrgs] = useState<any[]>([]);
+  // Read the local cache synchronously at mount so the list is there immediately
+  const [orgs, setOrgs] = useState<any[]>(() => getMyOrganizations(profileIdentity));
   const [showCreate, setShowCreate] = useState(false);
   const [proStatus, setProStatus] = useState(false);
   const [form, setForm] = useState({ name: '', picture: '', city: '', description: '' });

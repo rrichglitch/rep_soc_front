@@ -19,7 +19,8 @@ interface FriendsListProps {
 
 // Shared friends/members list used by profile pages (individual + org members via getFriends? no — orgs use members)
 function FriendsList({ identity, emptyText, hideToggle }: FriendsListProps) {
-  const [friends, setFriends] = useState<FriendEntry[]>([]);
+  // Read the local cache synchronously at mount so the list is there immediately
+  const [friends, setFriends] = useState<FriendEntry[]>(() => getFriends(identity));
 
   useEffect(() => {
     const refresh = () => setFriends(getFriends(identity));
