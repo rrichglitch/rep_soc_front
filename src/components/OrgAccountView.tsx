@@ -163,7 +163,7 @@ function OrgAccountView() {
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         absoluteCenter
-        right={<AuthActions profileReplacement={<button onClick={() => { logoutOrg(); navigate('/me'); }} className="topbar-signin" style={{background:"#dc2626"}}>Back to my account</button>} />}
+        right={<AuthActions profileReplacement={<button onClick={() => { logoutOrg(); navigate('/me', { replace: true }); }} className="topbar-signin" style={{background:"#dc2626"}}>Back to my account</button>} />}
       />
       <main className="main-content">
         <div className="profile-section">

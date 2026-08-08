@@ -81,7 +81,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
                 name={org.name}
                 subtitle={org.role}
                 right={
-                  <button onClick={() => { loginAsOrg(org); navigate('/me'); }} className="use-org-btn">
+                  <button onClick={() => { loginAsOrg(org); navigate('/me', { replace: true }); }} className="use-org-btn">
                     {activeOrg?.id === org.id ? 'Active' : 'Sign in'}
                   </button>
                 }
