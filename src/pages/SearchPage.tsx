@@ -391,6 +391,11 @@ function SearchPage() {
 
         .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; position: relative; z-index: 45; }
         .results-count { background: white; padding: 4px 12px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); display: inline-block; }
+
+        /* Mobile: only the logo (left) and profile pic (right) — no chat/bell icons */
+        @media (max-width: 767px) {
+          .search-page .auth-actions .nav-icon-link:not(:last-child) { display: none; }
+        }
         .results-tools { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
         .loc-search-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 24px; }
         .loc-search-modal { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
