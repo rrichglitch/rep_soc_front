@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
+import { QRCodeSVG } from 'qrcode.react';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
@@ -23,6 +24,7 @@ function OrgAccountView() {
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'story' | 'posts'>('story');
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
+  const [showQR, setShowQR] = useState(false);
 
   const refreshOrg = async () => {
     if (!org) return;
@@ -160,6 +162,7 @@ function OrgAccountView() {
               await updateOrganization(org.id, undefined, undefined, v);
               await refreshOrg();
             }}
+            pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
           >
             <p className="join-date">
               {createdAt ? `Joined ${createdAt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}` : ''}
@@ -176,6 +179,23 @@ function OrgAccountView() {
             onEnable={handleOrgToggleEnable}
             onDisable={handleOrgToggleDisable}
           />
+        )}
+
+        {showQR && (
+          <div className="qr-modal" onClick={() => setShowQR(false)}>
+            <div className="qr-content" onClick={(e) => e.stopPropagation()}>
+              <h3>Scan to Follow</h3>
+              <div className="qr-code">
+                <QRCodeSVG value={`${window.location.origin}/org/${org.id}`} size={200} />
+              </div>
+              <p className="qr-instruction">
+                Anyone can scan this code to quickly follow this organization.
+              </p>
+              <button onClick={() => setShowQR(false)} className="close-button">
+                Close
+              </button>
+            </div>
+          </div>
         )}
 
         {canManage && (
@@ -302,6 +322,13 @@ function OrgAccountView() {
         .field-value { color: #666; font-size: 14px; }
         .loc-update-btn { margin-left: 8px; padding: 1px 8px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .qr-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
+        .qr-content { background: white; border-radius: 12px; padding: 24px; max-width: 340px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        .qr-content h3 { margin: 0 0 16px; color: #333; font-size: 17px; }
+        .qr-code { display: flex; justify-content: center; margin-bottom: 16px; }
+        .qr-instruction { margin: 0 0 16px; color: #666; font-size: 13px; }
+        .close-button { padding: 8px 20px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .share-btn-under-pic { padding: 6px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .members-section h3 { margin: 0 0 12px; color: #333; font-size: 15px; }
         .member-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
         .member-row:last-child { border-bottom: none; }
