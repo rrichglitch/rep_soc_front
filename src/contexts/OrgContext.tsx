@@ -24,22 +24,53 @@ const OrgContext = createContext<OrgContextType>({
 
 export const useOrg = () => useContext(OrgContext);
 
+// Persist the org account session across reloads/navigation (bigint-safe JSON)
+const STORAGE_KEY = 'veri_active_org';
+
+function serializeOrg(org: ActiveOrg): string {
+  return JSON.stringify({ ...org, id: org.id.toString() });
+}
+
+function parseOrg(raw: string): ActiveOrg | null {
+  try {
+    const o = JSON.parse(raw);
+    if (!o || o.id === undefined) return null;
+    return { ...o, id: BigInt(o.id) };
+  } catch {
+    return null;
+  }
+}
+
 export function OrgProvider({ children }: { children: ReactNode }) {
-  const [activeOrg, setActiveOrg] = useState<ActiveOrg | null>(null);
+  const [activeOrg, setActiveOrg] = useState<ActiveOrg | null>(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? parseOrg(raw) : null;
+  });
 
   const loginAsOrg = useCallback((org: { id: bigint; name: string; picture?: string; city?: string; description?: string }) => {
-    setActiveOrg({
+    const full: ActiveOrg = {
       id: org.id,
       name: org.name,
       picture: org.picture || '',
       city: org.city || '',
       description: org.description || '',
       identity: orgAccountIdentityHex(org.id),
-    });
+    };
+    setActiveOrg(full);
+    try {
+      localStorage.setItem(STORAGE_KEY, serializeOrg(full));
+    } catch {
+      /* storage unavailable — session-only */
+    }
   }, []);
 
   const logoutOrg = useCallback(() => {
     setActiveOrg(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return (
