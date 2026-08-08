@@ -37,9 +37,9 @@ function AboutPage() {
             Substack, and Fiverr. We strive to give our community a platform to facilitate
             interactions based in trust and staked on their own reputations. Veri Social will
             help you to find the people or organizations that you are looking for and build
-            your reputation. Our platform features a highly comprehensive and expressive
-            search which allows you to describe exactly what you're looking for instead of
-            using predetermined filters. And we emphasize what others have to say about you
+            your reputation. Our platform features an expressive search which allows you to
+            describe exactly what you're looking for instead of using only keywords or
+            predetermined filters. And we emphasize what others have to say about you
             alongside how you describe yourself. We do not prioritize broadcasting corporate
             messaging to an audience and instead put all our focus into enabling our users
             to find what they are looking for with reliable information.
