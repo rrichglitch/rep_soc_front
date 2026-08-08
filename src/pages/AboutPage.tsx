@@ -31,31 +31,18 @@ function AboutPage() {
         <h1 className="main-logo">Veri Social</h1>
 
         <div className="about-section">
-          <h2>Why Trust Matters</h2>
-          <p>
-            In an age of endless options and infinite information, how do we know who to trust?
-            Traditional social networks reward popularity and viral content, but what we really
-            need is a way to evaluate reliability and character.
-          </p>
-          <p>
-            Trust is our most valuable currency. Whether you're choosing a business partner,
-            someone to collaborate with, or deciding to open up to someone, you want to know:
-            <strong> can I count on this person?</strong>
-          </p>
-        </div>
-
-        <div className="about-section">
           <h2>What Is Veri Social?</h2>
           <p>
-            Veri Social is a social network built around reputation. Instead of
-            posting content for the masses, every post you make is about someone else—it's
-            a public attestation of your experience with them.
-          </p>
-          <p>
-            Think of it as <strong>Yelp for people</strong>. When you have a positive (or
-            negative) experience with someone, you can post about it on their profile.
-            These reviews accumulate over time, building a trustworthy picture of who that
-            person really is.
+            Veri Social is a social network with some similarities to Yelp, Bumble, LinkedIn,
+            Substack, and Fiverr. We strive to give our community a platform to facilitate
+            interactions based in trust and staked on their own reputations. Veri Social will
+            help you to find the people or organizations that you are looking for and build
+            your reputation. Our platform features a highly comprehensive and expressive
+            search which allows you to describe exactly what you're looking for instead of
+            using predetermined filters. And we emphasize what others have to say about you
+            alongside how you describe yourself. We do not prioritize broadcasting corporate
+            messaging to an audience and instead put all our focus into enabling our users
+            to find what they are looking for with reliable information.
           </p>
         </div>
 
