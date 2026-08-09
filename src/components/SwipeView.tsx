@@ -206,6 +206,9 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
           scrollPaddingRight: Math.round((contW - cardW) / 2),
         } : undefined}
       >
+        {isDesktop && contW > cardW && (
+          <div className="swipe-spacer" style={{ flex: `0 0 ${Math.round((contW - cardW) / 2)}px` }} />
+        )}
         {results.map((r, i) => (
           <div
             key={r.type === 'org' ? `org-${r.orgId}` : r.identity}
@@ -256,12 +259,13 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         ))}
       </div>
       <style>{`
-        .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #111; }
+        .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #f5f5f5; }
         .swipe-track {
           display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x proximity;
           scrollbar-width: none; -ms-overflow-style: none; box-sizing: border-box;
         }
         .swipe-track::-webkit-scrollbar { display: none; }
+        .swipe-spacer { scroll-snap-align: none; }
         .swipe-card {
           position: relative; flex: 0 0 auto; height: 100%; scroll-snap-align: start;
           overflow: hidden; cursor: pointer; transition: opacity 0.2s;
