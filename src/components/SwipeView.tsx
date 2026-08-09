@@ -154,10 +154,32 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     return () => el.removeEventListener('wheel', onWheel);
   }, [isDesktop, cardW]);
 
+  const bounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overscrollBounce = (dir: 1 | -1) => {
+    const el = trackRef.current;
+    if (!el) return;
+    // scrollLeft can't exceed the track bounds, so bounce the whole track visually
+    if (bounceTimerRef.current) clearTimeout(bounceTimerRef.current);
+    el.style.transition = 'transform 0.18s ease-out';
+    el.style.transform = `translateX(${dir === 1 ? -140 : 140}px)`;
+    bounceTimerRef.current = setTimeout(() => {
+      // Springy return that overshoots slightly past rest, like native rubber-banding
+      el.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+      el.style.transform = 'translateX(0px)';
+      bounceTimerRef.current = setTimeout(() => {
+        el.style.transition = '';
+        el.style.transform = '';
+      }, 520);
+    }, 200);
+  };
+
   const goTo = (i: number) => {
-    const clamped = Math.max(0, Math.min(results.length - 1, i));
-    trackRef.current?.scrollTo({ left: clamped * cardW, behavior: 'smooth' });
-    setIndex(clamped);
+    if (i < 0 || i >= results.length) {
+      overscrollBounce(i < 0 ? -1 : 1);
+      return;
+    }
+    trackRef.current?.scrollTo({ left: i * cardW, behavior: 'smooth' });
+    setIndex(i);
   };
 
   const openProfile = (r: SwipeResult) => {
