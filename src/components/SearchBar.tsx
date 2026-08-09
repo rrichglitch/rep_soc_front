@@ -7,9 +7,10 @@ interface SearchBarProps {
   autoFocus?: boolean;
   placeholder?: string;
   className?: string;
+  onOptionsClick?: () => void;
 }
 
-function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className }: SearchBarProps) {
+function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined;
   const query = isControlled ? value : internalQuery;
@@ -36,6 +37,18 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
 
   return (
     <form onSubmit={handleSubmit} className={`search-bar ${className || ''}`}>
+      {onOptionsClick && (
+        <button type="button" onClick={onOptionsClick} className="search-options-btn" aria-label="Search options">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <line x1="2" y1="4.5" x2="14" y2="4.5" />
+            <circle cx="6" cy="4.5" r="1.7" fill="currentColor" stroke="none" />
+            <line x1="2" y1="8.5" x2="14" y2="8.5" />
+            <circle cx="10" cy="8.5" r="1.7" fill="currentColor" stroke="none" />
+            <line x1="2" y1="12.5" x2="14" y2="12.5" />
+            <circle cx="5.5" cy="12.5" r="1.7" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
+      )}
       <input
         type="text"
         value={query}
@@ -83,6 +96,18 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         .search-input::placeholder {
           color: #999;
         }
+
+        .search-options-btn {
+          flex: 0 0 auto;
+          padding: 10px 6px 10px 12px;
+          background: transparent;
+          border: none;
+          color: #999;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+        }
+        .search-options-btn:hover { color: #667eea; }
 
         .search-button {
           flex: 0 0 auto;

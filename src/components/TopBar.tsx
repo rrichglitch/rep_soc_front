@@ -45,6 +45,7 @@ function TopBar({ left, center, right, className = '', absoluteCenter = false }:
           padding: 0;
           min-width: 0;
         }
+        .topbar-search-wrap { width: 100%; }
         /* Desktop: absolutely center the search bar on the screen */
         .topbar-center-absolute { position: static; }
         @media (min-width: 768px) {

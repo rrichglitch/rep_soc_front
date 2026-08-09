@@ -61,6 +61,8 @@ function SearchPage() {
   const { activeOrg } = useOrg();
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
+  const [showSearchOptions, setShowSearchOptions] = useState(false);
+  const searchOptionsRef = useRef<HTMLDivElement>(null);
   const [locInput, setLocInput] = useState('');
   const [locSuggestions, setLocSuggestions] = useState<{ place_id: number; display_name: string; lat: string; lon: string }[]>([]);
   const locFetchSeqRef = useRef(0);
@@ -75,6 +77,18 @@ function SearchPage() {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
+
+  // Close the search options menu on outside click
+  useEffect(() => {
+    if (!showSearchOptions) return;
+    const close = (e: MouseEvent) => {
+      if (searchOptionsRef.current && !searchOptionsRef.current.contains(e.target as Node)) {
+        setShowSearchOptions(false);
+      }
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [showSearchOptions]);
 
   // Dynamic suggestions for the search-location dropdown (Nominatim typeahead, debounced)
   useEffect(() => {
@@ -237,16 +251,40 @@ function SearchPage() {
     <div className="search-page">
       <TopBar
         left={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        center={<div className="topbar-search-wrap"><SearchBar
-          onSearch={(q) => {
-            if (q.trim()) {
-              navigate(`/search?q=${encodeURIComponent(q)}`);
-            }
-          }}
-          value={inputValue}
-          onChange={setInputValue}
-          autoFocus
-        /></div>}
+        center={<div className="topbar-search-wrap">
+          <SearchBar
+            onSearch={(q) => {
+              if (q.trim()) {
+                navigate(`/search?q=${encodeURIComponent(q)}`);
+              }
+            }}
+            value={inputValue}
+            onChange={setInputValue}
+            autoFocus
+            onOptionsClick={() => setShowSearchOptions(true)}
+          />
+          {showSearchOptions && (
+            <div className="search-options-menu" ref={searchOptionsRef}>
+              <button
+                className="search-opt"
+                onClick={() => { setShowSearchOptions(false); setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }}
+              >
+                📍 Search Location
+                {searchLoc && <span className="search-opt-value">{searchLoc.label}</span>}
+              </button>
+              {searchLoc && (
+                <button className="search-opt" onClick={() => { setSearchLoc(null); setShowSearchOptions(false); }}>
+                  ✕ Clear search location
+                </button>
+              )}
+              {activePos && (
+                <button className="search-opt" onClick={() => setNearbyFirst(!nearbyFirst)}>
+                  {nearbyFirst ? '✓ ' : ''}Nearby First
+                </button>
+              )}
+            </div>
+          )}
+        </div>}
         right={<AuthActions />}
         absoluteCenter
       />
@@ -273,11 +311,6 @@ function SearchPage() {
             active={mode}
             onChange={(k) => setMode(k as any)}
           />
-          <div className="search-mode-right">
-            <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle loc-search-btn ${searchLoc ? 'active' : ''}`}>
-              📍 Search Location
-            </button>
-          </div>
         </div>
 
         {isLoading ? (
@@ -477,6 +510,21 @@ function SearchPage() {
         .loc-search-btn { white-space: nowrap; }
         /* Higher specificity so the transparent fill actually beats .nearby-toggle's white */
         .search-mode-header .loc-search-btn { background: transparent; }
+
+        .topbar-search-wrap { position: relative; }
+        .search-options-menu {
+          position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+          background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+          padding: 6px; min-width: 260px; max-width: calc(100vw - 32px); z-index: 200;
+          display: flex; flex-direction: column;
+        }
+        .search-opt {
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          padding: 10px 14px; background: none; border: none; border-radius: 8px;
+          font-size: 14px; font-weight: 500; color: #333; cursor: pointer; text-align: left;
+        }
+        .search-opt:hover { background: #f3f4f6; }
+        .search-opt-value { color: #667eea; font-size: 13px; font-weight: 600; }
 
         /* Swipe mode: the header floats over profile photos — lighter text + shadow */
         .search-mode-header.swipe-mode .profile-tab { color: rgba(255,255,255,0.92); text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
