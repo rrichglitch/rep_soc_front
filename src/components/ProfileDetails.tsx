@@ -220,7 +220,7 @@ function ProfileDetails({
         .age-line { font-size: 14px; color: #666; }
         .gender-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .gender-option {
-          padding: 2px 10px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
           font-size: 13px; font-weight: 600; color: #666; background: white;
         }
         .gender-option input { display: none; }
