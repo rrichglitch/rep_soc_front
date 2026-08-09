@@ -477,7 +477,8 @@ function SearchPage() {
         .map-section .map-view-wrap { height: 100%; border-radius: 0; box-shadow: none; }
         .map-section .map-view { height: 100%; }
         .map-section .leaflet-container { height: 100%; width: 100%; }
-        .nearby-toggle { padding: 6px 14px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .nearby-toggle { padding: 6px 14px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .nearby-toggle:hover { background: #667eea; color: white; }
         .nearby-toggle.active { background: #667eea; color: white; }
         .result-type-badge { margin-left: 8px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
         .result-distance { margin: 4px 0 0; color: #667eea; font-size: 13px; font-weight: 600; }
