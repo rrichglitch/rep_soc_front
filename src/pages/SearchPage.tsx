@@ -113,10 +113,15 @@ function SearchPage() {
   useEffect(() => {
     if (!email) return;
     getProfileByEmail(email).then(p => {
-      if (!p) return;
-      setMyIdentity(p.identity.toHexString());
-      if (p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
-        setMyPos({ lat: p.locationLat, lng: p.locationLng });
+      if (p) {
+        setMyIdentity(p.identity.toHexString());
+        if (p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
+          setMyPos({ lat: p.locationLat, lng: p.locationLng });
+        }
+      } else {
+        // Fallback: the connection identity is the acting account
+        const db = getDbConnection();
+        if (db) setMyIdentity(db.identity.toHexString());
       }
     }).catch(() => {});
   }, [email, isConnected]);

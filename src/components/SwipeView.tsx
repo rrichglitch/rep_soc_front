@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   checkIsFollowing, followUser, sendFriendRequest, getFriendRequestStatus, checkIsFriend,
+  orgAccountIdentityHex, getDbConnection,
 } from '../utils/spacetime';
 
 export interface SwipeResult {
@@ -75,35 +76,35 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     return () => ro.disconnect();
   }, [index, results]);
 
-  // Follow + friend status polling for the current card
+  // Follow + friend status polling for the current card.
+  // The acting account is the org when signed in as one, else the individual;
+  // the individual identity also falls back to the connection identity.
+  const actingOrgHex = activeOrgId !== undefined ? orgAccountIdentityHex(activeOrgId) : null;
+  const viewerId = actingOrgHex || myIdentity || getDbConnection()?.identity.toHexString() || '';
   const current = results[index];
   useEffect(() => {
     if (!current) return;
     let alive = true;
     const refresh = async () => {
-      if (current.type === 'person') {
-        try {
-          const f = await checkIsFollowing(current.identity, myIdentity);
-          if (alive) setFollowStates((s) => ({ ...s, [current.identity]: f }));
-        } catch { /* ignore */ }
+      try {
+        const f = await checkIsFollowing(current.identity, viewerId);
+        if (alive) setFollowStates((s) => ({ ...s, [current.identity]: f }));
+      } catch { /* ignore */ }
+      if (current.type === 'person' && !actingOrgHex) {
+        // Friendships only exist between individuals; org accounts can't friend
         setFriendStates((s) => ({
           ...s,
-          [current.identity]: checkIsFriend(myIdentity, current.identity)
+          [current.identity]: checkIsFriend(viewerId, current.identity)
             ? 'friends'
-            : getFriendRequestStatus(myIdentity, current.identity) === 'pending'
+            : getFriendRequestStatus(viewerId, current.identity) === 'pending'
               ? 'pending' : 'none',
         }));
-      } else {
-        try {
-          const f = await checkIsFollowing(current.identity, myIdentity);
-          if (alive) setFollowStates((s) => ({ ...s, [current.identity]: f }));
-        } catch { /* ignore */ }
       }
     };
     refresh();
     const t = setInterval(refresh, 3000);
     return () => { alive = false; clearInterval(t); };
-  }, [current?.identity, myIdentity, activeOrgId]);
+  }, [current?.identity, viewerId, actingOrgHex]);
 
   // Live index while scrolling + settle: snap to the nearest card after the
   // gesture ends (debounced) — reliable on wheel, trackpad, and touch.
@@ -278,7 +279,7 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
                 >
                   {followStates[r.identity] ? 'Following' : 'Follow'}
                 </button>
-                {r.type === 'person' && (
+                {r.type === 'person' && !actingOrgHex && (
                   <button
                     className={`swipe-friend ${friendStates[r.identity] === 'pending' || friendStates[r.identity] === 'friends' ? 'active' : ''}`}
                     disabled={friendStates[r.identity] !== 'none'}
