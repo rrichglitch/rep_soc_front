@@ -221,9 +221,6 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
           scrollPaddingRight: Math.round((contW - cardW) / 2),
         } : undefined}
       >
-        {isDesktop && contW > cardW && (
-          <div className="swipe-spacer" style={{ flex: `0 0 ${Math.round((contW - cardW) / 2)}px` }} />
-        )}
         {results.map((r, i) => (
           <div
             key={r.type === 'org' ? `org-${r.orgId}` : r.identity}
@@ -272,6 +269,9 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
             </div>
           </div>
         ))}
+        {isDesktop && contW > cardW && (
+          <div className="swipe-spacer" style={{ flex: `0 0 ${Math.round((contW - cardW) / 2)}px` }} />
+        )}
       </div>
       <style>{`
         .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #f5f5f5; }
@@ -282,9 +282,9 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         .swipe-track::-webkit-scrollbar { display: none; }
         .swipe-card {
           position: relative; flex: 0 0 auto; height: 100%; scroll-snap-align: start;
-          overflow: hidden; cursor: pointer; transition: opacity 0.2s;
+          overflow: hidden; cursor: pointer; transition: filter 0.25s;
         }
-        .swipe-card.dim { opacity: 0.45; }
+        .swipe-card.dim { filter: brightness(0.35) saturate(0.7); }
         .swipe-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
         .swipe-bg-placeholder { position: absolute; inset: 0; background: linear-gradient(135deg, #334155, #1e293b); }
         .swipe-scrim-fade {
