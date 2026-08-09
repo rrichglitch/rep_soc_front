@@ -23,6 +23,8 @@ interface UserProfile {
   city: string;
   description: string;
   created_at: Date;
+  birthday?: string;
+  gender?: string;
 }
 
 interface StoryPost {
@@ -100,6 +102,8 @@ function MyProfilePage() {
           city: profileData.city,
           description: profileData.description,
           created_at: date,
+          birthday: profileData.birthday,
+          gender: profileData.gender,
         });
 
         const profileStories = await getMyStoryPosts(identityHex);
