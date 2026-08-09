@@ -261,7 +261,7 @@ function SearchPage() {
             value={inputValue}
             onChange={setInputValue}
             autoFocus
-            onOptionsClick={() => setShowSearchOptions(true)}
+            onOptionsClick={() => setShowSearchOptions((v) => !v)}
           />
           {showSearchOptions && (
             <div className="search-options-menu" ref={searchOptionsRef}>
@@ -543,6 +543,7 @@ function SearchPage() {
             position: static; transform: none; width: 100%; justify-content: center;
             order: 3; margin-top: 2px;
           }
+          .search-mode-left .results-count { display: none; }
         }
 
         /* Swipe mode: full-bleed from under the top bar; the mode header floats over it */
