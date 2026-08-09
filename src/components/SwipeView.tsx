@@ -86,7 +86,7 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     actingOrgHex,
     myIdentity,
     getDbConnection()?.identity?.toHexString() || '',
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
   const current = results[index];
   useEffect(() => {
     if (!current) return;
