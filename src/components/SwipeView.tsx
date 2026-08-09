@@ -80,31 +80,42 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
   // The acting account is the org when signed in as one, else the individual;
   // the individual identity also falls back to the connection identity.
   const actingOrgHex = activeOrgId !== undefined ? orgAccountIdentityHex(activeOrgId) : null;
-  const viewerId = actingOrgHex || myIdentity || getDbConnection()?.identity?.toHexString() || '';
+  // All candidate viewer identities: the org (when acting as one), the email-resolved
+  // profile identity, and the connection identity — check state against each.
+  const candidateViewerIds = [
+    actingOrgHex,
+    myIdentity,
+    getDbConnection()?.identity?.toHexString() || '',
+  ].filter(Boolean);
   const current = results[index];
   useEffect(() => {
     if (!current) return;
     let alive = true;
     const refresh = async () => {
       try {
-        const f = await checkIsFollowing(current.identity, viewerId);
-        if (alive) setFollowStates((s) => ({ ...s, [current.identity]: f }));
+        const results = await Promise.all(
+          candidateViewerIds.map((id) => checkIsFollowing(current.identity, id))
+        );
+        if (alive) setFollowStates((s) => ({ ...s, [current.identity]: results.some(Boolean) }));
       } catch { /* ignore */ }
       if (current.type === 'person' && !actingOrgHex) {
         // Friendships only exist between individuals; org accounts can't friend
-        setFriendStates((s) => ({
-          ...s,
-          [current.identity]: checkIsFriend(viewerId, current.identity)
-            ? 'friends'
-            : getFriendRequestStatus(viewerId, current.identity) === 'pending'
-              ? 'pending' : 'none',
-        }));
+        const anyFriend = candidateViewerIds.some((id) => checkIsFriend(id, current.identity));
+        const anyPending = candidateViewerIds.some(
+          (id) => getFriendRequestStatus(id, current.identity) === 'pending'
+        );
+        if (alive) {
+          setFriendStates((s) => ({
+            ...s,
+            [current.identity]: anyFriend ? 'friends' : anyPending ? 'pending' : 'none',
+          }));
+        }
       }
     };
     refresh();
     const t = setInterval(refresh, 3000);
     return () => { alive = false; clearInterval(t); };
-  }, [current?.identity, viewerId, actingOrgHex]);
+  }, [current?.identity, candidateViewerIds.join('|'), actingOrgHex]);
 
   // Live index while scrolling + settle: snap to the nearest card after the
   // gesture ends (debounced) — reliable on wheel, trackpad, and touch.

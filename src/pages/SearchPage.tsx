@@ -110,20 +110,33 @@ function SearchPage() {
   }, []);
 
   // Load my stored location (only if not 'off')
+  // Resolve the viewer identity, retrying until it lands (the cache may not be
+  // ready on the first attempt). Falls back to the connection identity.
+  const myIdentityRef = useRef('');
   useEffect(() => {
     if (!email) return;
-    getProfileByEmail(email).then(p => {
+    let alive = true;
+    const resolve = async () => {
+      if (myIdentityRef.current) return;
+      const p = await getProfileByEmail(email).catch(() => null);
+      if (!alive) return;
       if (p) {
+        myIdentityRef.current = p.identity.toHexString();
         setMyIdentity(p.identity.toHexString());
         if (p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
           setMyPos({ lat: p.locationLat, lng: p.locationLng });
         }
       } else {
-        // Fallback: the connection identity is the acting account
         const db = getDbConnection();
-        if (db?.identity) setMyIdentity(db.identity.toHexString());
+        if (db?.identity) {
+          myIdentityRef.current = db.identity.toHexString();
+          setMyIdentity(db.identity.toHexString());
+        }
       }
-    }).catch(() => {});
+    };
+    resolve();
+    const t = setInterval(resolve, 2000);
+    return () => { alive = false; clearInterval(t); };
   }, [email, isConnected]);
 
   // The active reference point: an explicitly set search location wins over the saved one
