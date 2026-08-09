@@ -43,6 +43,21 @@ function SearchPage() {
   const [myIdentity, setMyIdentity] = useState<string>('');
   const [swipeIndex, setSwipeIndex] = useState(0);
 
+  // Stable identity for SwipeView — a fresh array every render would reset its position
+  const swipeResults = useMemo(
+    () => results.map(r => ({
+      type: r.type,
+      identity: r.identity,
+      orgId: r.orgId,
+      email: r.email,
+      fullName: r.fullName,
+      profilePicture: r.profilePicture,
+      city: r.city,
+      description: r.description,
+    })),
+    [results]
+  );
+
   const { activeOrg } = useOrg();
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
@@ -314,16 +329,7 @@ function SearchPage() {
           {mode === 'swipe' && (
             <div className="swipe-section">
               <SwipeView
-                results={results.map(r => ({
-                  type: r.type,
-                  identity: r.identity,
-                  orgId: r.orgId,
-                  email: r.email,
-                  fullName: r.fullName,
-                  profilePicture: r.profilePicture,
-                  city: r.city,
-                  description: r.description,
-                }))}
+                results={swipeResults}
                 myIdentity={myIdentity}
                 activeOrgId={activeOrg?.id}
                 isDesktop={isDesktop}

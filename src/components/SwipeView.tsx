@@ -39,12 +39,14 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
   const descRef = useRef<HTMLDivElement>(null);
   const tapStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
-  // Reset position when the result set changes
+  // Reset position only when the result SET genuinely changes (not on parent re-renders)
+  const resultsSig = results.map((r) => `${r.type}:${r.identity}`).join('|');
   useEffect(() => {
     setIndex(0);
     setScrim(0.25);
     if (trackRef.current) trackRef.current.scrollLeft = 0;
-  }, [results]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultsSig]);
 
   useEffect(() => { onIndexChange?.(index); }, [index, onIndexChange]);
 
@@ -55,6 +57,8 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
       const w = trackRef.current.clientWidth;
       setContW(w);
       setCardW(isDesktop ? Math.min(520, Math.round(w * 0.72)) : w);
+      // After the peek padding lands, recenter on the first card
+      trackRef.current.scrollLeft = 0;
     };
     measure();
     window.addEventListener('resize', measure);
@@ -315,14 +319,14 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         .swipe-friend:disabled { opacity: 0.8; cursor: default; }
         .swipe-carrot {
           position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
-          width: 48px; height: 48px; background: none; border: none; cursor: pointer;
-          color: white; font-size: 44px; line-height: 1;
-          text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+          width: 72px; height: 72px; background: none; border: none; cursor: pointer;
+          color: white; font-size: 64px; line-height: 1;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.55);
           display: flex; align-items: center; justify-content: center;
         }
         .swipe-carrot:hover { color: #e8e8e8; }
-        .swipe-prev { left: 14px; }
-        .swipe-next { right: 14px; }
+        .swipe-prev { left: 20px; }
+        .swipe-next { right: 20px; }
         @media (max-width: 767px) {
           .swipe-desc { max-height: 26vh; }
         }
