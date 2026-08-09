@@ -301,11 +301,12 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         .swipe-friend:disabled { opacity: 0.8; cursor: default; }
         .swipe-carrot {
           position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
-          width: 44px; height: 44px; border-radius: 50%; border: none; cursor: pointer;
-          background: rgba(255,255,255,0.9); color: #333; font-size: 24px; line-height: 1;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
+          width: 48px; height: 48px; background: none; border: none; cursor: pointer;
+          color: white; font-size: 44px; line-height: 1;
+          text-shadow: 0 2px 6px rgba(0,0,0,0.45);
+          display: flex; align-items: center; justify-content: center;
         }
-        .swipe-carrot:hover { background: white; }
+        .swipe-carrot:hover { color: #e8e8e8; }
         .swipe-prev { left: 14px; }
         .swipe-next { right: 14px; }
         @media (max-width: 767px) {
