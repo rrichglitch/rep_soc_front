@@ -239,9 +239,11 @@ function SearchPage() {
             active={mode}
             onChange={(k) => setMode(k as any)}
           />
-          <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle loc-search-btn ${searchLoc ? 'active' : ''}`}>
-            📍 Search Location
-          </button>
+          <div className="search-mode-right">
+            <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle loc-search-btn ${searchLoc ? 'active' : ''}`}>
+              📍 Search Location
+            </button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -443,7 +445,9 @@ function SearchPage() {
         .search-mode-header .profile-tab { padding: 8px 16px; }
         .search-mode-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
         .search-mode-left .results-count { white-space: nowrap; }
-        .loc-search-btn { margin-left: auto; }
+        .search-mode-header .profile-tabs { flex: 1; justify-content: center; }
+        .search-mode-right { flex: 1; display: flex; justify-content: flex-end; min-width: 0; }
+        .loc-search-btn { white-space: nowrap; }
 
         /* Swipe mode: full-bleed below the top bar, under the mode header */
         .swipe-section { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 40; }
