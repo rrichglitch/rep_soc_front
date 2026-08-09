@@ -350,6 +350,7 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         .swipe-prev { left: 24px; }
         .swipe-next { right: 24px; }
         @media (max-width: 767px) {
+          .swipe-carrot { display: none; }
           .swipe-desc { max-height: 26vh; }
         }
       `}</style>
