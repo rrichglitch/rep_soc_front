@@ -5,9 +5,12 @@ import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { haversineMiles, formatMiles } from '../utils/geo';
 import MapView from '../components/MapView';
+import SwipeView from '../components/SwipeView';
+import ProfileTabs from '../components/ProfileTabs';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 import AuthActions from '../components/AuthActions';
+import { useOrg } from '../contexts/OrgContext';
 
 interface SearchResult {
   type: 'person' | 'org';
@@ -35,16 +38,26 @@ function SearchPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
-  const [showMap, setShowMap] = useState<boolean>(() => localStorage.getItem('veri_showMap') === '1');
+  const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => window.matchMedia('(min-width: 768px)').matches);
+  const [myIdentity, setMyIdentity] = useState<string>('');
+  const { activeOrg } = useOrg();
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [locInput, setLocInput] = useState('');
   const [locSuggestions, setLocSuggestions] = useState<{ place_id: number; display_name: string; lat: string; lon: string }[]>([]);
   const locFetchSeqRef = useRef(0);
 
-  // Persist map-view + nearby-first state across navigation and browser restarts
-  useEffect(() => { localStorage.setItem('veri_showMap', showMap ? '1' : '0'); }, [showMap]);
+  // Persist mode + nearby-first state across navigation and browser restarts
+  useEffect(() => { localStorage.setItem('veri_searchMode', mode); }, [mode]);
   useEffect(() => { localStorage.setItem('veri_nearbyFirst', nearbyFirst ? '1' : '0'); }, [nearbyFirst]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   // Dynamic suggestions for the search-location dropdown (Nominatim typeahead, debounced)
   useEffect(() => {
@@ -83,7 +96,9 @@ function SearchPage() {
   useEffect(() => {
     if (!email) return;
     getProfileByEmail(email).then(p => {
-      if (p && p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
+      if (!p) return;
+      setMyIdentity(p.identity.toHexString());
+      if (p.locationPrecision !== 'off' && p.locationLat !== undefined && p.locationLng !== undefined) {
         setMyPos({ lat: p.locationLat, lng: p.locationLng });
       }
     }).catch(() => {});
@@ -202,6 +217,31 @@ function SearchPage() {
       />
 
       <main className="search-content">
+        <div className="search-mode-header">
+          <ProfileTabs
+            tabs={[
+              { key: 'list', label: 'List' },
+              { key: 'map', label: 'Map' },
+              { key: 'swipe', label: 'Swipe' },
+            ]}
+            active={mode}
+            onChange={(k) => setMode(k as any)}
+          />
+          <div className="results-tools">
+            <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
+            {activePos && (
+              <button
+                onClick={() => setNearbyFirst(!nearbyFirst)}
+                className={`nearby-toggle ${nearbyFirst ? 'active' : ''}`}
+              >
+                {nearbyFirst ? '✓ Nearby First' : 'Nearby First'}
+              </button>
+            )}
+            <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
+              {searchLoc ? `📍 ${searchLoc.label}` : '📍 Set search location'}
+            </button>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="loading">
@@ -219,56 +259,36 @@ function SearchPage() {
           )
         ) : (
           <>
-          <div className="results">
-            <div className="results-header">
-              <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
-              <div className="results-tools">
-                {activePos && (
-                  <button
-                    onClick={() => setNearbyFirst(!nearbyFirst)}
-                    className={`nearby-toggle ${nearbyFirst ? 'active' : ''}`}
-                  >
-                    {nearbyFirst ? '✓ Nearby First' : 'Nearby First'}
-                  </button>
-                )}
-                <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
-                  {searchLoc ? `📍 ${searchLoc.label}` : '📍 Set search location'}
-                </button>
-                <button
-                  onClick={() => setShowMap(!showMap)}
-                  className={`nearby-toggle ${showMap ? 'active' : ''}`}
-                >
-                  {showMap ? '✓ Map View' : 'Map View'}
-                </button>
-              </div>
-            </div>
-            {!showMap && results.map((result) => {
-              const isOwn = result.email === email;
-              const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
-              return (
-                <Link to={linkTo} key={result.type === 'org' ? `org-${result.orgId}` : result.identity} className="result-card">
-                  {result.profilePicture ? (
-                    <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
-                  ) : (
-                    <div className="result-avatar-placeholder" />
-                  )}
-                  <div className="result-info">
-                    <h3 className="result-name">
-                      {result.fullName}
-                      {result.type === 'org' && <span className="result-type-badge">Organization</span>}
-                      {isOwn && ' (You)'}
-                    </h3>
-                    {result.city && <p className="result-city">{result.city}</p>}
-                    {result.description && <p className="result-desc">{result.description}</p>}
-                    {result.distance !== undefined && (
-                      <p className="result-distance">{formatMiles(result.distance)} away</p>
+          {mode === 'list' && (
+            <div className="results">
+              {results.map((result) => {
+                const isOwn = result.email === email;
+                const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
+                return (
+                  <Link to={linkTo} key={result.type === 'org' ? `org-${result.orgId}` : result.identity} className="result-card">
+                    {result.profilePicture ? (
+                      <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
+                    ) : (
+                      <div className="result-avatar-placeholder" />
                     )}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-          {showMap && (
+                    <div className="result-info">
+                      <h3 className="result-name">
+                        {result.fullName}
+                        {result.type === 'org' && <span className="result-type-badge">Organization</span>}
+                        {isOwn && ' (You)'}
+                      </h3>
+                      {result.city && <p className="result-city">{result.city}</p>}
+                      {result.description && <p className="result-desc">{result.description}</p>}
+                      {result.distance !== undefined && (
+                        <p className="result-distance">{formatMiles(result.distance)} away</p>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+          {mode === 'map' && (
             <div className="map-section">
               <MapView
                 results={results.filter(r => r.locationLat !== undefined && r.locationLng !== undefined).map(r => ({
@@ -284,6 +304,25 @@ function SearchPage() {
                 }))}
                 center={activePos ?? undefined}
                 onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
+              />
+            </div>
+          )}
+          {mode === 'swipe' && (
+            <div className="swipe-section">
+              <SwipeView
+                results={results.map(r => ({
+                  type: r.type,
+                  identity: r.identity,
+                  orgId: r.orgId,
+                  email: r.email,
+                  fullName: r.fullName,
+                  profilePicture: r.profilePicture,
+                  city: r.city,
+                  description: r.description,
+                }))}
+                myIdentity={myIdentity}
+                activeOrgId={activeOrg?.id}
+                isDesktop={isDesktop}
               />
             </div>
           )}
@@ -391,6 +430,17 @@ function SearchPage() {
 
         .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; position: relative; z-index: 45; }
         .results-count { background: white; padding: 4px 12px; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); display: inline-block; }
+
+        /* Mode selector (List | Map | Swipe) + tools — always visible above the fixed overlays */
+        .search-mode-header {
+          position: relative; z-index: 70; background: #f5f5f5;
+          margin: -6px -24px 12px; padding: 4px 16px 0;
+        }
+        .search-mode-header .profile-tabs { margin-bottom: 2px; }
+        .search-mode-header .results-tools { justify-content: flex-start; padding-bottom: 8px; }
+
+        /* Swipe mode: full-bleed below the top bar, under the mode header */
+        .swipe-section { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 40; }
 
         /* Mobile: only the logo (left) and profile pic (right) — no chat/bell icons */
         @media (max-width: 767px) {
