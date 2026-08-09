@@ -129,11 +129,11 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     const onWheel = (e: WheelEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('.swipe-desc')) return; // let the description scroll
-      const dy = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-      if (dy !== 0) {
-        e.preventDefault();
-        el.scrollLeft += dy;
-      }
+      // Only vertical wheel input converts to horizontal paging; native
+      // horizontal input (trackpad swipe) scrolls on its own.
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
@@ -258,15 +258,15 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
       <style>{`
         .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #111; }
         .swipe-track {
-          display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory;
+          display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x proximity;
           scrollbar-width: none; -ms-overflow-style: none; box-sizing: border-box;
         }
         .swipe-track::-webkit-scrollbar { display: none; }
         .swipe-card {
           position: relative; flex: 0 0 auto; height: 100%; scroll-snap-align: start;
-          overflow: hidden; cursor: pointer; transition: opacity 0.25s, transform 0.25s;
+          overflow: hidden; cursor: pointer; transition: opacity 0.2s;
         }
-        .swipe-card.dim { opacity: 0.45; transform: scale(0.97); }
+        .swipe-card.dim { opacity: 0.45; }
         .swipe-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none; }
         .swipe-bg-placeholder { position: absolute; inset: 0; background: linear-gradient(135deg, #334155, #1e293b); }
         .swipe-scrim-fade {
