@@ -56,12 +56,12 @@ function ProfileDetails({
     }
   };
 
+  // Age (derived from the stored birthday) is NOT updateable — the birthday is
+  // set once at registration. Only gender is editable here.
   const [isEditingAge, setIsEditingAge] = useState(false);
-  const [ageBirthday, setAgeBirthday] = useState('');
   const [ageGender, setAgeGender] = useState('');
 
   const startAgeEdit = () => {
-    setAgeBirthday(birthday || '');
     setAgeGender(gender || '');
     setIsEditingAge(true);
   };
@@ -70,7 +70,7 @@ function ProfileDetails({
     if (!onSaveAgeGender) return;
     setIsSaving(true);
     try {
-      await onSaveAgeGender(ageBirthday || undefined, ageGender || undefined);
+      await onSaveAgeGender(undefined, ageGender || undefined);
       setIsEditingAge(false);
     } catch (e: any) {
       alert(e?.message || 'Failed to save. Please try again.');
@@ -127,16 +127,6 @@ function ProfileDetails({
           <div className="profile-field">
             {isEditingAge ? (
               <div className="edit-inline">
-                <div className="age-edit-row">
-                  <label className="age-edit-label">Birthday</label>
-                  <input
-                    type="date"
-                    value={ageBirthday}
-                    max={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setAgeBirthday(e.target.value)}
-                    className="age-date-input"
-                  />
-                </div>
                 <div className="gender-options">
                   {['male', 'female', 'other'].map((g) => (
                     <label key={g} className={`gender-option ${ageGender === g ? 'selected' : ''}`}>
@@ -233,9 +223,6 @@ function ProfileDetails({
         .edit-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #667eea; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
         .edit-actions { display: flex; gap: 8px; }
         .age-line { font-size: 14px; color: #666; }
-        .age-edit-row { display: flex; align-items: center; gap: 10px; }
-        .age-edit-label { font-size: 13px; color: #999; font-weight: 500; min-width: 60px; }
-        .age-date-input { padding: 8px 10px; border: 1px solid #667eea; border-radius: 6px; font-size: 14px; outline: none; }
         .gender-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .gender-option {
           padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
