@@ -181,8 +181,8 @@ function OrgAccountView() {
             }}
             birthday={orgData?.birthday}
             gender={orgData?.gender}
-            onSaveAgeGender={async (b, g) => {
-              await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, b, g);
+            onSaveAgeGender={async (_b, g) => {
+              await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, g);
               await refreshOrg();
             }}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}

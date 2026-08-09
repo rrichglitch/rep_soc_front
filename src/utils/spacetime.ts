@@ -201,21 +201,20 @@ export async function updateProfile(
   city?: string,
   description?: string,
   hideFriends?: boolean,
-  birthday?: string,
   gender?: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  console.log('Updating profile:', { profilePicture, city, description, hideFriends, birthday, gender });
+  console.log('Updating profile:', { profilePicture, city, description, hideFriends, gender });
+  // NOTE: birthday is intentionally NOT updateable — set once at registration.
   
   await dbConnection.reducers.updateProfile({
     profilePicture: profilePicture ?? undefined,
     city: city ?? undefined,
     description: description ?? undefined,
     hideFriends: hideFriends ?? undefined,
-    birthday: birthday ?? undefined,
     gender: gender ?? undefined,
   });
 }
@@ -809,7 +808,7 @@ export async function createOrganization(
 }
 
 export async function updateOrganization(
-  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean, birthday?: string, gender?: string
+  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean, gender?: string
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.updateOrganization({
@@ -817,7 +816,6 @@ export async function updateOrganization(
     locationLat: locationLat ?? undefined,
     locationLng: locationLng ?? undefined,
     hideMembers: hideMembers ?? undefined,
-    birthday: birthday ?? undefined,
     gender: gender ?? undefined,
   });
 }
