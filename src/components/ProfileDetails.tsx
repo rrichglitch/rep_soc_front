@@ -138,9 +138,6 @@ function ProfileDetails({
                       {g.charAt(0).toUpperCase() + g.slice(1)}
                     </label>
                   ))}
-                  <button type="button" className="gender-clear" onClick={() => setAgeGender('')}>
-                    None
-                  </button>
                 </div>
                 <div className="edit-actions">
                   <button onClick={saveAgeEdit} className="save-btn" disabled={isSaving}>✓</button>
@@ -223,12 +220,11 @@ function ProfileDetails({
         .age-line { font-size: 14px; color: #666; }
         .gender-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .gender-option {
-          padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          padding: 2px 10px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
           font-size: 13px; font-weight: 600; color: #666; background: white;
         }
         .gender-option input { display: none; }
         .gender-option.selected { background: #667eea; border-color: #667eea; color: white; }
-        .gender-clear { background: none; border: none; color: #999; font-size: 12px; cursor: pointer; text-decoration: underline; }
         .save-btn { padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .save-btn:hover { background: #5a6fd6; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
