@@ -101,15 +101,23 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     return () => { alive = false; clearInterval(t); };
   }, [current?.identity, myIdentity, activeOrgId]);
 
-  // Scroll → current index (scroll-snap aligns cards to the start edge)
+  // Live index while scrolling + settle: snap to the nearest card after the
+  // gesture ends (debounced) — reliable on wheel, trackpad, and touch.
+  const settleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onScroll = useCallback(() => {
     if (!trackRef.current || cardW === 0) return;
-    const i = Math.round(trackRef.current.scrollLeft / cardW);
+    const el = trackRef.current;
+    const i = Math.round(el.scrollLeft / cardW);
     if (i !== index && i >= 0 && i < results.length) {
       setIndex(i);
       setScrim(0.25);
       if (descRef.current) descRef.current.scrollTop = 0;
     }
+    if (settleRef.current) clearTimeout(settleRef.current);
+    settleRef.current = setTimeout(() => {
+      const target = Math.max(0, Math.min(results.length - 1, Math.round(el.scrollLeft / cardW)));
+      el.scrollTo({ left: target * cardW, behavior: 'smooth' });
+    }, 200);
   }, [cardW, index, results.length]);
 
   // Description scroll → scrim opacity 25% → 40% at full scroll
@@ -133,7 +141,10 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
       // horizontal input (trackpad swipe) scrolls on its own.
       if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
       e.preventDefault();
-      el.scrollLeft += e.deltaY;
+      let dy = e.deltaY;
+      if (e.deltaMode === 1) dy *= 16;            // lines → pixels
+      else if (e.deltaMode === 2) dy *= el.clientHeight; // pages → pixels
+      el.scrollLeft += dy;
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
@@ -261,11 +272,10 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
       <style>{`
         .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #f5f5f5; }
         .swipe-track {
-          display: flex; height: 100%; overflow-x: auto; scroll-snap-type: x proximity;
+          display: flex; height: 100%; overflow-x: auto;
           scrollbar-width: none; -ms-overflow-style: none; box-sizing: border-box;
         }
         .swipe-track::-webkit-scrollbar { display: none; }
-        .swipe-spacer { scroll-snap-align: none; }
         .swipe-card {
           position: relative; flex: 0 0 auto; height: 100%; scroll-snap-align: start;
           overflow: hidden; cursor: pointer; transition: opacity 0.2s;
