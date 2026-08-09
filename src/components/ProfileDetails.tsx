@@ -121,7 +121,7 @@ function ProfileDetails({
             )}
           </div>
         </div>
-        {(ageLine || onSaveAgeGender) && (
+        {(ageLine || onSaveAgeGender || children) && (
           <div className="profile-field">
             {isEditingAge ? (
               <div className="edit-inline">
@@ -146,7 +146,7 @@ function ProfileDetails({
               </div>
             ) : (
               <div className="field-display">
-                <span className="field-value age-line">{ageLine}</span>
+                {ageLine && <span className="field-value age-line">{ageLine}</span>}
                 {onSaveAgeGender && (
                   <button className="edit-btn" onClick={startAgeEdit} disabled={isSaving}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -155,11 +155,11 @@ function ProfileDetails({
                     </svg>
                   </button>
                 )}
+                {children}
               </div>
             )}
           </div>
         )}
-        {children}
         <div className="profile-field description-field">
           {isEditing ? (
             <div className="edit-inline">
