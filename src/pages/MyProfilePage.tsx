@@ -214,6 +214,12 @@ function MyProfilePage() {
               await updateProfile(undefined, undefined, v);
               await loadProfile();
             }}
+            age={profile?.age}
+            gender={profile?.gender}
+            onSaveAgeGender={async (_b, g) => {
+              await updateProfile(undefined, undefined, undefined, undefined, g);
+              await loadProfile();
+            }}
             onPictureClick={() => setShowPictureModal(true)}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
           >
