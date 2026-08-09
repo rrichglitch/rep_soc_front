@@ -18,4 +18,6 @@ export default {
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
   hideMembers: __t.option(__t.bool()),
+  birthday: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
 };

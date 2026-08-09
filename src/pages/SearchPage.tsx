@@ -4,6 +4,7 @@ import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { haversineMiles, formatMiles } from '../utils/geo';
+import { computeAge } from '../utils/age';
 import MapView from '../components/MapView';
 import SwipeView from '../components/SwipeView';
 import ProfileTabs from '../components/ProfileTabs';
@@ -62,6 +63,11 @@ function SearchPage() {
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
+  const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
+  const [ageMin, setAgeMin] = useState<string>(() => localStorage.getItem('veri_ageMin') || '');
+  const [ageMax, setAgeMax] = useState<string>(() => localStorage.getItem('veri_ageMax') || '');
+  const [showIndividuals, setShowIndividuals] = useState<boolean>(() => localStorage.getItem('veri_showIndividuals') !== '0');
+  const [showOrganizations, setShowOrganizations] = useState<boolean>(() => localStorage.getItem('veri_showOrganizations') !== '0');
   const searchOptionsRef = useRef<HTMLDivElement>(null);
   const [locInput, setLocInput] = useState('');
   const [locSuggestions, setLocSuggestions] = useState<{ place_id: number; display_name: string; lat: string; lon: string }[]>([]);
@@ -69,6 +75,11 @@ function SearchPage() {
 
   // Persist mode + nearby-first state across navigation and browser restarts
   useEffect(() => { localStorage.setItem('veri_searchMode', mode); }, [mode]);
+  useEffect(() => { localStorage.setItem('veri_genderFilter', genderFilter); }, [genderFilter]);
+  useEffect(() => { localStorage.setItem('veri_ageMin', ageMin); }, [ageMin]);
+  useEffect(() => { localStorage.setItem('veri_ageMax', ageMax); }, [ageMax]);
+  useEffect(() => { localStorage.setItem('veri_showIndividuals', showIndividuals ? '1' : '0'); }, [showIndividuals]);
+  useEffect(() => { localStorage.setItem('veri_showOrganizations', showOrganizations ? '1' : '0'); }, [showOrganizations]);
   useEffect(() => { localStorage.setItem('veri_nearbyFirst', nearbyFirst ? '1' : '0'); }, [nearbyFirst]);
 
   useEffect(() => {
@@ -176,8 +187,12 @@ function SearchPage() {
       try {
         const searchLower = query.toLowerCase();
         const foundProfiles: SearchResult[] = [];
+        const minAge = ageMin ? parseInt(ageMin, 10) : null;
+        const maxAge = ageMax ? parseInt(ageMax, 10) : null;
+        const ageFiltered = minAge !== null || maxAge !== null;
         
         for (const profile of db.db.user_profile.iter()) {
+          if (!showIndividuals) continue;
           const fullName = profile.fullName?.toLowerCase() || '';
           const city = profile.city?.toLowerCase() || '';
           const profileEmail = profile.email?.toLowerCase() || '';
@@ -187,6 +202,14 @@ function SearchPage() {
             city.includes(searchLower) ||
             profileEmail.includes(searchLower)
           ) {
+            // Gender + age filters (people only)
+            if (genderFilter !== 'any' && profile.gender !== genderFilter) continue;
+            if (ageFiltered) {
+              const age = computeAge(profile.birthday);
+              if (age === null) continue; // no birthday → excluded when filtering by age
+              if (minAge !== null && age < minAge) continue;
+              if (maxAge !== null && age > maxAge) continue;
+            }
             const lat = profile.locationLat !== undefined ? profile.locationLat : undefined;
             const lng = profile.locationLng !== undefined ? profile.locationLng : undefined;
             const hasLoc = profile.locationPrecision !== 'off' && lat !== undefined && lng !== undefined;
@@ -207,6 +230,7 @@ function SearchPage() {
 
         // Search organizations too
         for (const org of db.db.organization.iter()) {
+          if (!showOrganizations) continue;
           const orgName = org.name?.toLowerCase() || '';
           const orgCity = org.city?.toLowerCase() || '';
           if (orgName.includes(searchLower) || orgCity.includes(searchLower)) {
@@ -245,7 +269,7 @@ function SearchPage() {
     };
 
     searchQuery();
-  }, [query, isConnected, activePos, nearbyFirst]);
+  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
 
   return (
     <div className="search-page">
@@ -265,6 +289,29 @@ function SearchPage() {
           />
           {showSearchOptions && (
             <div className="search-options-menu" ref={searchOptionsRef}>
+              <div className="search-opt-section">
+                <span className="search-opt-label">Show</span>
+                <div className="filter-pills">
+                  <label className={`filter-pill ${showIndividuals ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={showIndividuals}
+                      onChange={(e) => setShowIndividuals(e.target.checked)}
+                      style={{ display: 'none' }}
+                    />
+                    Individuals
+                  </label>
+                  <label className={`filter-pill ${showOrganizations ? 'selected' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={showOrganizations}
+                      onChange={(e) => setShowOrganizations(e.target.checked)}
+                      style={{ display: 'none' }}
+                    />
+                    Organizations
+                  </label>
+                </div>
+              </div>
               <button
                 className="search-opt"
                 onClick={() => { setShowSearchOptions(false); setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }}
@@ -282,6 +329,44 @@ function SearchPage() {
                   {nearbyFirst ? '✓ ' : ''}Nearby First
                 </button>
               )}
+              <div className="search-opt-section">
+                <span className="search-opt-label">Gender</span>
+                <div className="filter-pills">
+                  {[['any', 'Any'], ['male', 'Male'], ['female', 'Female'], ['other', 'Other']].map(([v, label]) => (
+                    <button
+                      key={v}
+                      className={`filter-pill ${genderFilter === v ? 'selected' : ''}`}
+                      onClick={() => setGenderFilter(v)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="search-opt-section">
+                <span className="search-opt-label">Age</span>
+                <div className="age-filter-row">
+                  <input
+                    type="number"
+                    min={13}
+                    max={120}
+                    placeholder="Min"
+                    value={ageMin}
+                    onChange={(e) => setAgeMin(e.target.value)}
+                    className="age-filter-input"
+                  />
+                  <span className="age-filter-sep">–</span>
+                  <input
+                    type="number"
+                    min={13}
+                    max={120}
+                    placeholder="Max"
+                    value={ageMax}
+                    onChange={(e) => setAgeMax(e.target.value)}
+                    className="age-filter-input"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>}
@@ -525,6 +610,21 @@ function SearchPage() {
         }
         .search-opt:hover { background: #f3f4f6; }
         .search-opt-value { color: #667eea; font-size: 13px; font-weight: 600; }
+        .search-opt-section { padding: 10px 14px 4px; }
+        .search-opt-label { display: block; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+        .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .filter-pill {
+          padding: 5px 12px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          font-size: 12px; font-weight: 600; color: #666; background: white;
+        }
+        .filter-pill.selected { background: #667eea; border-color: #667eea; color: white; }
+        .age-filter-row { display: flex; align-items: center; gap: 8px; }
+        .age-filter-input {
+          width: 64px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 8px;
+          font-size: 14px; outline: none;
+        }
+        .age-filter-input:focus { border-color: #667eea; }
+        .age-filter-sep { color: #999; }
 
         /* Swipe mode: the header floats over profile photos — lighter text + shadow */
         .search-mode-header.swipe-mode .profile-tab { color: rgba(255,255,255,0.92); text-shadow: 0 1px 4px rgba(0,0,0,0.55); }

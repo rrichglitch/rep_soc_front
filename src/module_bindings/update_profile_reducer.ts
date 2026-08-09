@@ -15,4 +15,6 @@ export default {
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   hideFriends: __t.option(__t.bool()),
+  birthday: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
 };

@@ -249,6 +249,8 @@ function ProfilePage() {
             city: profile.city,
             description: profile.description,
             created_at: profile.createdAt,
+            birthday: profile.birthday,
+            gender: profile.gender,
           }}
           isOwnProfile={isOwnProfile}
           isFollowing={isFollowing}

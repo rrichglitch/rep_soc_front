@@ -27,4 +27,6 @@ export default __t.row({
   locationPrecision: __t.string().name("location_precision"),
   locationAsked: __t.bool().name("location_asked"),
   hideFriends: __t.bool().name("hide_friends"),
+  birthday: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
 });

@@ -23,4 +23,6 @@ export default __t.row({
   locationLng: __t.option(__t.f64()).name("location_lng"),
   locationPrecision: __t.string().name("location_precision"),
   hideMembers: __t.bool().name("hide_members"),
+  birthday: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
 });

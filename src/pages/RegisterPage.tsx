@@ -42,6 +42,8 @@ function RegisterPage() {
   const [nameTooltipHover, setNameTooltipHover] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const [locStatus, setLocStatus] = useState<'idle' | 'fetching' | 'done' | 'error'>('idle');
+  const [birthday, setBirthday] = useState('');
+  const [gender, setGender] = useState('');
   const [locCoords, setLocCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
 
@@ -202,7 +204,9 @@ function RegisterPage() {
         storedPictureBase64,
         sanitizedCity,
         sanitizedDescription,
-        displayName
+        displayName,
+        birthday,
+        gender
       );
 
       // Store the approximate location (best effort — the profile already exists)
@@ -449,6 +453,38 @@ function RegisterPage() {
 
           {diditVerified ? (
             <>
+              <div className="form-group">
+                <label htmlFor="birthday">Birthday</label>
+                <input
+                  id="birthday"
+                  type="date"
+                  value={birthday}
+                  max={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setBirthday(e.target.value)}
+                  required
+                />
+                <span className="hint">Your birthday is stored privately; only your age is shown to others.</span>
+              </div>
+
+              <div className="form-group">
+                <label>Gender</label>
+                <div className="register-gender-options">
+                  {['male', 'female', 'other'].map((g) => (
+                    <label key={g} className={`register-gender-option ${gender === g ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="register-gender"
+                        value={g}
+                        checked={gender === g}
+                        onChange={() => setGender(g)}
+                        required
+                      />
+                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="location-box">
                 <h4>Location required</h4>
                 <p>
@@ -471,7 +507,7 @@ function RegisterPage() {
                   </>
                 )}
               </div>
-              <button type="submit" className="submit-button" disabled={isLoading || locStatus !== 'done'}>
+              <button type="submit" className="submit-button" disabled={isLoading || locStatus !== 'done' || !birthday || !gender}>
                 {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
               <button type="button" onClick={handleRetry} className="back-button">
@@ -677,6 +713,13 @@ function RegisterPage() {
         .location-box .location-sub { color: #888; font-size: 12px; }
         .location-allow-btn { padding: 10px 24px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
         .location-allow-btn:disabled { opacity: 0.6; cursor: default; }
+        .register-gender-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .register-gender-option {
+          padding: 8px 18px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          font-size: 14px; font-weight: 600; color: #666; background: white;
+        }
+        .register-gender-option input { display: none; }
+        .register-gender-option.selected { background: #667eea; border-color: #667eea; color: white; }
         .location-ok { color: #166534; font-weight: 600; }
         .location-busy { color: #667eea; }
         .location-error { color: #b91c1c; }

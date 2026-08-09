@@ -200,19 +200,23 @@ export async function updateProfile(
   profilePicture?: string,
   city?: string,
   description?: string,
-  hideFriends?: boolean
+  hideFriends?: boolean,
+  birthday?: string,
+  gender?: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  console.log('Updating profile:', { profilePicture, city, description, hideFriends });
+  console.log('Updating profile:', { profilePicture, city, description, hideFriends, birthday, gender });
   
   await dbConnection.reducers.updateProfile({
     profilePicture: profilePicture ?? undefined,
     city: city ?? undefined,
     description: description ?? undefined,
     hideFriends: hideFriends ?? undefined,
+    birthday: birthday ?? undefined,
+    gender: gender ?? undefined,
   });
 }
 
@@ -275,7 +279,9 @@ export async function createVerifiedProfile(
   profilePicture: string,
   city: string,
   description: string,
-  fullName: string
+  fullName: string,
+  birthday?: string,
+  gender?: string
 ): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
@@ -289,6 +295,8 @@ export async function createVerifiedProfile(
     city,
     description,
     fullName,
+    birthday: birthday ?? '',
+    gender: gender ?? '',
   });
 
   console.log('createVerifiedProfile result:', result);
@@ -801,7 +809,7 @@ export async function createOrganization(
 }
 
 export async function updateOrganization(
-  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean
+  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean, birthday?: string, gender?: string
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.updateOrganization({
@@ -809,6 +817,8 @@ export async function updateOrganization(
     locationLat: locationLat ?? undefined,
     locationLng: locationLng ?? undefined,
     hideMembers: hideMembers ?? undefined,
+    birthday: birthday ?? undefined,
+    gender: gender ?? undefined,
   });
 }
 

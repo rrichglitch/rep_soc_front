@@ -1,13 +1,17 @@
 import { useRef, useState, type ReactNode } from 'react';
+import { computeAge } from '../utils/age';
 
 interface ProfileDetailsProps {
   picture: string;
   name: string;
   city: string;
   description: string;
+  birthday?: string;        // stored server-side; only the age is shown
+  gender?: string;          // 'male' | 'female' | 'other'
   onUpdateLocation: () => void;
   isLocationUpdating?: boolean;
   onSaveDescription: (value: string) => Promise<void>;
+  onSaveAgeGender?: (birthday: string | undefined, gender: string | undefined) => Promise<void>;
   onPictureClick?: () => void;
   pictureExtra?: ReactNode; // e.g. the Share button under the picture
   showLocationUpdate?: boolean; // default true
@@ -19,8 +23,8 @@ interface ProfileDetailsProps {
 // truth for the top info section: picture | name, Location + Update, extra
 // children, editable description, footer. Both profile pages render exactly this.
 function ProfileDetails({
-  picture, name, city, description,
-  onUpdateLocation, isLocationUpdating, onSaveDescription,
+  picture, name, city, description, birthday, gender,
+  onUpdateLocation, isLocationUpdating, onSaveDescription, onSaveAgeGender,
   onPictureClick, pictureExtra, showLocationUpdate = true, children, footer,
 }: ProfileDetailsProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -51,6 +55,34 @@ function ProfileDetails({
       setIsSaving(false);
     }
   };
+
+  const [isEditingAge, setIsEditingAge] = useState(false);
+  const [ageBirthday, setAgeBirthday] = useState('');
+  const [ageGender, setAgeGender] = useState('');
+
+  const startAgeEdit = () => {
+    setAgeBirthday(birthday || '');
+    setAgeGender(gender || '');
+    setIsEditingAge(true);
+  };
+
+  const saveAgeEdit = async () => {
+    if (!onSaveAgeGender) return;
+    setIsSaving(true);
+    try {
+      await onSaveAgeGender(ageBirthday || undefined, ageGender || undefined);
+      setIsEditingAge(false);
+    } catch (e: any) {
+      alert(e?.message || 'Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const age = computeAge(birthday);
+  const ageLine = [age !== null ? `${age}` : '', gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : '']
+    .filter(Boolean)
+    .join(' · ');
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -91,6 +123,57 @@ function ProfileDetails({
             )}
           </div>
         </div>
+        {(ageLine || onSaveAgeGender) && (
+          <div className="profile-field">
+            {isEditingAge ? (
+              <div className="edit-inline">
+                <div className="age-edit-row">
+                  <label className="age-edit-label">Birthday</label>
+                  <input
+                    type="date"
+                    value={ageBirthday}
+                    max={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setAgeBirthday(e.target.value)}
+                    className="age-date-input"
+                  />
+                </div>
+                <div className="gender-options">
+                  {['male', 'female', 'other'].map((g) => (
+                    <label key={g} className={`gender-option ${ageGender === g ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="gender-edit"
+                        value={g}
+                        checked={ageGender === g}
+                        onChange={() => setAgeGender(g)}
+                      />
+                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                    </label>
+                  ))}
+                  <button type="button" className="gender-clear" onClick={() => setAgeGender('')}>
+                    None
+                  </button>
+                </div>
+                <div className="edit-actions">
+                  <button onClick={saveAgeEdit} className="save-btn" disabled={isSaving}>✓</button>
+                  <button onClick={() => setIsEditingAge(false)} className="cancel-btn">✕</button>
+                </div>
+              </div>
+            ) : (
+              <div className="field-display">
+                <span className="field-value age-line">{ageLine}</span>
+                {onSaveAgeGender && (
+                  <button className="edit-btn" onClick={startAgeEdit} disabled={isSaving}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {children}
         <div className="profile-field description-field">
           {isEditing ? (
@@ -149,6 +232,18 @@ function ProfileDetails({
         .edit-inline { display: flex; flex-direction: column; gap: 8px; width: 100%; }
         .edit-textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #667eea; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; outline: none; }
         .edit-actions { display: flex; gap: 8px; }
+        .age-line { font-size: 14px; color: #666; }
+        .age-edit-row { display: flex; align-items: center; gap: 10px; }
+        .age-edit-label { font-size: 13px; color: #999; font-weight: 500; min-width: 60px; }
+        .age-date-input { padding: 8px 10px; border: 1px solid #667eea; border-radius: 6px; font-size: 14px; outline: none; }
+        .gender-options { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .gender-option {
+          padding: 6px 14px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          font-size: 13px; font-weight: 600; color: #666; background: white;
+        }
+        .gender-option input { display: none; }
+        .gender-option.selected { background: #667eea; border-color: #667eea; color: white; }
+        .gender-clear { background: none; border: none; color: #999; font-size: 12px; cursor: pointer; text-decoration: underline; }
         .save-btn { padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
         .save-btn:hover { background: #5a6fd6; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }

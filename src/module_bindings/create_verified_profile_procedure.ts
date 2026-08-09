@@ -20,5 +20,7 @@ export const params = {
   city: __t.string(),
   description: __t.string(),
   fullName: __t.string(),
+  birthday: __t.string(),
+  gender: __t.string(),
 };
 export const returnType = CreateVerifiedProfileResult
