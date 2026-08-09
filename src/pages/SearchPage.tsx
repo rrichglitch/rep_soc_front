@@ -252,7 +252,7 @@ function SearchPage() {
       />
 
       <main className="search-content">
-        <div className="search-mode-header">
+        <div className={`search-mode-header${mode === 'swipe' ? ' swipe-mode' : ''}`}>
           <div className="search-mode-left">
             <p className="results-count">{mode === 'swipe' && results.length > 0 ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {activePos && (
@@ -477,6 +477,19 @@ function SearchPage() {
         .loc-search-btn { white-space: nowrap; }
         /* Higher specificity so the transparent fill actually beats .nearby-toggle's white */
         .search-mode-header .loc-search-btn { background: transparent; }
+
+        /* Swipe mode: the header floats over profile photos — lighter text + shadow */
+        .search-mode-header.swipe-mode .profile-tab { color: rgba(255,255,255,0.92); text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
+        .search-mode-header.swipe-mode .profile-tab.active { color: #fff; border-bottom-color: #fff; }
+        .search-mode-header.swipe-mode .profile-tab:hover { color: #fff; }
+        .search-mode-header.swipe-mode .results-count { color: rgba(255,255,255,0.85); text-shadow: 0 1px 4px rgba(0,0,0,0.55); }
+        .search-mode-header.swipe-mode .nearby-toggle {
+          color: rgba(255,255,255,0.92); background: transparent;
+          border-color: rgba(255,255,255,0.6);
+          text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+        }
+        .search-mode-header.swipe-mode .nearby-toggle:hover { background: #667eea; color: #fff; }
+        .search-mode-header.swipe-mode .nearby-toggle.active { background: #667eea; color: #fff; }
         @media (max-width: 767px) {
           .search-mode-header .profile-tabs {
             position: static; transform: none; width: 100%; justify-content: center;
