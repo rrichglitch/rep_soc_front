@@ -454,12 +454,11 @@ function SearchPage() {
         }
         .search-mode-header .profile-tab { padding: 8px 16px; }
         .search-mode-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-        .search-mode-left .results-count { white-space: nowrap; background: none; box-shadow: none; padding: 0; color: #666; font-weight: 600; text-shadow: 0 0 5px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.8); }
+        .search-mode-left .results-count { white-space: nowrap; background: none; box-shadow: none; padding: 0; color: #666; font-weight: 600; }
         .search-mode-right { display: flex; }
-        /* Transparent fill + glow so the pills read over any card/map background */
-        .search-mode-header .profile-tab { text-shadow: 0 0 5px rgba(255,255,255,0.9), 0 1px 2px rgba(255,255,255,0.8); }
-        .search-mode-header .nearby-toggle { box-shadow: 0 1px 5px rgba(0,0,0,0.18); text-shadow: 0 0 5px rgba(255,255,255,0.85); }
-        .loc-search-btn { white-space: nowrap; background: transparent; }
+        .loc-search-btn { white-space: nowrap; }
+        /* Higher specificity so the transparent fill actually beats .nearby-toggle's white */
+        .search-mode-header .loc-search-btn { background: transparent; }
         @media (max-width: 767px) {
           .search-mode-header .profile-tabs {
             position: static; transform: none; width: 100%; justify-content: center;
