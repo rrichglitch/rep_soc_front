@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { computeAge } from '../utils/age';
+
 import FollowButton from './FollowButton';
 import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
@@ -9,7 +9,7 @@ interface UserProfile {
   full_name: string;
   profile_picture: string;
   city: string;
-  birthday?: string;
+  age?: number;
   gender?: string;
   description: string;
   created_at: Date;
@@ -105,8 +105,7 @@ function ProfileHeader({
         <h2 className="profile-name">{profile.full_name}</h2>
         {profile.city && <p className="profile-city">{profile.city}</p>}
         {(() => {
-          const age = computeAge(profile.birthday);
-          const line = [age !== null ? `${age}` : '', profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : ''].filter(Boolean).join(' · ');
+          const line = [profile.age !== undefined ? `${profile.age}` : '', profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : ''].filter(Boolean).join(' · ');
           return line ? <p className="profile-city age-line">{line}</p> : null;
         })()}
         {profile.description && <p className="profile-description">{profile.description}</p>}

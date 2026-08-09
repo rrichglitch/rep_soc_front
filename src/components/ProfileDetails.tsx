@@ -1,12 +1,11 @@
 import { useRef, useState, type ReactNode } from 'react';
-import { computeAge } from '../utils/age';
 
 interface ProfileDetailsProps {
   picture: string;
   name: string;
   city: string;
   description: string;
-  birthday?: string;        // stored server-side; only the age is shown
+  age?: number;             // computed server-side; birthdays never reach clients
   gender?: string;          // 'male' | 'female' | 'other'
   onUpdateLocation: () => void;
   isLocationUpdating?: boolean;
@@ -23,7 +22,7 @@ interface ProfileDetailsProps {
 // truth for the top info section: picture | name, Location + Update, extra
 // children, editable description, footer. Both profile pages render exactly this.
 function ProfileDetails({
-  picture, name, city, description, birthday, gender,
+  picture, name, city, description, age, gender,
   onUpdateLocation, isLocationUpdating, onSaveDescription, onSaveAgeGender,
   onPictureClick, pictureExtra, showLocationUpdate = true, children, footer,
 }: ProfileDetailsProps) {
@@ -79,8 +78,7 @@ function ProfileDetails({
     }
   };
 
-  const age = computeAge(birthday);
-  const ageLine = [age !== null ? `${age}` : '', gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : '']
+  const ageLine = [age !== undefined ? `${age}` : '', gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : '']
     .filter(Boolean)
     .join(' · ');
 

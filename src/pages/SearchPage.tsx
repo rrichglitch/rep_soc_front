@@ -4,7 +4,7 @@ import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { haversineMiles, formatMiles } from '../utils/geo';
-import { computeAge } from '../utils/age';
+
 import MapView from '../components/MapView';
 import SwipeView from '../components/SwipeView';
 import ProfileTabs from '../components/ProfileTabs';
@@ -205,8 +205,8 @@ function SearchPage() {
             // Gender + age filters (people only)
             if (genderFilter !== 'any' && profile.gender !== genderFilter) continue;
             if (ageFiltered) {
-              const age = computeAge(profile.birthday);
-              if (age === null) continue; // no birthday → excluded when filtering by age
+              const age = profile.age;
+              if (age === undefined) continue; // no age → excluded when filtering by age
               if (minAge !== null && age < minAge) continue;
               if (maxAge !== null && age > maxAge) continue;
             }

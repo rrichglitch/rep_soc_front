@@ -179,7 +179,6 @@ function OrgAccountView() {
               await updateOrganization(org.id, undefined, undefined, v);
               await refreshOrg();
             }}
-            birthday={orgData?.birthday}
             gender={orgData?.gender}
             onSaveAgeGender={async (_b, g) => {
               await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, g);

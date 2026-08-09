@@ -37,6 +37,7 @@ import {
 import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
+import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
 import AdminUpdateProfileReducer from "./admin_update_profile_reducer";
 import CancelFriendRequestReducer from "./cancel_friend_request_reducer";
@@ -220,6 +221,7 @@ const reducersSchema = __reducers(
   __reducerSchema("accept_friend_request", AcceptFriendRequestReducer),
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
+  __reducerSchema("admin_set_birthday", AdminSetBirthdayReducer),
   __reducerSchema("admin_set_pro", AdminSetProReducer),
   __reducerSchema("admin_update_profile", AdminUpdateProfileReducer),
   __reducerSchema("cancel_friend_request", CancelFriendRequestReducer),

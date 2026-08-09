@@ -23,7 +23,7 @@ interface UserProfile {
   city: string;
   description: string;
   created_at: Date;
-  birthday?: string;
+  age?: number;
   gender?: string;
 }
 
@@ -102,7 +102,7 @@ function MyProfilePage() {
           city: profileData.city,
           description: profileData.description,
           created_at: date,
-          birthday: profileData.birthday,
+          age: profileData.age,
           gender: profileData.gender,
         });
 

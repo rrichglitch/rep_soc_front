@@ -194,6 +194,12 @@ export const StoryPost = __t.object("StoryPost", {
 });
 export type StoryPost = __Infer<typeof StoryPost>;
 
+export const UserBirthday = __t.object("UserBirthday", {
+  identity: __t.identity(),
+  birthday: __t.string(),
+});
+export type UserBirthday = __Infer<typeof UserBirthday>;
+
 export const UserProfile = __t.object("UserProfile", {
   identity: __t.identity(),
   email: __t.string(),
@@ -213,6 +219,7 @@ export const UserProfile = __t.object("UserProfile", {
   hideFriends: __t.bool(),
   birthday: __t.option(__t.string()),
   gender: __t.option(__t.string()),
+  age: __t.option(__t.u8()),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 
