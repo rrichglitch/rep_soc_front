@@ -20,11 +20,12 @@ interface SwipeViewProps {
   myIdentity: string;     // hex identity of the viewer
   activeOrgId?: bigint;   // when signed in as an org, follow acts as the org
   isDesktop: boolean;
+  onIndexChange?: (index: number) => void;
 }
 
 // Tinder/Bumble-style browsing: full-bleed profile previews, swipe (or
 // horizontal scroll) to move between them, ‹ › carrots and peek cards on desktop.
-function SwipeView({ results, myIdentity, activeOrgId, isDesktop }: SwipeViewProps) {
+function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange }: SwipeViewProps) {
   const navigate = useNavigate();
   const trackRef = useRef<HTMLDivElement>(null);
   const [cardW, setCardW] = useState(0);
@@ -44,6 +45,8 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop }: SwipeViewPro
     setScrim(0.25);
     if (trackRef.current) trackRef.current.scrollLeft = 0;
   }, [results]);
+
+  useEffect(() => { onIndexChange?.(index); }, [index, onIndexChange]);
 
   // Measure card width: desktop shows peek cards on both sides, mobile is full-bleed
   useEffect(() => {
@@ -252,7 +255,6 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop }: SwipeViewPro
           </div>
         ))}
       </div>
-      <div className="swipe-counter">{index + 1} / {results.length}</div>
       <style>{`
         .swipe-stage { position: absolute; inset: 0; overflow: hidden; background: #111; }
         .swipe-track {
@@ -306,11 +308,6 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop }: SwipeViewPro
         .swipe-carrot:hover { background: white; }
         .swipe-prev { left: 14px; }
         .swipe-next { right: 14px; }
-        .swipe-counter {
-          position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 5;
-          background: rgba(0,0,0,0.55); color: white; font-size: 13px; font-weight: 600;
-          padding: 4px 14px; border-radius: 20px; pointer-events: none;
-        }
         @media (max-width: 767px) {
           .swipe-desc { max-height: 26vh; }
         }

@@ -41,6 +41,7 @@ function SearchPage() {
   const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
   const [isDesktop, setIsDesktop] = useState<boolean>(() => window.matchMedia('(min-width: 768px)').matches);
   const [myIdentity, setMyIdentity] = useState<string>('');
+  const [swipeIndex, setSwipeIndex] = useState(0);
   const { activeOrg } = useOrg();
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
@@ -228,7 +229,7 @@ function SearchPage() {
             onChange={(k) => setMode(k as any)}
           />
           <div className="results-tools">
-            <p className="results-count">{results.length} result{results.length !== 1 ? 's' : ''}</p>
+            <p className="results-count">{mode === 'swipe' ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {activePos && (
               <button
                 onClick={() => setNearbyFirst(!nearbyFirst)}
@@ -323,6 +324,7 @@ function SearchPage() {
                 myIdentity={myIdentity}
                 activeOrgId={activeOrg?.id}
                 isDesktop={isDesktop}
+                onIndexChange={setSwipeIndex}
               />
             </div>
           )}
