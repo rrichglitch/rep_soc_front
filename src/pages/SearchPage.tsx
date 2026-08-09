@@ -219,16 +219,7 @@ function SearchPage() {
 
       <main className="search-content">
         <div className="search-mode-header">
-          <ProfileTabs
-            tabs={[
-              { key: 'list', label: 'List' },
-              { key: 'map', label: 'Map' },
-              { key: 'swipe', label: 'Swipe' },
-            ]}
-            active={mode}
-            onChange={(k) => setMode(k as any)}
-          />
-          <div className="results-tools">
+          <div className="search-mode-left">
             <p className="results-count">{mode === 'swipe' ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {activePos && (
               <button
@@ -238,10 +229,19 @@ function SearchPage() {
                 {nearbyFirst ? '✓ Nearby First' : 'Nearby First'}
               </button>
             )}
-            <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle ${searchLoc ? 'active' : ''}`}>
-              {searchLoc ? `📍 ${searchLoc.label}` : '📍 Set search location'}
-            </button>
           </div>
+          <ProfileTabs
+            tabs={[
+              { key: 'list', label: 'List' },
+              { key: 'map', label: 'Map' },
+              { key: 'swipe', label: 'Swipe' },
+            ]}
+            active={mode}
+            onChange={(k) => setMode(k as any)}
+          />
+          <button onClick={() => { setLocInput(''); setLocSuggestions([]); setShowLocModal(true); }} className={`nearby-toggle loc-search-btn ${searchLoc ? 'active' : ''}`}>
+            📍 Search Location
+          </button>
         </div>
 
         {isLoading ? (
@@ -436,10 +436,14 @@ function SearchPage() {
         /* Mode selector (List | Map | Swipe) + tools — always visible above the fixed overlays */
         .search-mode-header {
           position: relative; z-index: 70; background: #f5f5f5;
-          margin: -6px -24px 12px; padding: 4px 16px 0;
+          margin: -6px -24px 12px; padding: 4px 16px;
+          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
         }
-        .search-mode-header .profile-tabs { margin-bottom: 2px; }
-        .search-mode-header .results-tools { justify-content: flex-start; padding-bottom: 8px; }
+        .search-mode-header .profile-tabs { margin: 0; border-bottom: none; }
+        .search-mode-header .profile-tab { padding: 8px 16px; }
+        .search-mode-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .search-mode-left .results-count { white-space: nowrap; }
+        .loc-search-btn { margin-left: auto; }
 
         /* Swipe mode: full-bleed below the top bar, under the mode header */
         .swipe-section { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 40; }
