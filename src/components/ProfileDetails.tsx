@@ -138,10 +138,10 @@ function ProfileDetails({
                       {g.charAt(0).toUpperCase() + g.slice(1)}
                     </label>
                   ))}
-                </div>
-                <div className="edit-actions">
-                  <button onClick={saveAgeEdit} className="save-btn" disabled={isSaving}>✓</button>
-                  <button onClick={() => setIsEditingAge(false)} className="cancel-btn">✕</button>
+                  <div className="edit-actions">
+                    <button onClick={saveAgeEdit} className="save-btn" disabled={isSaving}>✓</button>
+                    <button onClick={() => setIsEditingAge(false)} className="cancel-btn">✕</button>
+                  </div>
                 </div>
               </div>
             ) : (

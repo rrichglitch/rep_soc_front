@@ -715,7 +715,7 @@ function RegisterPage() {
         .location-allow-btn:disabled { opacity: 0.6; cursor: default; }
         .register-gender-options { display: flex; gap: 8px; flex-wrap: wrap; }
         .register-gender-option {
-          padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
+          padding: 3px 3px; border: 1px solid #d1d5db; border-radius: 20px; cursor: pointer;
           font-size: 14px; font-weight: 600; color: #666; background: white;
         }
         .register-gender-option input { display: none; }
