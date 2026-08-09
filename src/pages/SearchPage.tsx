@@ -233,8 +233,8 @@ function SearchPage() {
           <ProfileTabs
             tabs={[
               { key: 'list', label: 'List' },
-              { key: 'map', label: 'Map' },
               { key: 'swipe', label: 'Swipe' },
+              { key: 'map', label: 'Map' },
             ]}
             active={mode}
             onChange={(k) => setMode(k as any)}
