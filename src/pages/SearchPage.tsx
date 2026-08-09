@@ -42,8 +42,7 @@ function SearchPage() {
   const [isDesktop, setIsDesktop] = useState<boolean>(() => window.matchMedia('(min-width: 768px)').matches);
   const [myIdentity, setMyIdentity] = useState<string>('');
   const [swipeIndex, setSwipeIndex] = useState(0);
-  const [headerH, setHeaderH] = useState(0);
-  const headerRef = useRef<HTMLDivElement>(null);
+
   const { activeOrg } = useOrg();
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
@@ -54,15 +53,6 @@ function SearchPage() {
   // Persist mode + nearby-first state across navigation and browser restarts
   useEffect(() => { localStorage.setItem('veri_searchMode', mode); }, [mode]);
   useEffect(() => { localStorage.setItem('veri_nearbyFirst', nearbyFirst ? '1' : '0'); }, [nearbyFirst]);
-
-  useEffect(() => {
-    if (!headerRef.current) return;
-    const measure = () => setHeaderH(headerRef.current?.offsetHeight || 0);
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(headerRef.current);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 768px)');
@@ -229,7 +219,7 @@ function SearchPage() {
       />
 
       <main className="search-content">
-        <div className="search-mode-header" ref={headerRef}>
+        <div className="search-mode-header">
           <div className="search-mode-left">
             <p className="results-count">{mode === 'swipe' ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {activePos && (
@@ -322,7 +312,7 @@ function SearchPage() {
             </div>
           )}
           {mode === 'swipe' && (
-            <div className="swipe-section" style={{ top: 60 + headerH }}>
+            <div className="swipe-section">
               <SwipeView
                 results={results.map(r => ({
                   type: r.type,
@@ -450,18 +440,26 @@ function SearchPage() {
         .search-mode-header {
           position: relative; z-index: 70; background: none;
           margin: -6px -24px 12px; padding: 4px 16px;
-          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+          display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
         }
-        .search-mode-header .profile-tabs { margin: 0; border-bottom: none; }
+        .search-mode-header .profile-tabs {
+          position: absolute; left: 50%; transform: translateX(-50%);
+          margin: 0; border-bottom: none; white-space: nowrap;
+        }
         .search-mode-header .profile-tab { padding: 8px 16px; }
-        .search-mode-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .search-mode-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
         .search-mode-left .results-count { white-space: nowrap; background: none; box-shadow: none; padding: 0; color: #666; font-weight: 600; }
-        .search-mode-header .profile-tabs { flex: 1; justify-content: center; }
-        .search-mode-right { flex: 1; display: flex; justify-content: flex-end; min-width: 0; }
+        .search-mode-right { display: flex; }
         .loc-search-btn { white-space: nowrap; }
+        @media (max-width: 767px) {
+          .search-mode-header .profile-tabs {
+            position: static; transform: none; width: 100%; justify-content: center;
+            order: 3; margin-top: 2px;
+          }
+        }
 
-        /* Swipe mode: full-bleed, starting right below the mode header buttons */
-        .swipe-section { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; }
+        /* Swipe mode: full-bleed from under the top bar; the mode header floats over it */
+        .swipe-section { position: fixed; top: 60px; left: 0; right: 0; bottom: 0; z-index: 40; }
 
         /* Mobile: only the logo (left) and profile pic (right) — no chat/bell icons */
         @media (max-width: 767px) {
