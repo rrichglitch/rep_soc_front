@@ -236,7 +236,7 @@ function SearchPage() {
       <main className="search-content">
         <div className="search-mode-header">
           <div className="search-mode-left">
-            <p className="results-count">{mode === 'swipe' ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
+            <p className="results-count">{mode === 'swipe' && results.length > 0 ? `${swipeIndex + 1} / ${results.length}` : `${results.length} result${results.length !== 1 ? 's' : ''}`}</p>
             {activePos && (
               <button
                 onClick={() => setNearbyFirst(!nearbyFirst)}

@@ -319,14 +319,14 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         .swipe-friend:disabled { opacity: 0.8; cursor: default; }
         .swipe-carrot {
           position: absolute; top: 50%; transform: translateY(-50%); z-index: 5;
-          width: 72px; height: 72px; background: none; border: none; cursor: pointer;
-          color: white; font-size: 64px; line-height: 1;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+          width: 144px; height: 144px; background: none; border: none; cursor: pointer;
+          color: white; font-size: 128px; line-height: 1;
+          text-shadow: 0 2px 14px rgba(0,0,0,0.55);
           display: flex; align-items: center; justify-content: center;
         }
         .swipe-carrot:hover { color: #e8e8e8; }
-        .swipe-prev { left: 20px; }
-        .swipe-next { right: 20px; }
+        .swipe-prev { left: 24px; }
+        .swipe-next { right: 24px; }
         @media (max-width: 767px) {
           .swipe-desc { max-height: 26vh; }
         }
