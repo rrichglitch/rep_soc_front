@@ -121,7 +121,7 @@ function SearchPage() {
       } else {
         // Fallback: the connection identity is the acting account
         const db = getDbConnection();
-        if (db) setMyIdentity(db.identity.toHexString());
+        if (db?.identity) setMyIdentity(db.identity.toHexString());
       }
     }).catch(() => {});
   }, [email, isConnected]);

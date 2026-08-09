@@ -80,7 +80,7 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
   // The acting account is the org when signed in as one, else the individual;
   // the individual identity also falls back to the connection identity.
   const actingOrgHex = activeOrgId !== undefined ? orgAccountIdentityHex(activeOrgId) : null;
-  const viewerId = actingOrgHex || myIdentity || getDbConnection()?.identity.toHexString() || '';
+  const viewerId = actingOrgHex || myIdentity || getDbConnection()?.identity?.toHexString() || '';
   const current = results[index];
   useEffect(() => {
     if (!current) return;
