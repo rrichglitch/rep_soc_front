@@ -37,6 +37,14 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
 
   return (
     <form onSubmit={handleSubmit} className={`search-bar ${className || ''}`}>
+      <input
+        type="text"
+        value={query}
+        onChange={handleChange}
+        placeholder={placeholder || 'Find people...'}
+        className="search-input"
+        autoFocus={autoFocus}
+      />
       {onOptionsClick && (
         <button type="button" onClick={onOptionsClick} className="search-options-btn" aria-label="Search options">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -49,14 +57,6 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
           </svg>
         </button>
       )}
-      <input
-        type="text"
-        value={query}
-        onChange={handleChange}
-        placeholder={placeholder || 'Find people...'}
-        className="search-input"
-        autoFocus={autoFocus}
-      />
       <button type="submit" className="search-button">
         <svg
           width="20"
@@ -99,7 +99,7 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
 
         .search-options-btn {
           flex: 0 0 auto;
-          padding: 10px 6px 10px 12px;
+          padding: 10px 6px 10px 10px;
           background: transparent;
           border: none;
           color: #999;
