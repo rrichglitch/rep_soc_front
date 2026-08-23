@@ -84,10 +84,16 @@ function CallbackPage() {
           navigate('/home', { replace: true });
           return;
         }
-        if (claim.error && !claim.error.includes('No profile')) {
-          // Verification hiccup — let the user retry; keep them on register
-          // fallback below only when there is genuinely no profile.
-          console.warn('OAuth claim failed:', claim.error);
+        // Claim failed for an existing-profile email: surface it loudly instead
+        // of silently falling through — the profile is NOT owned by this
+        // identity, and treating it as success leaves the user half-broken.
+        if (!claim.error?.includes('No profile')) {
+          hasRedirected.current = true;
+          setErrorMsg(
+            `Your account could not be migrated to Google sign-in (${claim.error || 'unknown error'}). ` +
+            'Nothing was changed — please try again or contact support.'
+          );
+          return;
         }
       }
 
