@@ -41,6 +41,13 @@ function SearchPage() {
   const [inputValue, setInputValue] = useState(query);
   // Sync the bar whenever the URL query changes (suggestion clicks, submits)
   useEffect(() => { setInputValue(query); }, [query]);
+
+  // Typing/clearing while the bar is focused reopens the dropdown (submitting a
+  // search closes it, but the input stays focused — the next keystroke should
+  // bring the suggestions back).
+  useEffect(() => {
+    if (inputFocusedRef.current) setShowSuggestions(true);
+  }, [inputValue]);
   const [isConnected, setIsConnected] = useState(false);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
@@ -69,6 +76,7 @@ function SearchPage() {
   const [showLocModal, setShowLocModal] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputFocusedRef = useRef(false);
   const [searchHistory, setSearchHistory] = useState<SearchEntry[]>(() => loadSearchHistory('anon'));
   const rowTouchRef = useRef<{ q: string; sx: number; sy: number } | null>(null);
   const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
@@ -320,8 +328,8 @@ function SearchPage() {
             value={inputValue}
             onChange={setInputValue}
             onOptionsClick={() => { setShowSuggestions(false); setShowSearchOptions((v) => !v); }}
-            onInputFocus={() => { setShowSearchOptions(false); setShowSuggestions(true); }}
-            onInputBlur={() => { setTimeout(() => setShowSuggestions(false), 160); }}
+            onInputFocus={() => { inputFocusedRef.current = true; setShowSearchOptions(false); setShowSuggestions(true); }}
+            onInputBlur={() => { inputFocusedRef.current = false; setTimeout(() => setShowSuggestions(false), 160); }}
             onSaveToggle={() => {
               const q = inputValue.trim();
               if (!q) return;
