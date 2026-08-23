@@ -16,6 +16,7 @@ import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
 import MainFeedPage from './pages/MainFeedPage';
 import ProfilePage from './pages/ProfilePage';
 import MyProfilePage from './pages/MyProfilePage';
@@ -249,6 +250,7 @@ function AppRoutes() {
       <ScrollToTop />
     <Routes>
       <Route path="/callback" element={<CallbackPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<LandingPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
