@@ -117,6 +117,64 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
     return () => { alive = false; clearInterval(t); };
   }, [current?.identity, candidateViewerIds.join('|'), actingOrgHex]);
 
+  // Mobile: one-card-per-swipe via controlled touch gestures (no native momentum,
+  // so fast flicks can never skip cards). Description area keeps native vertical scroll.
+  const touchRef = useRef<{ sx: number; sy: number; t0: number; sscroll: number; lx: number; lock: 'h' | 'v' | null } | null>(null);
+  const swipeStateRef = useRef({ len: results.length, w: cardW, desktop: isDesktop });
+  swipeStateRef.current = { len: results.length, w: cardW, desktop: isDesktop };
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || isDesktop) return;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      touchRef.current = { sx: t.clientX, sy: t.clientY, t0: performance.now(), sscroll: el.scrollLeft, lx: t.clientX, lock: null };
+    };
+    const onMove = (e: TouchEvent) => {
+      const g = touchRef.current;
+      if (!g) return;
+      const t = e.touches[0];
+      if (!t) return;
+      const dx = t.clientX - g.sx;
+      const dy = t.clientY - g.sy;
+      g.lx = t.clientX;
+      if (!g.lock) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        const inDesc = (e.target as HTMLElement)?.closest?.('.swipe-desc') != null;
+        g.lock = inDesc ? (Math.abs(dx) > Math.abs(dy) ? 'h' : 'v') : 'h';
+      }
+      if (g.lock === 'h') {
+        e.preventDefault();
+        el.scrollLeft = g.sscroll - dx;
+      }
+    };
+    const onEnd = () => {
+      const g = touchRef.current;
+      touchRef.current = null;
+      if (!g) return;
+      const { len, w } = swipeStateRef.current;
+      if (w === 0) return;
+      const dx = g.lx - g.sx;
+      const cur = Math.round(el.scrollLeft / w);
+      const fling = performance.now() - g.t0 < 180 && Math.abs(dx) > 15;
+      const target =
+        dx < -50 || (fling && dx < 0) ? Math.min(len - 1, cur + 1) :
+        dx > 50 || (fling && dx > 0) ? Math.max(0, cur - 1) : cur;
+      el.scrollTo({ left: target * w, behavior: 'smooth' });
+    };
+    const onCancel = () => { touchRef.current = null; };
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onCancel, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onCancel);
+    };
+  }, [isDesktop]);
+
   // Live index while scrolling + settle: snap to the nearest card after the
   // gesture ends (debounced) — reliable on wheel, trackpad, and touch.
   const settleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -369,10 +427,9 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         @media (max-width: 767px) {
           .swipe-carrot { display: none; }
           .swipe-desc { max-height: 26vh; }
-          /* Mobile: swipe snaps to the next/prev card (CSS snap; desktop uses
-             free scroll + debounced settle so wheel scrolling stays smooth) */
-          .swipe-track { scroll-snap-type: x mandatory; }
-          .swipe-card { scroll-snap-align: start; }
+          /* Mobile: one-card-per-swipe is handled by controlled touch gestures;
+             vertical panning stays native so long descriptions scroll smoothly */
+          .swipe-track { touch-action: pan-y; }
         }
       `}</style>
     </div>
