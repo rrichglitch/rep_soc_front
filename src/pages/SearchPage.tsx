@@ -39,6 +39,8 @@ function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
+  // Sync the bar whenever the URL query changes (suggestion clicks, submits)
+  useEffect(() => { setInputValue(query); }, [query]);
   const [isConnected, setIsConnected] = useState(false);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
@@ -351,7 +353,7 @@ function SearchPage() {
                     }
                   }}
                 >
-                  <button className="suggestion-main" onClick={() => runSearch(s.q)}>
+                  <button className="suggestion-main" onMouseDown={(e) => { e.preventDefault(); runSearch(s.q); }}>
                     {s.q}
                   </button>
                   {!s.saved && (
@@ -704,6 +706,9 @@ function SearchPage() {
           background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
           width: min(420px, calc(100vw - 32px)); max-height: 220px; overflow-y: auto;
           z-index: 210; padding: 6px;
+        }
+        @media (max-width: 767px) {
+          .search-suggestions { left: 0; right: 0; width: auto; transform: none; }
         }
         .search-suggestion { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
         .search-suggestion:hover { background: #f3f4f6; }
