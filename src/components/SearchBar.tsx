@@ -8,9 +8,13 @@ interface SearchBarProps {
   placeholder?: string;
   className?: string;
   onOptionsClick?: () => void;
+  onInputFocus?: () => void;
+  onInputBlur?: () => void;
+  onSaveToggle?: () => void;
+  starActive?: boolean;
 }
 
-function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick }: SearchBarProps) {
+function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick, onInputFocus, onInputBlur, onSaveToggle, starActive }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined;
   const query = isControlled ? value : internalQuery;
@@ -44,7 +48,21 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         placeholder={placeholder || 'Find people...'}
         className="search-input"
         autoFocus={autoFocus}
+        onFocus={onInputFocus}
+        onBlur={onInputBlur}
       />
+      {onSaveToggle && (
+        <button
+          type="button"
+          onClick={onSaveToggle}
+          className={`search-star-btn ${starActive ? 'active' : ''}`}
+          aria-label="Save search"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill={starActive ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+          </svg>
+        </button>
+      )}
       {onOptionsClick && (
         <button type="button" onClick={onOptionsClick} className="search-options-btn" aria-label="Search options">
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -96,6 +114,20 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         .search-input::placeholder {
           color: #999;
         }
+
+        .search-star-btn {
+          flex: 0 0 auto;
+          padding: 10px 4px;
+          background: transparent;
+          border: none;
+          color: #c4c8d0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          transition: color 0.15s;
+        }
+        .search-star-btn:hover { color: #f59e0b; }
+        .search-star-btn.active { color: #f59e0b; }
 
         .search-options-btn {
           flex: 0 0 auto;

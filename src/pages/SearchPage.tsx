@@ -4,6 +4,9 @@ import { useAuth } from 'react-oidc-context';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { haversineMiles, formatMiles } from '../utils/geo';
+import {
+  loadSearchHistory, recordSearch, deleteSearch, toggleSaveSearch, type SearchEntry,
+} from '../utils/searchHistory';
 
 import MapView from '../components/MapView';
 import SwipeView from '../components/SwipeView';
@@ -63,6 +66,9 @@ function SearchPage() {
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<SearchEntry[]>(() => loadSearchHistory('anon'));
+  const rowTouchRef = useRef<{ q: string; sx: number; sy: number } | null>(null);
   const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
   const [ageMin, setAgeMin] = useState<string>(() => localStorage.getItem('veri_ageMin') || '');
   const [ageMax, setAgeMax] = useState<string>(() => localStorage.getItem('veri_ageMax') || '');
@@ -163,6 +169,29 @@ function SearchPage() {
     const t = setInterval(resolve, 2000);
     return () => { alive = false; clearInterval(t); };
   }, [email, isConnected]);
+
+  // Per-account search history: keyed on the resolved identity
+  const historyId = myIdentity || 'anon';
+  useEffect(() => {
+    setSearchHistory(loadSearchHistory(historyId));
+  }, [historyId]);
+
+  // Suggestions: saved searches first, then recency; prefix-filtered by the input
+  const suggestions = useMemo(() => {
+    const prefix = inputValue.trim().toLowerCase();
+    return [...searchHistory]
+      .filter((e) => e.q.toLowerCase().startsWith(prefix))
+      .sort((a, b) => (b.saved ? 1 : 0) - (a.saved ? 1 : 0) || b.at - a.at);
+  }, [searchHistory, inputValue]);
+  const starActive = !!searchHistory.find((e) => e.q === inputValue.trim() && e.saved);
+
+  const runSearch = (q: string) => {
+    const query = q.trim();
+    if (!query) return;
+    setSearchHistory(recordSearch(historyId, query));
+    setShowSuggestions(false);
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
 
   // The active reference point: an explicitly set search location wins over the saved one
   const activePos = useMemo(
@@ -279,13 +308,63 @@ function SearchPage() {
           <SearchBar
             onSearch={(q) => {
               if (q.trim()) {
+                setSearchHistory(recordSearch(historyId, q));
+                setShowSuggestions(false);
                 navigate(`/search?q=${encodeURIComponent(q)}`);
               }
             }}
             value={inputValue}
             onChange={setInputValue}
-            onOptionsClick={() => setShowSearchOptions((v) => !v)}
+            onOptionsClick={() => { setShowSuggestions(false); setShowSearchOptions((v) => !v); }}
+            onInputFocus={() => { setShowSearchOptions(false); setShowSuggestions(true); }}
+            onInputBlur={() => { setTimeout(() => setShowSuggestions(false), 160); }}
+            onSaveToggle={() => {
+              const q = inputValue.trim();
+              if (!q) return;
+              setSearchHistory(toggleSaveSearch(historyId, q));
+            }}
+            starActive={starActive}
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="search-suggestions">
+              {suggestions.map((s) => (
+                <div
+                  key={s.q}
+                  className="search-suggestion"
+                  onTouchStart={(e) => {
+                    const t = e.touches[0];
+                    if (t) rowTouchRef.current = { q: s.q, sx: t.clientX, sy: t.clientY };
+                  }}
+                  onTouchEnd={(e) => {
+                    const g = rowTouchRef.current;
+                    rowTouchRef.current = null;
+                    if (!g || g.q !== s.q) return;
+                    const t = e.changedTouches[0];
+                    if (!t) return;
+                    const dx = t.clientX - g.sx;
+                    const dy = t.clientY - g.sy;
+                    // Swipe left/right deletes a NON-saved search
+                    if (!s.saved && Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                      setSearchHistory(deleteSearch(historyId, s.q));
+                    }
+                  }}
+                >
+                  <button className="suggestion-main" onClick={() => runSearch(s.q)}>
+                    {s.q}
+                  </button>
+                  <button
+                    className={`suggestion-star ${s.saved ? 'active' : ''}`}
+                    aria-label={s.saved ? 'Unsave search' : 'Save search'}
+                    onClick={() => setSearchHistory(toggleSaveSearch(historyId, s.q))}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill={s.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {showSearchOptions && (
             <div className="search-options-menu" ref={searchOptionsRef}>
               <div className="search-opt-section">
@@ -609,6 +688,25 @@ function SearchPage() {
         }
         .search-opt:hover { background: #f3f4f6; }
         .search-opt-value { color: #667eea; font-size: 13px; font-weight: 600; }
+        .search-suggestions {
+          position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+          background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+          width: min(420px, calc(100vw - 32px)); max-height: 340px; overflow-y: auto;
+          z-index: 210; padding: 6px;
+        }
+        .search-suggestion { display: flex; align-items: center; gap: 2px; border-radius: 8px; }
+        .search-suggestion:hover { background: #f3f4f6; }
+        .suggestion-main {
+          flex: 1; min-width: 0; text-align: left; background: none; border: none;
+          padding: 9px 10px; font-size: 14px; color: #333; cursor: pointer;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .suggestion-star {
+          background: none; border: none; color: #d1d5db; cursor: pointer;
+          padding: 8px 10px; display: flex; align-items: center;
+        }
+        .suggestion-star:hover { color: #f59e0b; }
+        .suggestion-star.active { color: #f59e0b; }
         .search-opt-section { padding: 10px 14px 4px; }
         .search-opt-label { display: block; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
         .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
