@@ -129,6 +129,11 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
       setScrim(0.25);
       if (descRef.current) descRef.current.scrollTop = 0;
     }
+    // Mobile snaps natively via CSS scroll-snap; only desktop needs the JS settle
+    if (!isDesktop) {
+      if (settleRef.current) clearTimeout(settleRef.current);
+      return;
+    }
     if (settleRef.current) clearTimeout(settleRef.current);
     settleRef.current = setTimeout(() => {
       const target = Math.max(0, Math.min(results.length - 1, Math.round(el.scrollLeft / cardW)));
@@ -364,6 +369,10 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
         @media (max-width: 767px) {
           .swipe-carrot { display: none; }
           .swipe-desc { max-height: 26vh; }
+          /* Mobile: swipe snaps to the next/prev card (CSS snap; desktop uses
+             free scroll + debounced settle so wheel scrolling stays smooth) */
+          .swipe-track { scroll-snap-type: x mandatory; }
+          .swipe-card { scroll-snap-align: start; }
         }
       `}</style>
     </div>
