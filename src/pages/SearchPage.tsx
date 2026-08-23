@@ -176,12 +176,14 @@ function SearchPage() {
     setSearchHistory(loadSearchHistory(historyId));
   }, [historyId]);
 
-  // Suggestions: saved searches first, then recency; prefix-filtered by the input
+  // Suggestions: saved searches first, then recency; prefix-filtered by the input.
+  // Only the top 5 render; the rest are reachable by scrolling the dropdown.
   const suggestions = useMemo(() => {
     const prefix = inputValue.trim().toLowerCase();
     return [...searchHistory]
       .filter((e) => e.q.toLowerCase().startsWith(prefix))
-      .sort((a, b) => (b.saved ? 1 : 0) - (a.saved ? 1 : 0) || b.at - a.at);
+      .sort((a, b) => (b.saved ? 1 : 0) - (a.saved ? 1 : 0) || b.at - a.at)
+      .slice(0, 5);
   }, [searchHistory, inputValue]);
   const starActive = !!searchHistory.find((e) => e.q === inputValue.trim() && e.saved);
 
@@ -700,7 +702,7 @@ function SearchPage() {
         .search-suggestions {
           position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
           background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-          width: min(420px, calc(100vw - 32px)); max-height: 340px; overflow-y: auto;
+          width: min(420px, calc(100vw - 32px)); max-height: 220px; overflow-y: auto;
           z-index: 210; padding: 6px;
         }
         .search-suggestion { display: flex; align-items: center; gap: 2px; border-radius: 8px; }

@@ -9,7 +9,7 @@ export interface SearchEntry {
   at: number;
 }
 
-export const SEARCH_HISTORY_CAP = 30;
+export const SEARCH_HISTORY_CAP = 100;
 
 const keyFor = (id: string) => `veri_search_history_${id}`;
 
