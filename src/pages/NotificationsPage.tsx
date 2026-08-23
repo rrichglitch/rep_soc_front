@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileByEmail } from '../utils/spacetime';
 import AuthActions from '../components/AuthActions';
@@ -20,21 +21,18 @@ function NotificationsPage() {
       identityRef.current = activeOrg.identity;
       return;
     }
-    if (!auth.isAuthenticated || !auth.user?.id_token) return;
+    const email = currentUserEmail(auth);
+    if (!email) return;
     try {
-      const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-      const email = payload.email;
-      if (email) {
-        getProfileByEmail(email).then(p => {
-          if (p) {
-            const id = p.identity.toHexString();
-            setCurrentIdentity(id);
-            identityRef.current = id;
-          }
-        });
-      }
+      getProfileByEmail(email).then(p => {
+        if (p) {
+          const id = p.identity.toHexString();
+          setCurrentIdentity(id);
+          identityRef.current = id;
+        }
+      });
     } catch {}
-  }, [auth.isAuthenticated, activeOrg]);
+  }, [activeOrg]);
 
   useEffect(() => {
     if (!currentIdentity) return;

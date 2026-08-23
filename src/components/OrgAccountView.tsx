@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
+import { currentUserEmail } from '../utils/authState';
+import { getOAuthSession } from '../utils/oauthSession';
 import { QRCodeSVG } from 'qrcode.react';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
@@ -44,11 +46,7 @@ function OrgAccountView() {
     }
     // Re-resolve my role each refresh (the member subscription may lag on first load)
     try {
-      let userEmail: string | undefined;
-      if (auth.user?.id_token) {
-        const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-        userEmail = payload.email;
-      }
+      const userEmail = currentUserEmail(auth);
       if (userEmail) {
         const profile = await getProfileByEmail(userEmail);
         if (profile) {
@@ -62,23 +60,16 @@ function OrgAccountView() {
 
   useEffect(() => {
     if (!org) return;
-    if (!auth.isAuthenticated || !auth.user) return;
-    let userEmail: string | undefined;
-    if (auth.user.id_token) {
-      try {
-        const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-        userEmail = payload.email;
-      } catch {}
-    }
+    const userEmail = currentUserEmail(auth);
     if (!userEmail) return;
     const load = async () => {
-      await connectToSpacetimeDB(userEmail!, auth.user!.access_token).catch(() => {});
+      await connectToSpacetimeDB(userEmail, getOAuthSession()?.stToken).catch(() => {});
       refreshOrg();
       const interval = setInterval(refreshOrg, 3000);
       return () => clearInterval(interval);
     };
     load();
-  }, [org?.id, auth.isAuthenticated, auth.user]);
+  }, [org?.id]);
 
   if (!org) return null;
 

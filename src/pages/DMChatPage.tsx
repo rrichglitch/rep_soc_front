@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
@@ -18,10 +19,9 @@ function DMChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.user?.id_token || !otherId) return;
+    if (!otherId) return;
     const init = async () => {
-      const payload = JSON.parse(atob(auth.user!.id_token!.split('.')[1]));
-      const email = payload.email;
+      const email = currentUserEmail(auth);
       if (email) {
         const p = await getProfileByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());
@@ -29,7 +29,7 @@ function DMChatPage() {
       setOtherProfile(await getProfileByIdentity(otherId));
     };
     init();
-  }, [auth.isAuthenticated, otherId]);
+  }, [otherId]);
 
   useEffect(() => {
     if (!currentIdentity || !otherId) return;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getFriendChats, getMyOrganizations, getOrganizationMembers, getProfileByEmail } from '../utils/spacetime';
@@ -15,32 +16,29 @@ function FriendsPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.user?.id_token) return;
+    const email = currentUserEmail(auth);
+    if (!email) return;
     try {
-      const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-      const email = payload.email;
-      if (email) {
-        getProfileByEmail(email).then(p => {
-          if (p) {
-            const id = p.identity.toHexString();
-            if (activeOrg) {
-              // Org account: list ALL individual members, org chats = its own org
-              setFriends(getOrganizationMembers(activeOrg.id));
-              setOrgs([{
-                id: activeOrg.id,
-                name: activeOrg.name,
-                picture: activeOrg.picture,
-                role: 'member',
-              }]);
-            } else {
-              setFriends(getFriendChats(id));
-              setOrgs(getMyOrganizations(id));
-            }
+      getProfileByEmail(email).then(p => {
+        if (p) {
+          const id = p.identity.toHexString();
+          if (activeOrg) {
+            // Org account: list ALL individual members, org chats = its own org
+            setFriends(getOrganizationMembers(activeOrg.id));
+            setOrgs([{
+              id: activeOrg.id,
+              name: activeOrg.name,
+              picture: activeOrg.picture,
+              role: 'member',
+            }]);
+          } else {
+            setFriends(getFriendChats(id));
+            setOrgs(getMyOrganizations(id));
           }
-        });
-      }
+        }
+      });
     } catch {}
-  }, [auth.isAuthenticated, activeOrg]);
+  }, [activeOrg]);
 
   const filteredFriends = useMemo(() => {
     if (!search.trim()) return friends;

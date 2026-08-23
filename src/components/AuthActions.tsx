@@ -3,22 +3,30 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthProfile } from '../hooks/useAuthProfile';
 import { getUnreadNotificationCount } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
+import { useAuth } from 'react-oidc-context';
+import { getOAuthSession } from '../utils/oauthSession';
 
 export default function AuthActions({ profileReplacement, hideChat }: { profileReplacement?: ReactNode; hideChat?: boolean }) {
   const { isLoggedIn, profilePicture } = useAuthProfile();
   const { activeOrg } = useOrg();
   const navigate = useNavigate();
+  const auth = useAuth();
   const [unreadNotifs, setUnreadNotifs] = useState(0);
 
+  // Identity hex of whoever we act as: org account > oauth session > legacy OIDC sub
+  const notifIdentity = activeOrg
+    ? activeOrg.identity
+    : (getOAuthSession()?.identityHex || auth.user?.profile?.sub || '');
+
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !notifIdentity) return;
     const update = () => {
-      setUnreadNotifs(getUnreadNotificationCount(activeOrg ? activeOrg.identity : ''));
+      setUnreadNotifs(getUnreadNotificationCount(notifIdentity));
     };
     update();
     const interval = setInterval(update, 5000);
     return () => clearInterval(interval);
-  }, [isLoggedIn, activeOrg]);
+  }, [isLoggedIn, notifIdentity]);
 
   if (!isLoggedIn) {
     // Single entry point — flow selection happens on the /login page

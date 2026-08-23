@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail, isSignedIn } from '../utils/authState';
+import { getOAuthSession } from '../utils/oauthSession';
 import ProfileHeader from '../components/ProfileHeader';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
@@ -44,23 +46,11 @@ function ProfilePage() {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = auth.user?.access_token;
-      if (!token || !auth.isAuthenticated) return;
-
-      // Extract email directly from auth token since ProfilePage is not inside PrivateRoute
-      let userEmail: string | undefined;
-      if (auth.user?.id_token) {
-        try {
-          const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-          userEmail = payload.email;
-        } catch (e) {
-          console.error('Failed to parse token:', e);
-        }
-      }
+      const userEmail = currentUserEmail(auth);
       if (!userEmail) return;
 
       try {
-        await connectToSpacetimeDB('', token);
+        await connectToSpacetimeDB('', getOAuthSession()?.stToken);
         for (let i = 0; i < 10; i++) {
           const profile = await getProfileByEmail(userEmail);
           if (profile) {
@@ -73,10 +63,10 @@ function ProfilePage() {
         console.error('Auth connect failed:', e);
       }
     };
-    if (auth.isAuthenticated && auth.user) {
+    if (isSignedIn(auth)) {
       initAuth();
     }
-  }, [auth.isAuthenticated, auth.user]);
+  }, []);
   
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { isSignedIn } from '../utils/authState';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
 import { haversineMiles, formatMiles } from '../utils/geo';
@@ -325,7 +326,7 @@ function SearchPage() {
   return (
     <div className="search-page">
       <TopBar
-        left={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<Link to={isSignedIn(auth) ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap">
           <SearchBar
             onSearch={(q) => {

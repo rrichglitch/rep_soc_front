@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail } from '../utils/authState';
+import { getOAuthSession } from '../utils/oauthSession';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
@@ -21,24 +23,17 @@ function OrgProfilePage() {
   const orgId = id ? BigInt(id) : 0n;
 
   useEffect(() => {
-    connectToSpacetimeDB('', auth.user?.access_token).catch(() => {});
+    connectToSpacetimeDB('', getOAuthSession()?.stToken).catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.user) return;
     if (!id) return;
-    const token = auth.user.access_token;
-    let userEmail: string | undefined;
-    if (auth.user.id_token) {
-      try {
-        const payload = JSON.parse(atob(auth.user.id_token.split('.')[1]));
-        userEmail = payload.email;
-      } catch {}
-    }
+    const userEmail = currentUserEmail(auth);
+    const token = auth.user?.access_token ?? getOAuthSession()?.stToken;
     if (!token || !userEmail) return;
 
     const load = async () => {
-      await connectToSpacetimeDB(userEmail!, token);
+      await connectToSpacetimeDB(userEmail, token);
       const orgData = getOrganizationById(orgId);
       if (orgData) {
         setOrg(orgData);
@@ -52,7 +47,7 @@ function OrgProfilePage() {
       setIsLoading(false);
     };
     load();
-  }, [auth.isAuthenticated, auth.user, id]);
+  }, [id]);
 
   const handleJoinRequest = async () => {
     if (!orgId) return;

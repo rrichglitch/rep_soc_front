@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from 'react-oidc-context';
+import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
@@ -20,10 +21,9 @@ function OrgChatPage() {
   const orgId = id ? BigInt(id) : 0n;
 
   useEffect(() => {
-    if (!auth.isAuthenticated || !auth.user?.id_token || !id) return;
+    if (!id) return;
     const init = async () => {
-      const payload = JSON.parse(atob(auth.user!.id_token!.split('.')[1]));
-      const email = payload.email;
+      const email = currentUserEmail(auth);
       if (email) {
         const p = await getProfileByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());
@@ -32,7 +32,7 @@ function OrgChatPage() {
       if (org) setOrgName(org.name);
     };
     init();
-  }, [auth.isAuthenticated, id]);
+  }, [id]);
 
   useEffect(() => {
     if (!orgId) return;
