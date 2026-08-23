@@ -352,6 +352,15 @@ function SearchPage() {
                   <button className="suggestion-main" onClick={() => runSearch(s.q)}>
                     {s.q}
                   </button>
+                  {!s.saved && (
+                    <button
+                      className="suggestion-x"
+                      aria-label="Delete search"
+                      onClick={() => setSearchHistory(deleteSearch(historyId, s.q))}
+                    >
+                      ✕
+                    </button>
+                  )}
                   <button
                     className={`suggestion-star ${s.saved ? 'active' : ''}`}
                     aria-label={s.saved ? 'Unsave search' : 'Save search'}
@@ -707,6 +716,15 @@ function SearchPage() {
         }
         .suggestion-star:hover { color: #f59e0b; }
         .suggestion-star.active { color: #f59e0b; }
+        .suggestion-x {
+          background: none; border: none; color: #c4c8d0; cursor: pointer;
+          padding: 8px 2px 8px 6px; font-size: 12px; visibility: hidden;
+          display: flex; align-items: center;
+        }
+        .suggestion-x:hover { color: #dc2626; }
+        @media (min-width: 768px) {
+          .search-suggestion:hover .suggestion-x { visibility: visible; }
+        }
         .search-opt-section { padding: 10px 14px 4px; }
         .search-opt-label { display: block; font-size: 12px; font-weight: 600; color: #999; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
         .filter-pills { display: flex; gap: 6px; flex-wrap: wrap; }
