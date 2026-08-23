@@ -36,11 +36,14 @@ function persist(id: string, list: SearchEntry[]) {
 }
 
 // Record a used search at the front of the history (deduped, capped at 30).
+// The saved flag survives re-running a saved search.
 export function recordSearch(id: string, q: string): SearchEntry[] {
-  const list = loadSearchHistory(id).filter((e) => e.q !== q);
-  list.unshift({ q, saved: false, at: Date.now() });
-  persist(id, list);
-  return list;
+  const list = loadSearchHistory(id);
+  const saved = list.find((e) => e.q === q)?.saved ?? false;
+  const filtered = list.filter((e) => e.q !== q);
+  filtered.unshift({ q, saved, at: Date.now() });
+  persist(id, filtered);
+  return filtered;
 }
 
 // Remove a search from the history entirely (saved or not).
