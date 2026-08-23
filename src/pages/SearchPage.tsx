@@ -284,7 +284,6 @@ function SearchPage() {
             }}
             value={inputValue}
             onChange={setInputValue}
-            autoFocus
             onOptionsClick={() => setShowSearchOptions((v) => !v)}
           />
           {showSearchOptions && (
