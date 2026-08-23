@@ -39,14 +39,24 @@ function SearchPage() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inputValue, setInputValue] = useState(query);
-  // Sync the bar whenever the URL query changes (suggestion clicks, submits)
-  useEffect(() => { setInputValue(query); }, [query]);
-
-  // Typing/clearing while the bar is focused reopens the dropdown (submitting a
-  // search closes it, but the input stays focused — the next keystroke should
-  // bring the suggestions back).
+  // Sync the bar whenever the URL query changes (suggestion clicks, submits).
+  // The flag marks changes that came from a performed search so the reopen
+  // effect below can tell them apart from manual edits.
+  const urlSyncRef = useRef(false);
   useEffect(() => {
-    if (inputFocusedRef.current) setShowSuggestions(true);
+    if (inputValue !== query) {
+      urlSyncRef.current = true;
+      setInputValue(query);
+    }
+  }, [query, inputValue]);
+
+  // Manual edits while the bar is focused reopen the dropdown (a performed
+  // search hides it; the input stays focused, so the next keystroke brings the
+  // suggestions back). URL-synced changes never reopen it.
+  useEffect(() => {
+    const fromSync = urlSyncRef.current;
+    urlSyncRef.current = false;
+    if (inputFocusedRef.current && !fromSync) setShowSuggestions(true);
   }, [inputValue]);
   const [isConnected, setIsConnected] = useState(false);
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
