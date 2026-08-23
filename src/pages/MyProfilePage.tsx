@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation, disconnectFromSpacetimeDB } from '../utils/spacetime';
+import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
@@ -39,10 +39,23 @@ interface StoryPost {
 }
 
 function MyProfilePage() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const { email } = useApp();
   const { activeOrg } = useOrg();
+
+  const handleLogout = () => {
+    const oauthSession = getOAuthSession();
+    clearOAuthSession();
+    disconnectFromSpacetimeDB();
+    if (oauthSession) {
+      // OAuth-backed session — returning to the login page is enough
+      navigate('/', { replace: true });
+    } else {
+      // Legacy SpacetimeCloud-OIDC session — full OIDC sign-out
+      window.location.href = '/';
+    }
+  };
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showQR, setShowQR] = useState(false);
@@ -197,7 +210,7 @@ function MyProfilePage() {
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        right={<AuthActions profileReplacement={<button onClick={() => auth.signoutRedirect()} className="topbar-signin" style={{background:"#dc2626"}}>Log Out</button>} />}
+        right={<AuthActions profileReplacement={<button onClick={handleLogout} className="topbar-signin" style={{background:"#dc2626"}}>Log Out</button>} />}
         absoluteCenter
       />
 

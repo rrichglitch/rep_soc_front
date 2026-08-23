@@ -123,6 +123,13 @@ export const Notification = __t.object("Notification", {
 });
 export type Notification = __Infer<typeof Notification>;
 
+export const OAuthClaimResult = __t.object("OAuthClaimResult", {
+  success: __t.bool(),
+  alreadyOwned: __t.bool(),
+  error: __t.option(__t.string()),
+});
+export type OAuthClaimResult = __Infer<typeof OAuthClaimResult>;
+
 export const OrgMemberRequest = __t.object("OrgMemberRequest", {
   id: __t.u64(),
   orgId: __t.u64(),

@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
 import { AUTH_CONFIG } from './config';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, claimProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
@@ -68,6 +69,46 @@ function AuthCallback({ children }: AuthCallbackProps) {
 
   useEffect(() => {
     const initAuth = async () => {
+      // OAuth-backed session (Google/Facebook via relay) — takes precedence
+      const oauthSession = getOAuthSession();
+      if (oauthSession) {
+        console.log('Authenticated via OAuth relay:', oauthSession.provider);
+        setIdentity({ toHexString: () => oauthSession.identityHex } as unknown as Identity);
+        setEmail(oauthSession.email);
+
+        try {
+          await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
+
+          let profileExists = false;
+          for (let i = 0; i < 30; i++) {
+            profileExists = await checkProfileExistsByEmail(oauthSession.email);
+            if (profileExists) break;
+            await new Promise(resolve => setTimeout(resolve, 200));
+          }
+
+          console.log('Profile exists in DB:', profileExists);
+          setHasProfileState(profileExists);
+
+          if (!profileExists && !window.location.pathname.includes('/register')) {
+            console.log('No profile found, redirecting to register');
+            setIsLoading(false);
+            navigate('/register', { replace: true });
+            return;
+          }
+        } catch (e) {
+          console.error('Error connecting to SpacetimeDB:', e);
+          // Session token is stale/invalid — drop it and go to the login page
+          clearOAuthSession();
+          disconnectFromSpacetimeDB();
+          setIsLoading(false);
+          navigate('/', { replace: true });
+          return;
+        }
+
+        setIsLoading(false);
+        return;
+      }
+
       if (!auth.isAuthenticated || !auth.user) {
         setIsLoading(false);
         return;
@@ -139,7 +180,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
     initAuth();
 
     return () => {
-      if (!auth.isAuthenticated) {
+      if (!auth.isAuthenticated && !getOAuthSession()) {
         disconnectFromSpacetimeDB();
       }
     };
@@ -149,7 +190,7 @@ function AuthCallback({ children }: AuthCallbackProps) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!auth.isAuthenticated) {
+  if (!auth.isAuthenticated && !getOAuthSession()) {
     return <Navigate to="/" state={{ from: location }} replace />;
   }
 
@@ -167,7 +208,7 @@ function PrivateRoute({ children }: { children: ReactNode }) {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!auth.isAuthenticated) {
+  if (!auth.isAuthenticated && !getOAuthSession()) {
     return <Navigate to="/" replace />;
   }
 

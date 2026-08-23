@@ -10,6 +10,7 @@ import AcceptFriendRequestReducer from "../accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "../accept_org_member_reducer";
 import AdminDeleteProfileReducer from "../admin_delete_profile_reducer";
 import AdminSetBirthdayReducer from "../admin_set_birthday_reducer";
+import AdminSetGenderReducer from "../admin_set_gender_reducer";
 import AdminSetProReducer from "../admin_set_pro_reducer";
 import AdminUpdateProfileReducer from "../admin_update_profile_reducer";
 import CancelFriendRequestReducer from "../cancel_friend_request_reducer";
@@ -49,6 +50,7 @@ export type AcceptFriendRequestParams = __Infer<typeof AcceptFriendRequestReduce
 export type AcceptOrgMemberParams = __Infer<typeof AcceptOrgMemberReducer>;
 export type AdminDeleteProfileParams = __Infer<typeof AdminDeleteProfileReducer>;
 export type AdminSetBirthdayParams = __Infer<typeof AdminSetBirthdayReducer>;
+export type AdminSetGenderParams = __Infer<typeof AdminSetGenderReducer>;
 export type AdminSetProParams = __Infer<typeof AdminSetProReducer>;
 export type AdminUpdateProfileParams = __Infer<typeof AdminUpdateProfileReducer>;
 export type CancelFriendRequestParams = __Infer<typeof CancelFriendRequestReducer>;

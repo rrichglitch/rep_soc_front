@@ -5,6 +5,9 @@ export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
 export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
 export const SPACETIMEDB_MODULE = 'repsoc';
 
+// Our own OAuth relay (Google + Facebook) — replaces SpacetimeCloud OIDC
+export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://auth.veri.social';
+
 const getOrigin = () => {
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;

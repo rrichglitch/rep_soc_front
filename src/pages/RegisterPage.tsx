@@ -7,6 +7,7 @@ import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
 import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
+import { getOAuthSession } from '../utils/oauthSession';
 
 const PENDING_REGISTRATION_KEY = 'pending_registration';
 
@@ -62,6 +63,16 @@ function RegisterPage() {
         }
       } catch (e) {
         console.error('Failed to restore pending registration:', e);
+      }
+    }
+
+    // New OAuth users: prefill name and picture from the provider profile
+    const oauthSession = getOAuthSession();
+    if (oauthSession) {
+      if (oauthSession.name) setFullName(oauthSession.name);
+      if (oauthSession.picture && !storedPictureBase64) {
+        setPicturePreview(oauthSession.picture);
+        setStoredPictureBase64(oauthSession.picture);
       }
     }
   }, []);
