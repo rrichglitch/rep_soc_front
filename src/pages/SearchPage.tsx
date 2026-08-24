@@ -33,12 +33,17 @@ function SearchPage() {
   // The flag marks changes that came from a performed search so the reopen
   // effect below can tell them apart from manual edits.
   const urlSyncRef = useRef(false);
+  const prevQueryRef = useRef(query);
+  // Sync the bar ONLY when the URL query actually changes (suggestion clicks,
+  // submits). Manual typing changes inputValue without touching query, so it
+  // is never clobbered back to the previous search.
   useEffect(() => {
-    if (inputValue !== query) {
+    if (query !== prevQueryRef.current) {
+      prevQueryRef.current = query;
       urlSyncRef.current = true;
       setInputValue(query);
     }
-  }, [query, inputValue]);
+  }, [query]);
 
   // Manual edits while the bar is focused reopen the dropdown (a performed
   // search hides it; the input stays focused, so the next keystroke brings the
@@ -257,7 +262,7 @@ function SearchPage() {
 
     searchQuery();
     return () => { cancelled = true; };
-  }, [query, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
+  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
 
   return (
     <div className="search-page">
