@@ -158,9 +158,16 @@ export async function runSearch(
 ): Promise<SearchResult[]> {
   const provider = getSearchProvider();
 
+  // Product rule: anonymous callers only see organizations. Enforced here at
+  // the provider so no caller (or stale UI state) can widen anonymous scope.
+  const filters: SearchFilters =
+    opts.tier === 'anon'
+      ? { ...opts.filters, showIndividuals: false, showOrganizations: true }
+      : opts.filters;
+
   if (provider === 'gpu') {
     try {
-      const gpuResults = await callGpuSearch(query, opts.filters);
+      const gpuResults = await callGpuSearch(query, filters);
       if (gpuResults.length > 0) return decorate(gpuResults, opts.activePos);
       // Empty semantic results legitimately happen; still fall through to
       // keyword so exact matches are never missed.
@@ -169,7 +176,7 @@ export async function runSearch(
     }
   }
 
-  const { results } = await keywordSearch(query, opts.filters);
+  const { results } = await keywordSearch(query, filters);
   return decorate(results, opts.activePos);
 }
 

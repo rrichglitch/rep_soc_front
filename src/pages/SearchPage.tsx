@@ -54,6 +54,7 @@ function SearchPage() {
     if (inputFocusedRef.current && !fromSync) setShowSuggestions(true);
   }, [inputValue]);
   const [isConnected, setIsConnected] = useState(false);
+  const signedIn = isSignedIn();
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
   const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
@@ -343,24 +344,33 @@ function SearchPage() {
               <div className="search-opt-section">
                 <span className="search-opt-label">Show</span>
                 <div className="filter-pills">
-                  <label className={`filter-pill ${showIndividuals ? 'selected' : ''}`}>
+                  <label
+                    className={`filter-pill ${signedIn && showIndividuals ? 'selected' : ''}${!signedIn ? ' disabled' : ''}`}
+                    style={!signedIn ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                  >
                     <input
                       type="checkbox"
-                      checked={showIndividuals}
+                      checked={signedIn ? showIndividuals : false}
                       onChange={(e) => setShowIndividuals(e.target.checked)}
+                      disabled={!signedIn}
                       style={{ display: 'none' }}
                     />
                     Individuals
                   </label>
-                  <label className={`filter-pill ${showOrganizations ? 'selected' : ''}`}>
+                  <label
+                    className={`filter-pill ${signedIn ? (showOrganizations ? 'selected' : '') : 'selected'}${!signedIn ? ' disabled' : ''}`}
+                    style={!signedIn ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                  >
                     <input
                       type="checkbox"
-                      checked={showOrganizations}
+                      checked={signedIn ? showOrganizations : true}
                       onChange={(e) => setShowOrganizations(e.target.checked)}
+                      disabled={!signedIn}
                       style={{ display: 'none' }}
                     />
                     Organizations
                   </label>
+                  {!signedIn && <span className="search-opt-note">Sign in to search people</span>}
                 </div>
               </div>
               <button
@@ -380,6 +390,8 @@ function SearchPage() {
                   {nearbyFirst ? '✓ ' : ''}Nearby First
                 </button>
               )}
+              {signedIn && (
+                <>
               <div className="search-opt-section">
                 <span className="search-opt-label">Gender</span>
                 <div className="filter-pills">
@@ -418,6 +430,8 @@ function SearchPage() {
                   />
                 </div>
               </div>
+              </>
+              )}
             </div>
           )}
         </div>}
