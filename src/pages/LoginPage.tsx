@@ -37,7 +37,12 @@ function LoginPage() {
             Continue with Google
           </button>
 
-          <button onClick={() => startOAuth('facebook')} className="login-button oauth facebook">
+          <button
+            onClick={() => startOAuth('facebook')}
+            disabled
+            className="login-button oauth facebook disabled"
+            title="Facebook sign-in is not available yet"
+          >
             <svg className="oauth-icon" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.68.24 2.68.24v2.95h-1.51c-1.49 0-1.95.93-1.95 1.87V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
             </svg>
@@ -122,6 +127,13 @@ function LoginPage() {
         .login-button.oauth:hover {
           background: #f7f8fa;
           border-color: #c6c9ce;
+        }
+
+        .login-button.disabled {
+          opacity: 0.45;
+          filter: grayscale(0.9);
+          cursor: not-allowed;
+          pointer-events: none;
         }
 
         .divider span {
