@@ -1,25 +1,19 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { getOAuthSession } from '../utils/oauthSession';
 import { AUTH_RELAY_URL } from '../config';
 
 function LoginPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
   useEffect(() => {
-    if (auth.isAuthenticated || getOAuthSession()) {
+    if (getOAuthSession()) {
       navigate(from, { replace: true });
     }
-  }, [auth.isAuthenticated, from, navigate]);
-
-  const handleLogin = () => {
-    auth.signinRedirect();
-  };
+  }, [from, navigate]);
 
   const startOAuth = (provider: 'google' | 'facebook') => {
     const app = window.location.origin;
@@ -48,12 +42,6 @@ function LoginPage() {
               <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.88 11.85v-8.38H7.08V12h3.04V9.36c0-3 1.79-4.67 4.53-4.67 1.31 0 2.68.24 2.68.24v2.95h-1.51c-1.49 0-1.95.93-1.95 1.87V12h3.33l-.53 3.47h-2.8v8.38A12 12 0 0 0 24 12z" />
             </svg>
             Continue with Facebook
-          </button>
-
-          <div className="divider"><span>or</span></div>
-
-          <button onClick={handleLogin} className="login-button legacy">
-            Sign in with SpacetimeDB
           </button>
         </div>
 
@@ -134,29 +122,6 @@ function LoginPage() {
         .login-button.oauth:hover {
           background: #f7f8fa;
           border-color: #c6c9ce;
-        }
-
-        .login-button.legacy {
-          background: #667eea;
-          color: white;
-        }
-
-        .login-button.legacy:hover {
-          background: #5568d3;
-          transform: translateY(-1px);
-        }
-
-        .divider {
-          display: flex;
-          align-items: center;
-          margin: 4px 0;
-        }
-
-        .divider::before, .divider::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: #e0e0e0;
         }
 
         .divider span {

@@ -3,20 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthProfile } from '../hooks/useAuthProfile';
 import { getUnreadNotificationCount } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
-import { useAuth } from 'react-oidc-context';
-import { getOAuthSession } from '../utils/oauthSession';
+import { currentUserIdentityHex } from '../utils/authState';
 
 export default function AuthActions({ profileReplacement, hideChat }: { profileReplacement?: ReactNode; hideChat?: boolean }) {
   const { isLoggedIn, profilePicture } = useAuthProfile();
   const { activeOrg } = useOrg();
   const navigate = useNavigate();
-  const auth = useAuth();
   const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   // Identity hex of whoever we act as: org account > oauth session > legacy OIDC sub
   const notifIdentity = activeOrg
     ? activeOrg.identity
-    : (getOAuthSession()?.identityHex || auth.user?.profile?.sub || '');
+    : (currentUserIdentityHex() || '');
 
   useEffect(() => {
     if (!isLoggedIn || !notifIdentity) return;

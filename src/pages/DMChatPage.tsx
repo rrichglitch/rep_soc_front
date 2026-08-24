@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
@@ -10,7 +9,6 @@ import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileB
 function DMChatPage() {
   const { activeOrg } = useOrg();
   const { identity: otherId } = useParams<{ identity: string }>();
-  const auth = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<any[]>([]);
   const [currentIdentity, setCurrentIdentity] = useState<string | null>(null);
@@ -21,7 +19,7 @@ function DMChatPage() {
   useEffect(() => {
     if (!otherId) return;
     const init = async () => {
-      const email = currentUserEmail(auth);
+      const email = currentUserEmail();
       if (email) {
         const p = await getProfileByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());

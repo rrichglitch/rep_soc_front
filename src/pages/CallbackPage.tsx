@@ -1,23 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { connectToSpacetimeDB, checkProfileExistsByEmail } from '../utils/spacetime';
 import { setOAuthSession } from '../utils/oauthSession';
 import { oauthClaimProfile } from '../utils/oauthRelay';
 
 function CallbackPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const hasRedirected = useRef(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  console.log('CallbackPage rendered, auth:', {
-    isAuthenticated: auth.isAuthenticated,
-    isLoading: auth.isLoading,
-    error: auth.error,
-    hash: window.location.hash.slice(0, 80),
-    search: window.location.search.slice(0, 80),
-  });
+
 
   // OAuth relay callback: /callback#st_token=..&provider=..&email=..&...
   const handleOAuthCallback = async (params: URLSearchParams) => {
@@ -144,84 +136,9 @@ function CallbackPage() {
       return;
     }
 
-    const handleAuthSuccess = async () => {
-      const idToken = auth.user?.id_token;
-      const accessToken = auth.user?.access_token;
 
-      if (!idToken || !accessToken) {
-        console.error('No tokens found in auth.user:', auth.user);
-        hasRedirected.current = true;
-        navigate('/register', { replace: true });
-        return;
-      }
 
-      try {
-        const payload = JSON.parse(atob(idToken.split('.')[1]));
-        const userEmail = payload.email;
-
-        if (!userEmail) {
-          console.error('No email in token payload:', payload);
-          hasRedirected.current = true;
-          navigate('/register', { replace: true });
-          return;
-        }
-
-        await connectToSpacetimeDB(userEmail, accessToken);
-
-        let profileExists = false;
-        for (let i = 0; i < 10; i++) {
-          profileExists = await checkProfileExistsByEmail(userEmail);
-          if (profileExists) break;
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-
-        hasRedirected.current = true;
-        if (!profileExists) {
-          navigate('/register', { replace: true });
-        } else {
-          navigate('/home', { replace: true });
-        }
-      } catch (e) {
-        console.error('Error during callback:', e);
-        hasRedirected.current = true;
-        navigate('/register', { replace: true });
-      }
-    };
-
-    // Timeout fallback - redirect to register after 10 seconds
-    const timeoutId = setTimeout(() => {
-      if (!hasRedirected.current) {
-        console.log('Callback timeout, redirecting to register');
-        hasRedirected.current = true;
-        navigate('/register', { replace: true });
-      }
-    }, 10000);
-
-    if (auth.isAuthenticated && auth.user) {
-      clearTimeout(timeoutId);
-      handleAuthSuccess();
-      return;
-    }
-
-    if (auth.error) {
-      console.error('Auth error:', auth.error);
-      clearTimeout(timeoutId);
-      hasRedirected.current = true;
-      setErrorMsg(auth.error.message || 'Authentication failed. Please try again.');
-      return;
-    }
-
-    const hasCallbackParams = searchParams.has('code') || searchParams.has('state');
-
-    if (!auth.isLoading && !auth.isAuthenticated && !hasCallbackParams) {
-      console.log('Auth failed - not loading, not authenticated, and no callback params');
-      clearTimeout(timeoutId);
-      hasRedirected.current = true;
-      navigate('/', { replace: true });
-    }
-
-    return () => clearTimeout(timeoutId);
-  }, [auth.isAuthenticated, auth.isLoading, auth.error, auth.user, navigate]);
+  }, [navigate]);
 
   return (
     <div className="callback-page">

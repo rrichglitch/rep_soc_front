@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail, isSignedIn } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import ProfileHeader from '../components/ProfileHeader';
@@ -26,7 +25,6 @@ interface StoryPost {
 
 function ProfilePage() {
   const { identity: profileIdentity } = useParams<{ identity: string }>();
-  const auth = useAuth();
   const navigate = useNavigate();
 
   const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
@@ -46,7 +44,7 @@ function ProfilePage() {
 
   useEffect(() => {
     const initAuth = async () => {
-      const userEmail = currentUserEmail(auth);
+      const userEmail = currentUserEmail();
       if (!userEmail) return;
 
       try {
@@ -63,7 +61,7 @@ function ProfilePage() {
         console.error('Auth connect failed:', e);
       }
     };
-    if (isSignedIn(auth)) {
+    if (isSignedIn()) {
       initAuth();
     }
   }, []);
@@ -225,7 +223,7 @@ function ProfilePage() {
     <div className="profile-page">
       <TopBar
         left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
-        center={<Link to={auth.isAuthenticated ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        center={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         absoluteCenter
         right={<AuthActions />}
       />

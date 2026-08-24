@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -8,7 +7,6 @@ import { getFriendChats, getMyOrganizations, getOrganizationMembers, getProfileB
 import { useOrg } from '../contexts/OrgContext';
 
 function FriendsPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
   const [friends, setFriends] = useState<any[]>([]);
@@ -16,7 +14,7 @@ function FriendsPage() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const email = currentUserEmail(auth);
+    const email = currentUserEmail();
     if (!email) return;
     try {
       getProfileByEmail(email).then(p => {

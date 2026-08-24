@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
 import { currentUserEmail } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
@@ -15,7 +14,6 @@ import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
 function OrgAccountView() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const { activeOrg, logoutOrg } = useOrg();
   const org = activeOrg as ActiveOrg;
@@ -46,7 +44,7 @@ function OrgAccountView() {
     }
     // Re-resolve my role each refresh (the member subscription may lag on first load)
     try {
-      const userEmail = currentUserEmail(auth);
+      const userEmail = currentUserEmail();
       if (userEmail) {
         const profile = await getProfileByEmail(userEmail);
         if (profile) {
@@ -60,7 +58,7 @@ function OrgAccountView() {
 
   useEffect(() => {
     if (!org) return;
-    const userEmail = currentUserEmail(auth);
+    const userEmail = currentUserEmail();
     if (!userEmail) return;
     const load = async () => {
       await connectToSpacetimeDB(userEmail, getOAuthSession()?.stToken).catch(() => {});

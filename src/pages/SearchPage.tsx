@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { isSignedIn } from '../utils/authState';
 import { useApp } from '../App';
 import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
@@ -35,7 +34,6 @@ function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
-  const auth = useAuth();
   const { email } = useApp();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -326,7 +324,7 @@ function SearchPage() {
   return (
     <div className="search-page">
       <TopBar
-        left={<Link to={isSignedIn(auth) ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap">
           <SearchBar
             onSearch={(q) => {

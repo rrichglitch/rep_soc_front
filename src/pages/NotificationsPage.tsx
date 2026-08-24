@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileByEmail } from '../utils/spacetime';
@@ -8,7 +7,6 @@ import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
 
 function NotificationsPage() {
-  const auth = useAuth();
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
   const [notifs, setNotifs] = useState<any[]>([]);
@@ -21,7 +19,7 @@ function NotificationsPage() {
       identityRef.current = activeOrg.identity;
       return;
     }
-    const email = currentUserEmail(auth);
+    const email = currentUserEmail();
     if (!email) return;
     try {
       getProfileByEmail(email).then(p => {

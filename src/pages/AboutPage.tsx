@@ -6,7 +6,8 @@ import { useAuthProfile } from '../hooks/useAuthProfile';
 
 function AboutPage() {
   const navigate = useNavigate();
-  const { isLoggedIn, handleSignIn } = useAuthProfile();
+  const { isLoggedIn } = useAuthProfile();
+  const handleSignIn = () => navigate('/login');
 
   const handleSearch = (query: string) => {
     if (query.trim()) {

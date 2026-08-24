@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import TopBar from '../components/TopBar';
@@ -10,7 +9,6 @@ import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, conn
 
 function OrgProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const auth = useAuth();
   const navigate = useNavigate();
   const { loginAsOrg, activeOrg, logoutOrg } = useOrg();
 
@@ -28,8 +26,8 @@ function OrgProfilePage() {
 
   useEffect(() => {
     if (!id) return;
-    const userEmail = currentUserEmail(auth);
-    const token = auth.user?.access_token ?? getOAuthSession()?.stToken;
+    const userEmail = currentUserEmail();
+    const token = getOAuthSession()?.stToken;
     if (!token || !userEmail) return;
 
     const load = async () => {

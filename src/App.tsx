@@ -6,12 +6,9 @@ import {
   Route,
   Navigate,
   useLocation,
-  useNavigate,
 } from 'react-router-dom';
-import { AuthProvider, useAuth } from 'react-oidc-context';
 import type { Identity } from 'spacetimedb';
-import { AUTH_CONFIG } from './config';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, claimProfile, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
 import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
 
@@ -51,14 +48,11 @@ const AppContext = createContext<AppContextType>({
 // eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext);
 
-interface AuthCallbackProps {
-  children: (isAuthenticated: boolean) => ReactNode;
-}
-
-function AuthCallback({ children }: AuthCallbackProps) {
-  const auth = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+// Wraps signed-in-only subtrees. Resolves the OAuth session ONCE and holds
+// children in a loading state until the SpacetimeDB connection is ready —
+// so pages never render "logged out" and then snap to logged-in.
+function AuthGate({ children }: { children: ReactNode }) {
+  const location = window.location.pathname;
   const [isLoading, setIsLoading] = useState(true);
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -69,166 +63,83 @@ function AuthCallback({ children }: AuthCallbackProps) {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const initAuth = async () => {
-      // OAuth-backed session (Google/Facebook via relay) — takes precedence
       const oauthSession = getOAuthSession();
-      if (oauthSession) {
-        console.log('Authenticated via OAuth relay:', oauthSession.provider);
-        setIdentity({ toHexString: () => oauthSession.identityHex } as unknown as Identity);
-        setEmail(oauthSession.email);
+      if (!oauthSession) {
+        setIsLoading(false);
+        return;
+      }
 
-        try {
-          await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
+      console.log('Authenticated via OAuth relay:', oauthSession.provider);
+      setIdentity({ toHexString: () => oauthSession.identityHex } as unknown as Identity);
+      setEmail(oauthSession.email);
 
-          let profileExists = false;
-          for (let i = 0; i < 30; i++) {
-            profileExists = await checkProfileExistsByEmail(oauthSession.email);
-            if (profileExists) break;
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
+      try {
+        await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
 
-          console.log('Profile exists in DB:', profileExists);
-          setHasProfileState(profileExists);
+        let profileExists = false;
+        for (let i = 0; i < 30; i++) {
+          if (cancelled) return;
+          profileExists = await checkProfileExistsByEmail(oauthSession.email);
+          if (profileExists) break;
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
 
-          if (!profileExists && !window.location.pathname.includes('/register')) {
-            console.log('No profile found, redirecting to register');
-            setIsLoading(false);
-            navigate('/register', { replace: true });
-            return;
-          }
-        } catch (e) {
-          console.error('Error connecting to SpacetimeDB:', e);
-          // Session token is stale/invalid — drop it and go to the login page
-          clearOAuthSession();
-          disconnectFromSpacetimeDB();
+        console.log('Profile exists in DB:', profileExists);
+        setHasProfileState(profileExists);
+
+        if (!profileExists && !location.includes('/register')) {
+          console.log('No profile found, redirecting to register');
           setIsLoading(false);
-          navigate('/', { replace: true });
+          window.location.replace('/register');
           return;
         }
-
+      } catch (e) {
+        console.error('Error connecting to SpacetimeDB:', e);
+        // Session token is stale/invalid — drop it and go to the landing page
+        clearOAuthSession();
+        disconnectFromSpacetimeDB();
         setIsLoading(false);
+        window.location.replace('/');
         return;
       }
 
-      if (!auth.isAuthenticated || !auth.user) {
-        setIsLoading(false);
-        return;
-      }
-
-      console.log('Authenticated via OIDC:', auth.user);
-
-      const idToken = auth.user?.id_token;
-      const accessToken = auth.user?.access_token;
-
-      if (idToken && accessToken) {
-        try {
-          const payload = JSON.parse(atob(idToken.split('.')[1]));
-          const sub = payload.sub;
-          const userEmail = payload.email;
-
-          console.log('Identity from token:', sub);
-          console.log('Email from token:', userEmail);
-
-          if (!userEmail) {
-            console.error('No email in token. Token payload:', payload);
-            setIsLoading(false);
-            return;
-          }
-
-          const userIdentity = { toHexString: () => sub } as unknown as Identity;
-          setIdentity(userIdentity);
-          setEmail(userEmail);
-
-          try {
-            await connectToSpacetimeDB(userEmail, accessToken);
-
-            let profileExists = false;
-            for (let i = 0; i < 30; i++) {
-              profileExists = await checkProfileExistsByEmail(userEmail);
-              if (profileExists) break;
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-
-            console.log('Profile exists in DB:', profileExists);
-            setHasProfileState(profileExists);
-            if (profileExists) { try { await claimProfile(userEmail); } catch (e) { /* non-fatal */ } }
-
-            if (!profileExists && !window.location.pathname.includes('/register')) {
-              console.log('No profile found, redirecting to register');
-              setEmail(userEmail);
-              setIsLoading(false);
-              navigate('/register', { replace: true });
-              return;
-            }
-          } catch (e) {
-            console.error('Error connecting to SpacetimeDB:', e);
-            setEmail(userEmail);
-            setIsLoading(false);
-            navigate('/register', { replace: true });
-            return;
-          }
-        } catch (e) {
-          console.error('Failed to parse token:', e);
-          setIdentity(null as unknown as Identity);
-        }
-      } else {
-        setIdentity(null as unknown as Identity);
-      }
-
-      setIsLoading(false);
+      if (!cancelled) setIsLoading(false);
     };
 
     initAuth();
+    return () => { cancelled = true; };
+  }, [location]);
 
-    return () => {
-      if (!auth.isAuthenticated && !getOAuthSession()) {
-        disconnectFromSpacetimeDB();
-      }
-    };
-  }, [auth.isAuthenticated, auth.user, navigate]);
-
-  if (isLoading) {
-    return <div className="loading">Loading...</div>;
+  // Hold the whole subtree in the loading shell until session + profile state
+  // are resolved. This is what eliminates the logged-out → logged-in flash.
+  if (isLoading || getOAuthSession()) {
+    if (isLoading) {
+      return <div className="loading">Loading...</div>;
+    }
   }
 
-  if (!auth.isAuthenticated && !getOAuthSession()) {
-    return <Navigate to="/" state={{ from: location }} replace />;
-  }
-
-  return (
-    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile }}>
-      {children(true)}
-    </AppContext.Provider>
-  );
-}
-
-function PrivateRoute({ children }: { children: ReactNode }) {
-  const auth = useAuth();
-
-  if (auth.isLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  if (!auth.isAuthenticated && !getOAuthSession()) {
+  if (!getOAuthSession()) {
     return <Navigate to="/" replace />;
   }
 
   return (
-    <AuthCallback>
-      {() => children}
-    </AuthCallback>
+    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile }}>
+      {children}
+    </AppContext.Provider>
   );
 }
 
 function RedirectHandler() {
-  const navigate = useNavigate();
   useEffect(() => {
     const redirectPath = sessionStorage.getItem('auth_redirect_path');
     if (redirectPath) {
       sessionStorage.removeItem('auth_redirect_path');
-      navigate(redirectPath, { replace: true });
+      window.location.replace(redirectPath);
     }
-  }, [navigate]);
+  }, []);
   return null;
 }
 
@@ -244,6 +155,8 @@ function ScrollToTop() {
   return null;
 }
 
+// Tiny helper so ScrollToTop doesn't need react-router's useLocation inside
+// the same tree as heavy siblings.
 function AppRoutes() {
   return (
     <>
@@ -258,14 +171,14 @@ function AppRoutes() {
       <Route path="/search" element={<SearchPage />} />
       <Route path="/profile/:identity" element={<ProfilePage />} />
       <Route path="/org/:id" element={<OrgProfilePage />} />
-      <Route path="/register" element={<PrivateRoute><RegisterPage /></PrivateRoute>} />
-      <Route path="/home" element={<><RedirectHandler /><PrivateRoute><MainFeedPage /></PrivateRoute></>} />
-      <Route path="/me" element={<PrivateRoute><MyProfilePage /></PrivateRoute>} />
-      <Route path="/follow/:ownerIdentity" element={<PrivateRoute><FollowPage /></PrivateRoute>} />
-      <Route path="/notifications" element={<PrivateRoute><NotificationsPage /></PrivateRoute>} />
-      <Route path="/friends" element={<PrivateRoute><FriendsPage /></PrivateRoute>} />
-      <Route path="/messages/:identity" element={<PrivateRoute><DMChatPage /></PrivateRoute>} />
-      <Route path="/org-chat/:id" element={<PrivateRoute><OrgChatPage /></PrivateRoute>} />
+      <Route path="/register" element={<AuthGate><RegisterPage /></AuthGate>} />
+      <Route path="/home" element={<><RedirectHandler /><AuthGate><MainFeedPage /></AuthGate></>} />
+      <Route path="/me" element={<AuthGate><MyProfilePage /></AuthGate>} />
+      <Route path="/follow/:ownerIdentity" element={<AuthGate><FollowPage /></AuthGate>} />
+      <Route path="/notifications" element={<AuthGate><NotificationsPage /></AuthGate>} />
+      <Route path="/friends" element={<AuthGate><FriendsPage /></AuthGate>} />
+      <Route path="/messages/:identity" element={<AuthGate><DMChatPage /></AuthGate>} />
+      <Route path="/org-chat/:id" element={<AuthGate><OrgChatPage /></AuthGate>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
@@ -274,13 +187,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider {...AUTH_CONFIG}>
-      <BrowserRouter>
-        <OrgProvider>
-          <AppRoutes />
-        </OrgProvider>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <OrgProvider>
+        <AppRoutes />
+      </OrgProvider>
+    </BrowserRouter>
   );
 }
 

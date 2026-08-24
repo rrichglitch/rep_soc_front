@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from 'react-oidc-context';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
@@ -10,7 +9,6 @@ import { getOrgMessages, sendOrgMessage, getOrganizationById, getProfileByEmail 
 function OrgChatPage() {
   const { activeOrg } = useOrg();
   const { id } = useParams<{ id: string }>();
-  const auth = useAuth();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<any[]>([]);
   const [currentIdentity, setCurrentIdentity] = useState<string | null>(null);
@@ -23,7 +21,7 @@ function OrgChatPage() {
   useEffect(() => {
     if (!id) return;
     const init = async () => {
-      const email = currentUserEmail(auth);
+      const email = currentUserEmail();
       if (email) {
         const p = await getProfileByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());

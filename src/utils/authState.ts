@@ -1,31 +1,24 @@
-// Unified auth state across both session types:
-//  - OAuth relay sessions (Google/Facebook) — localStorage-based
-//  - Legacy SpacetimeCloud-OIDC sessions — react-oidc-context
+// Session-agnostic auth state helpers (OAuth relay sessions only).
+// The old SpacetimeCloud-OIDC flow has been removed; all sessions live in
+// localStorage via oauthSession.ts.
 import { getOAuthSession } from './oauthSession';
 
-interface OidcLike {
+// Legacy no-op signature retained so existing call sites keep compiling.
+export interface OidcLike {
   isAuthenticated: boolean;
-  user?: { id_token?: string } | null;
+  user?: { id_token?: string; access_token?: string } | null;
 }
 
-function emailFromIdToken(idToken?: string): string | null {
-  if (!idToken) return null;
-  try {
-    const payload = JSON.parse(atob(idToken.split('.')[1]));
-    return payload.email ?? null;
-  } catch {
-    return null;
-  }
+// Email of the signed-in user from the OAuth session.
+export function currentUserEmail(_auth?: OidcLike): string | null {
+  return getOAuthSession()?.email ?? null;
 }
 
-// Email of the signed-in user regardless of session type. Pass the value of
-// useAuth() when available so legacy OIDC sessions resolve too.
-export function currentUserEmail(auth?: OidcLike): string | null {
-  const oauth = getOAuthSession();
-  if (oauth?.email) return oauth.email;
-  return emailFromIdToken(auth?.user?.id_token);
+export function isSignedIn(_auth?: OidcLike): boolean {
+  return Boolean(getOAuthSession());
 }
 
-export function isSignedIn(auth?: OidcLike): boolean {
-  return Boolean(getOAuthSession()) || Boolean(auth?.isAuthenticated);
+// Identity hex of the signed-in user (used for notification tickers etc).
+export function currentUserIdentityHex(): string | null {
+  return getOAuthSession()?.identityHex ?? null;
 }

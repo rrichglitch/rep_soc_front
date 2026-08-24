@@ -1,4 +1,3 @@
-import { WebStorageStateStore, User } from 'oidc-client-ts';
 
 export const APP_URL = 'https://veri.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
@@ -7,43 +6,6 @@ export const SPACETIMEDB_MODULE = 'repsoc';
 
 // Our own OAuth relay (Google + Facebook) — replaces SpacetimeCloud OIDC
 export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://auth.veri.social';
-
-const getOrigin = () => {
-  if (typeof window !== 'undefined') {
-    const origin = window.location.origin;
-    console.log('Auth origin:', origin);
-    return origin;
-  }
-  return 'https://veri.social';
-};
-
-const origin = getOrigin();
-
-// Environment variable overrides for local development
-const authAuthority = import.meta.env.VITE_AUTH_AUTHORITY || 'https://auth.spacetimedb.com/oidc';
-const authClientId = import.meta.env.VITE_AUTH_CLIENT_ID || 'client_032dcrU7dNeqH21pwTabNC';
-
-// SpacetimeAuth configuration
-export const AUTH_CONFIG = {
-  authority: authAuthority,
-  client_id: authClientId,
-  redirect_uri: `${origin}/callback`,
-  post_logout_redirect_uri: `${origin}/about`,
-  scope: 'openid profile email',
-  response_type: 'code',
-  automaticSilentRenew: true,
-  filterProtocolClaims: true,
-  loadUserInfo: false,
-  userStore: new WebStorageStateStore({
-    store: localStorage,
-  }),
-  onSigninCallback: (user: User | void) => {
-    console.log('User signed in:', user);
-    window.history.replaceState({}, document.title, window.location.pathname);
-  },
-};
-
-console.log('AUTH_CONFIG:', AUTH_CONFIG);
 
 export const CHAR_LIMITS = {
   fullName: 100,
