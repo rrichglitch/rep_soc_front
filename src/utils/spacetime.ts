@@ -249,6 +249,38 @@ export async function initiateDiditVerification(
   return result.url;
 }
 
+// Fetch the caller's pending-registration state. If they already have an
+// APPROVED Didit verification (or an in-progress one), the register page can
+// resume the flow instead of restarting from scratch.
+export async function getPendingRegistration(): Promise<{
+  hasPending: boolean;
+  verified: boolean;
+  legalName: string | null;
+  email: string | null;
+  city: string | null;
+  description: string | null;
+  profilePicture: string | null;
+} | null> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpacetimeDB');
+  }
+
+  const result = await dbConnection.procedures.getPendingRegistration({});
+  console.log('getPendingRegistration result:', result);
+
+  if (!result.hasPending) return null;
+
+  return {
+    hasPending: result.hasPending,
+    verified: result.verified,
+    legalName: result.legalName ?? null,
+    email: result.email ?? null,
+    city: result.city ?? null,
+    description: result.description ?? null,
+    profilePicture: result.profilePicture ?? null,
+  };
+}
+
 export async function checkDiditVerification(sessionId: string): Promise<{ fullName: string; selfieImage: string | null; status: string }> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');

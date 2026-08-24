@@ -5,7 +5,7 @@ import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, TURNSTILE_SITE_
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
-import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation } from '../utils/spacetime';
+import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation, getPendingRegistration } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
 import { getOAuthSession } from '../utils/oauthSession';
 
@@ -75,6 +75,26 @@ function RegisterPage() {
         setStoredPictureBase64(oauthSession.picture);
       }
     }
+
+    // RESUME: ask the backend whether this identity already has a pending
+    // registration. An APPROVED verification jumps straight to "Confirm Your
+    // Details" — no redoing ID verification. Best effort only.
+    getPendingRegistration()
+      .then((pending) => {
+        if (!pending) return;
+        if (pending.verified && pending.legalName) {
+          setFullName(pending.legalName);
+          if (pending.city) setCity(pending.city);
+          if (pending.description) setDescription(pending.description);
+          if (pending.profilePicture && !storedPictureBase64) {
+            setPicturePreview(pending.profilePicture);
+            setStoredPictureBase64(pending.profilePicture);
+          }
+          setDiditVerified(true);
+          console.log('Resuming signup: identity verification already approved');
+        }
+      })
+      .catch((e) => console.warn('Could not check pending registration:', e));
   }, []);
 
   // On mount: handle Didit callback

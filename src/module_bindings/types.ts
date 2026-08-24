@@ -19,6 +19,12 @@ export const CheckDiditResult = __t.object("CheckDiditResult", {
 });
 export type CheckDiditResult = __Infer<typeof CheckDiditResult>;
 
+export const CleanupSweep = __t.object("CleanupSweep", {
+  scheduledId: __t.u64(),
+  scheduledAt: __t.scheduleAt(),
+});
+export type CleanupSweep = __Infer<typeof CleanupSweep>;
+
 export const CreateVerifiedProfileResult = __t.object("CreateVerifiedProfileResult", {
   success: __t.bool(),
   error: __t.option(__t.string()),
@@ -179,6 +185,17 @@ export const PendingRegistration = __t.object("PendingRegistration", {
   diditSelfieImage: __t.string(),
 });
 export type PendingRegistration = __Infer<typeof PendingRegistration>;
+
+export const PendingRegistrationState = __t.object("PendingRegistrationState", {
+  hasPending: __t.bool(),
+  verified: __t.bool(),
+  legalName: __t.option(__t.string()),
+  email: __t.option(__t.string()),
+  city: __t.option(__t.string()),
+  description: __t.option(__t.string()),
+  profilePicture: __t.option(__t.string()),
+});
+export type PendingRegistrationState = __Infer<typeof PendingRegistrationState>;
 
 export const PushSubscription = __t.object("PushSubscription", {
   identity: __t.identity(),

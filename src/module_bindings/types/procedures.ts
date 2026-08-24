@@ -8,6 +8,7 @@ import { type Infer as __Infer } from "spacetimedb";
 // Import all procedure arg schemas
 import * as CheckDiditVerificationProcedure from "../check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "../create_verified_profile_procedure";
+import * as GetPendingRegistrationProcedure from "../get_pending_registration_procedure";
 import * as InitiateDiditVerificationProcedure from "../initiate_didit_verification_procedure";
 import * as OauthClaimProfileProcedure from "../oauth_claim_profile_procedure";
 
@@ -15,6 +16,8 @@ export type CheckDiditVerificationArgs = __Infer<typeof CheckDiditVerificationPr
 export type CheckDiditVerificationResult = __Infer<typeof CheckDiditVerificationProcedure.returnType>;
 export type CreateVerifiedProfileArgs = __Infer<typeof CreateVerifiedProfileProcedure.params>;
 export type CreateVerifiedProfileResult = __Infer<typeof CreateVerifiedProfileProcedure.returnType>;
+export type GetPendingRegistrationArgs = __Infer<typeof GetPendingRegistrationProcedure.params>;
+export type GetPendingRegistrationResult = __Infer<typeof GetPendingRegistrationProcedure.returnType>;
 export type InitiateDiditVerificationArgs = __Infer<typeof InitiateDiditVerificationProcedure.params>;
 export type InitiateDiditVerificationResult = __Infer<typeof InitiateDiditVerificationProcedure.returnType>;
 export type OauthClaimProfileArgs = __Infer<typeof OauthClaimProfileProcedure.params>;

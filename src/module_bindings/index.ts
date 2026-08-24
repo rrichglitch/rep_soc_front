@@ -50,6 +50,7 @@ import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
+import EnsureCleanupSweepReducer from "./ensure_cleanup_sweep_reducer";
 import FollowReducer from "./follow_reducer";
 import JitterOrgToApproxReducer from "./jitter_org_to_approx_reducer";
 import JitterToApproxReducer from "./jitter_to_approx_reducer";
@@ -77,6 +78,7 @@ import UpgradeToProReducer from "./upgrade_to_pro_reducer";
 // Import all procedure arg schemas
 import * as CheckDiditVerificationProcedure from "./check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "./create_verified_profile_procedure";
+import * as GetPendingRegistrationProcedure from "./get_pending_registration_procedure";
 import * as InitiateDiditVerificationProcedure from "./initiate_didit_verification_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 
@@ -236,6 +238,7 @@ const reducersSchema = __reducers(
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
+  __reducerSchema("ensure_cleanup_sweep", EnsureCleanupSweepReducer),
   __reducerSchema("follow", FollowReducer),
   __reducerSchema("jitter_org_to_approx", JitterOrgToApproxReducer),
   __reducerSchema("jitter_to_approx", JitterToApproxReducer),
@@ -265,6 +268,7 @@ const reducersSchema = __reducers(
 const proceduresSchema = __procedures(
   __procedureSchema("check_didit_verification", CheckDiditVerificationProcedure.params, CheckDiditVerificationProcedure.returnType),
   __procedureSchema("create_verified_profile", CreateVerifiedProfileProcedure.params, CreateVerifiedProfileProcedure.returnType),
+  __procedureSchema("get_pending_registration", GetPendingRegistrationProcedure.params, GetPendingRegistrationProcedure.returnType),
   __procedureSchema("initiate_didit_verification", InitiateDiditVerificationProcedure.params, InitiateDiditVerificationProcedure.returnType),
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
 );

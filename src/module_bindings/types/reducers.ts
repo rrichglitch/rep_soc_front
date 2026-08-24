@@ -22,6 +22,7 @@ import DeclineFriendRequestReducer from "../decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "../decline_org_member_reducer";
 import DeleteStoryPostReducer from "../delete_story_post_reducer";
 import DemoteCoLeaderReducer from "../demote_co_leader_reducer";
+import EnsureCleanupSweepReducer from "../ensure_cleanup_sweep_reducer";
 import FollowReducer from "../follow_reducer";
 import JitterOrgToApproxReducer from "../jitter_org_to_approx_reducer";
 import JitterToApproxReducer from "../jitter_to_approx_reducer";
@@ -62,6 +63,7 @@ export type DeclineFriendRequestParams = __Infer<typeof DeclineFriendRequestRedu
 export type DeclineOrgMemberParams = __Infer<typeof DeclineOrgMemberReducer>;
 export type DeleteStoryPostParams = __Infer<typeof DeleteStoryPostReducer>;
 export type DemoteCoLeaderParams = __Infer<typeof DemoteCoLeaderReducer>;
+export type EnsureCleanupSweepParams = __Infer<typeof EnsureCleanupSweepReducer>;
 export type FollowParams = __Infer<typeof FollowReducer>;
 export type JitterOrgToApproxParams = __Infer<typeof JitterOrgToApproxReducer>;
 export type JitterToApproxParams = __Infer<typeof JitterToApproxReducer>;
