@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import type { Timestamp } from 'spacetimedb';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
@@ -104,8 +103,9 @@ function MyProfilePage() {
     try {
       const profileData = await getProfileByEmail(email);
       if (profileData) {
-        const createdAt = profileData.createdAt as unknown as Timestamp;
-        const date = new Date(Number(createdAt.microsSinceUnixEpoch) / 1000);
+        const date = profileData.createdAtMicros
+          ? new Date(Number(profileData.createdAtMicros) / 1000)
+          : new Date();
         const identityHex = profileData.identity.toHexString();
         
         setProfile({

@@ -197,6 +197,44 @@ export const PendingRegistrationState = __t.object("PendingRegistrationState", {
 });
 export type PendingRegistrationState = __Infer<typeof PendingRegistrationState>;
 
+export const ProfileByEmailResult = __t.object("ProfileByEmailResult", {
+  found: __t.bool(),
+  identityHex: __t.option(__t.string()),
+  email: __t.option(__t.string()),
+  fullName: __t.option(__t.string()),
+  city: __t.option(__t.string()),
+  description: __t.option(__t.string()),
+  profilePicture: __t.option(__t.string()),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
+  locationPrecision: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
+  age: __t.option(__t.u8()),
+  hideFriends: __t.bool(),
+  createdAtMicros: __t.option(__t.i64()),
+  isPro: __t.bool(),
+});
+export type ProfileByEmailResult = __Infer<typeof ProfileByEmailResult>;
+
+export const ProfileByIdentityResult = __t.object("ProfileByIdentityResult", {
+  found: __t.bool(),
+  identityHex: __t.option(__t.string()),
+  email: __t.option(__t.string()),
+  fullName: __t.option(__t.string()),
+  city: __t.option(__t.string()),
+  description: __t.option(__t.string()),
+  profilePicture: __t.option(__t.string()),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
+  locationPrecision: __t.option(__t.string()),
+  gender: __t.option(__t.string()),
+  age: __t.option(__t.u8()),
+  hideFriends: __t.bool(),
+  createdAtMicros: __t.option(__t.i64()),
+  isPro: __t.bool(),
+});
+export type ProfileByIdentityResult = __Infer<typeof ProfileByIdentityResult>;
+
 export const PushSubscription = __t.object("PushSubscription", {
   identity: __t.identity(),
   endpoint: __t.string(),

@@ -154,37 +154,61 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
     console.log('No connection, cannot check profile');
     return false;
   }
-
   try {
-    const sanitized = sanitizeEmail(email);
-    console.log('Checking profile for email:', email, 'sanitized:', sanitized);
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      console.log('Found profile with email:', profile.email);
-      if (profile.email === sanitized) {
-        return true;
-      }
-    }
-    console.log('No profile found for sanitized email:', sanitized);
-    return false;
+    const r = await dbConnection.procedures.getProfileByEmail({ email });
+    return !!r?.found;
   } catch (e) {
     console.error('Error checking profile:', e);
     return false;
   }
 }
 
-export async function getProfileByEmail(email: string) {
+// Shape-compatible shim over get_profile_by_email: callers expect a row-like
+// object with camelCase fields and an identity with toHexString().
+export interface ProfileLookupRow {
+  identity: { toHexString: () => string };
+  email: string;
+  fullName: string;
+  city: string;
+  description: string;
+  profilePicture: string;
+  locationLat?: number;
+  locationLng?: number;
+  locationPrecision: string;
+  gender?: string;
+  age?: number;
+  hideFriends: boolean;
+  createdAtMicros?: bigint;
+  isPro: boolean;
+}
+
+function rowFromProcedure(r: any): ProfileLookupRow | null {
+  if (!r?.found) return null;
+  return {
+    identity: { toHexString: () => r.identityHex || '' },
+    email: r.email ?? '',
+    fullName: r.fullName ?? '',
+    city: r.city ?? '',
+    description: r.description ?? '',
+    profilePicture: r.profilePicture ?? '',
+    locationLat: r.locationLat ?? undefined,
+    locationLng: r.locationLng ?? undefined,
+    locationPrecision: r.locationPrecision ?? 'off',
+    gender: r.gender ?? undefined,
+    age: r.age ?? undefined,
+    hideFriends: !!r.hideFriends,
+    createdAtMicros: r.createdAtMicros ?? undefined,
+    isPro: !!r.isPro,
+  };
+}
+
+export async function getProfileByEmail(email: string): Promise<ProfileLookupRow | null> {
   if (!dbConnection) {
     return null;
   }
-
   try {
-    const sanitized = sanitizeEmail(email);
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      if (profile.email === sanitized) {
-        return profile;
-      }
-    }
-    return null;
+    const r = await dbConnection.procedures.getProfileByEmail({ email });
+    return rowFromProcedure(r);
   } catch (e) {
     console.error('Error getting profile:', e);
     return null;
@@ -337,18 +361,14 @@ export async function createVerifiedProfile(
   }
 }
 
-export async function getProfileByIdentity(identity: string) {
+export async function getProfileByIdentity(identity: string): Promise<ProfileLookupRow | null> {
   if (!dbConnection) {
     return null;
   }
 
   try {
-    for (const profile of dbConnection.db.user_profile.iter()) {
-      if (profile.identity.toHexString() === identity) {
-        return profile;
-      }
-    }
-    return null;
+    const r = await dbConnection.procedures.getProfileByIdentity({ identityHex: identity });
+    return rowFromProcedure(r);
   } catch (e) {
     console.error('Error getting profile by identity:', e);
     return null;

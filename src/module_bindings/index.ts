@@ -79,6 +79,8 @@ import UpgradeToProReducer from "./upgrade_to_pro_reducer";
 import * as CheckDiditVerificationProcedure from "./check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "./create_verified_profile_procedure";
 import * as GetPendingRegistrationProcedure from "./get_pending_registration_procedure";
+import * as GetProfileByEmailProcedure from "./get_profile_by_email_procedure";
+import * as GetProfileByIdentityProcedure from "./get_profile_by_identity_procedure";
 import * as InitiateDiditVerificationProcedure from "./initiate_didit_verification_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 import * as SearchProfilesProcedure from "./search_profiles_procedure";
@@ -270,6 +272,8 @@ const proceduresSchema = __procedures(
   __procedureSchema("check_didit_verification", CheckDiditVerificationProcedure.params, CheckDiditVerificationProcedure.returnType),
   __procedureSchema("create_verified_profile", CreateVerifiedProfileProcedure.params, CreateVerifiedProfileProcedure.returnType),
   __procedureSchema("get_pending_registration", GetPendingRegistrationProcedure.params, GetPendingRegistrationProcedure.returnType),
+  __procedureSchema("get_profile_by_email", GetProfileByEmailProcedure.params, GetProfileByEmailProcedure.returnType),
+  __procedureSchema("get_profile_by_identity", GetProfileByIdentityProcedure.params, GetProfileByIdentityProcedure.returnType),
   __procedureSchema("initiate_didit_verification", InitiateDiditVerificationProcedure.params, InitiateDiditVerificationProcedure.returnType),
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
   __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),
