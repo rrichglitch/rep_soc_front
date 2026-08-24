@@ -280,7 +280,7 @@ function SearchPage() {
             }}
             value={inputValue}
             onChange={setInputValue}
-            onOptionsClick={() => { setShowSuggestions(false); setShowSearchOptions((v) => !v); }}
+            onOptionsClick={signedIn ? () => { setShowSuggestions(false); setShowSearchOptions((v) => !v); } : undefined}
             onInputFocus={() => { inputFocusedRef.current = true; setShowSearchOptions(false); setShowSuggestions(true); }}
             onInputBlur={() => { inputFocusedRef.current = false; setTimeout(() => setShowSuggestions(false), 160); }}
             onSaveToggle={() => {
