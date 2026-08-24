@@ -206,6 +206,29 @@ export const PushSubscription = __t.object("PushSubscription", {
 });
 export type PushSubscription = __Infer<typeof PushSubscription>;
 
+export const SearchProfilesResult = __t.object("SearchProfilesResult", {
+  get results() {
+    return __t.array(SearchResultItem);
+  },
+  nextCursor: __t.option(__t.string()),
+  error: __t.option(__t.string()),
+});
+export type SearchProfilesResult = __Infer<typeof SearchProfilesResult>;
+
+export const SearchResultItem = __t.object("SearchResultItem", {
+  resultType: __t.string(),
+  identityHex: __t.string(),
+  orgId: __t.option(__t.u64()),
+  email: __t.string(),
+  fullName: __t.string(),
+  profilePicture: __t.string(),
+  city: __t.string(),
+  description: __t.string(),
+  locationLat: __t.option(__t.f64()),
+  locationLng: __t.option(__t.f64()),
+});
+export type SearchResultItem = __Infer<typeof SearchResultItem>;
+
 export const StoryPost = __t.object("StoryPost", {
   id: __t.u64(),
   profileOwnerIdentity: __t.identity(),

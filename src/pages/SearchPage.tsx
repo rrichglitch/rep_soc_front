@@ -2,8 +2,13 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { isSignedIn } from '../utils/authState';
 import { useApp } from '../App';
-import { getDbConnection, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
-import { haversineMiles, formatMiles } from '../utils/geo';
+import { connectToSpacetimeDB, getProfileByEmail, getDbConnection } from '../utils/spacetime';
+import { runSearch as executeSearch, type SearchResult } from '../utils/searchProvider';
+import { formatMiles } from '../utils/geo';
+
+// Local helper so the identity-resolution path keeps working without leaking
+// the connection handle into the search path.
+const getDbConnectionSafe = getDbConnection;
 import {
   loadSearchHistory, recordSearch, deleteSearch, toggleSaveSearch, type SearchEntry,
 } from '../utils/searchHistory';
@@ -15,20 +20,6 @@ import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
-
-interface SearchResult {
-  type: 'person' | 'org';
-  identity: string;
-  orgId?: bigint;
-  email: string;
-  fullName: string;
-  profilePicture: string;
-  city: string;
-  description: string;
-  locationLat?: number;
-  locationLng?: number;
-  distance?: number;
-}
 
 function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -177,7 +168,7 @@ function SearchPage() {
           setMyPos({ lat: p.locationLat, lng: p.locationLng });
         }
       } else {
-        const db = getDbConnection();
+        const db = getDbConnectionSafe();
         if (db?.identity) {
           myIdentityRef.current = db.identity.toHexString();
           setMyIdentity(db.identity.toHexString());
@@ -221,6 +212,7 @@ function SearchPage() {
   );
 
   useEffect(() => {
+    let cancelled = false;
     const searchQuery = async () => {
       if (!query.trim()) {
         setResults([]);
@@ -228,98 +220,44 @@ function SearchPage() {
         return;
       }
 
-      const db = getDbConnection();
-      if (!db) {
-        setIsLoading(false);
-        return;
-      }
-
+      setIsLoading(true);
       try {
-        const searchLower = query.toLowerCase();
-        const foundProfiles: SearchResult[] = [];
-        const minAge = ageMin ? parseInt(ageMin, 10) : null;
-        const maxAge = ageMax ? parseInt(ageMax, 10) : null;
-        const ageFiltered = minAge !== null || maxAge !== null;
-        
-        for (const profile of db.db.user_profile.iter()) {
-          if (!showIndividuals) continue;
-          const fullName = profile.fullName?.toLowerCase() || '';
-          const city = profile.city?.toLowerCase() || '';
-          const profileEmail = profile.email?.toLowerCase() || '';
+        // Server-side search via the searchProvider abstraction:
+        //   'stdb' → keyword procedure on SpacetimeDB (always available)
+        //   'gpu'  → semantic hybrid on the GPU box, keyword fallback
+        const found = await executeSearch(query, {
+          tier: isSignedIn() ? 'free' : 'anon',
+          filters: {
+            gender: genderFilter,
+            ageMin: ageMin ? parseInt(ageMin, 10) : undefined,
+            ageMax: ageMax ? parseInt(ageMax, 10) : undefined,
+            showIndividuals,
+            showOrganizations,
+            limit: 60,
+          },
+          activePos,
+        });
+        if (cancelled) return;
 
-          if (
-            fullName.includes(searchLower) ||
-            city.includes(searchLower) ||
-            profileEmail.includes(searchLower)
-          ) {
-            // Gender + age filters (people only)
-            if (genderFilter !== 'any' && profile.gender !== genderFilter) continue;
-            if (ageFiltered) {
-              const age = profile.age;
-              if (age === undefined) continue; // no age → excluded when filtering by age
-              if (minAge !== null && age < minAge) continue;
-              if (maxAge !== null && age > maxAge) continue;
-            }
-            const lat = profile.locationLat !== undefined ? profile.locationLat : undefined;
-            const lng = profile.locationLng !== undefined ? profile.locationLng : undefined;
-            const hasLoc = profile.locationPrecision !== 'off' && lat !== undefined && lng !== undefined;
-            foundProfiles.push({
-              type: 'person',
-              identity: profile.identity?.toHexString() || '',
-              email: profile.email,
-              fullName: profile.fullName,
-              profilePicture: profile.profilePicture || '',
-              city: profile.city,
-              description: profile.description,
-              locationLat: hasLoc ? lat : undefined,
-              locationLng: hasLoc ? lng : undefined,
-              distance: activePos && hasLoc ? haversineMiles(activePos.lat, activePos.lng, lat!, lng!) : undefined,
-            });
-          }
-        }
-
-        // Search organizations too
-        for (const org of db.db.organization.iter()) {
-          if (!showOrganizations) continue;
-          const orgName = org.name?.toLowerCase() || '';
-          const orgCity = org.city?.toLowerCase() || '';
-          if (orgName.includes(searchLower) || orgCity.includes(searchLower)) {
-            const lat = org.locationLat !== undefined ? org.locationLat : undefined;
-            const lng = org.locationLng !== undefined ? org.locationLng : undefined;
-            foundProfiles.push({
-              type: 'org',
-              identity: '',
-              orgId: org.id,
-              email: '',
-              fullName: org.name,
-              profilePicture: org.picture || '',
-              city: org.city,
-              description: org.description,
-              locationLat: lat,
-              locationLng: lng,
-              distance: activePos && lat !== undefined && lng !== undefined ? haversineMiles(activePos.lat, activePos.lng, lat, lng) : undefined,
-            });
-          }
-        }
-
-        // Nearby-first sorting
+        // Nearby-first sorting (distance was computed in the provider)
         if (nearbyFirst) {
-          foundProfiles.sort((a, b) => {
+          found.sort((a, b) => {
             const da = a.distance ?? Infinity;
             const db = b.distance ?? Infinity;
             return da - db;
           });
         }
 
-        setResults(foundProfiles);
+        setResults(found);
       } catch (e) {
         console.error('Search error:', e);
       }
-      setIsLoading(false);
+      if (!cancelled) setIsLoading(false);
     };
 
     searchQuery();
-  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
+    return () => { cancelled = true; };
+  }, [query, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
 
   return (
     <div className="search-page">

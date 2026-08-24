@@ -11,6 +11,7 @@ import * as CreateVerifiedProfileProcedure from "../create_verified_profile_proc
 import * as GetPendingRegistrationProcedure from "../get_pending_registration_procedure";
 import * as InitiateDiditVerificationProcedure from "../initiate_didit_verification_procedure";
 import * as OauthClaimProfileProcedure from "../oauth_claim_profile_procedure";
+import * as SearchProfilesProcedure from "../search_profiles_procedure";
 
 export type CheckDiditVerificationArgs = __Infer<typeof CheckDiditVerificationProcedure.params>;
 export type CheckDiditVerificationResult = __Infer<typeof CheckDiditVerificationProcedure.returnType>;
@@ -22,4 +23,6 @@ export type InitiateDiditVerificationArgs = __Infer<typeof InitiateDiditVerifica
 export type InitiateDiditVerificationResult = __Infer<typeof InitiateDiditVerificationProcedure.returnType>;
 export type OauthClaimProfileArgs = __Infer<typeof OauthClaimProfileProcedure.params>;
 export type OauthClaimProfileResult = __Infer<typeof OauthClaimProfileProcedure.returnType>;
+export type SearchProfilesArgs = __Infer<typeof SearchProfilesProcedure.params>;
+export type SearchProfilesResult = __Infer<typeof SearchProfilesProcedure.returnType>;
 

@@ -81,6 +81,7 @@ import * as CreateVerifiedProfileProcedure from "./create_verified_profile_proce
 import * as GetPendingRegistrationProcedure from "./get_pending_registration_procedure";
 import * as InitiateDiditVerificationProcedure from "./initiate_didit_verification_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
+import * as SearchProfilesProcedure from "./search_profiles_procedure";
 
 // Import all table schema definitions
 import FollowingRow from "./following_table";
@@ -271,6 +272,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("get_pending_registration", GetPendingRegistrationProcedure.params, GetPendingRegistrationProcedure.returnType),
   __procedureSchema("initiate_didit_verification", InitiateDiditVerificationProcedure.params, InitiateDiditVerificationProcedure.returnType),
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
+  __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),
 );
 
 type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "tables"> & {
