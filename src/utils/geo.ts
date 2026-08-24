@@ -54,16 +54,46 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
     const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
     if (!res.ok) return null;
     const data = await res.json();
-    const a = data?.address || {};
-    const city = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null;
+    return extractCity(data);
+  } catch {
+    return null;
+  }
+}
+
+// Shared city extraction from a Nominatim-style reverse-geocode response
+function extractCity(data: any): string | null {
+  const a = data?.address || {};
+  const city = a.city || a.town || a.village || a.municipality || a.county || a.state_district || a.state || null;
+  if (!city) return null;
+  // Use the state code (ISO3166-2-lvl4 like "US-NY") instead of the full state name
+  let stateCode = '';
+  if (a.state && a.state !== city) {
+    const iso = a['ISO3166-2-lvl4'];
+    stateCode = iso ? `, ${iso.split('-').pop()}` : `, ${a.state}`;
+  }
+  return `${city}${stateCode}`;
+}
+
+// Reverse geocode with one automatic Nominatim retry, then BigDataCloud as an
+// independent fallback — registration must not die on a single third-party hiccup.
+export async function reverseGeocodeResilient(lat: number, lng: number): Promise<string | null> {
+  // First attempt + one retry (Nominatim hiccups are usually transient)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const city = await reverseGeocode(lat, lng);
+    if (city) return city;
+    if (attempt === 0) await new Promise(r => setTimeout(r, 800));
+  }
+  try {
+    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const d = await res.json();
+    const city = d.city || d.locality || d.principalSubdivision;
     if (!city) return null;
-    // Use the state code (ISO3166-2-lvl4 like "US-NY") instead of the full state name
-    let stateCode = '';
-    if (a.state && a.state !== city) {
-      const iso = a['ISO3166-2-lvl4'];
-      stateCode = iso ? `, ${iso.split('-').pop()}` : `, ${a.state}`;
-    }
-    return `${city}${stateCode}`;
+    const regionCode = d.countryCode === 'US' && d.principalSubdivisionCode
+      ? `, ${String(d.principalSubdivisionCode).split('-').pop()}`
+      : (d.principalSubdivision ? `, ${d.principalSubdivision}` : '');
+    return `${city}${regionCode}`;
   } catch {
     return null;
   }

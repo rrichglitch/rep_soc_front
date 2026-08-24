@@ -6,7 +6,7 @@ import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
 import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation } from '../utils/spacetime';
-import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
+import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
 import { getOAuthSession } from '../utils/oauthSession';
 
 const PENDING_REGISTRATION_KEY = 'pending_registration';
@@ -261,16 +261,16 @@ function RegisterPage() {
       // Approximate precision: jittered ON DEVICE — exact position never leaves
       const jittered = jitterLocation(pos.lat, pos.lng, 5);
       setLocCoords(jittered);
-      // City is derived from the location fix (no manual city entry)
-      const geocodedCity = await reverseGeocode(pos.lat, pos.lng);
+      // City is derived from the location fix (no manual city entry).
+      // Resilient path: Nominatim retry + independent fallback geocoder.
+      const geocodedCity = await reverseGeocodeResilient(pos.lat, pos.lng);
       if (geocodedCity) {
         setCity(geocodedCity);
+        setLocStatus('done');
       } else {
         setLocStatus('error');
-        setLocError('Could not determine your city from your location. Please try again.');
-        return;
+        setLocError('Could not determine your city from your location. Please tap "Allow location" again.');
       }
-      setLocStatus('done');
     } catch (e: any) {
       setLocStatus('error');
       setLocError(
