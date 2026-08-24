@@ -344,33 +344,24 @@ function SearchPage() {
               <div className="search-opt-section">
                 <span className="search-opt-label">Show</span>
                 <div className="filter-pills">
-                  <label
-                    className={`filter-pill ${signedIn && showIndividuals ? 'selected' : ''}${!signedIn ? ' disabled' : ''}`}
-                    style={!signedIn ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                  >
+                  <label className={`filter-pill ${showIndividuals ? 'selected' : ''}`}>
                     <input
                       type="checkbox"
-                      checked={signedIn ? showIndividuals : false}
+                      checked={showIndividuals}
                       onChange={(e) => setShowIndividuals(e.target.checked)}
-                      disabled={!signedIn}
                       style={{ display: 'none' }}
                     />
                     Individuals
                   </label>
-                  <label
-                    className={`filter-pill ${signedIn ? (showOrganizations ? 'selected' : '') : 'selected'}${!signedIn ? ' disabled' : ''}`}
-                    style={!signedIn ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                  >
+                  <label className={`filter-pill ${showOrganizations ? 'selected' : ''}`}>
                     <input
                       type="checkbox"
-                      checked={signedIn ? showOrganizations : true}
+                      checked={showOrganizations}
                       onChange={(e) => setShowOrganizations(e.target.checked)}
-                      disabled={!signedIn}
                       style={{ display: 'none' }}
                     />
                     Organizations
                   </label>
-                  {!signedIn && <span className="search-opt-note">Sign in to search people</span>}
                 </div>
               </div>
               <button
@@ -390,8 +381,6 @@ function SearchPage() {
                   {nearbyFirst ? '✓ ' : ''}Nearby First
                 </button>
               )}
-              {signedIn && (
-                <>
               <div className="search-opt-section">
                 <span className="search-opt-label">Gender</span>
                 <div className="filter-pills">
@@ -430,8 +419,6 @@ function SearchPage() {
                   />
                 </div>
               </div>
-              </>
-              )}
             </div>
           )}
         </div>}
