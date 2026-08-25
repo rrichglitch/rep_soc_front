@@ -87,6 +87,9 @@ function SearchPage() {
   const [searchLoc, setSearchLoc] = useState<{ label: string; lat: number; lng: number } | null>(null);
   const [showLocModal, setShowLocModal] = useState(false);
   const [showSearchOptions, setShowSearchOptions] = useState(false);
+  // Bumped on every explicit submit so re-running the SAME query still
+  // triggers a fresh search (e.g. after changing the options).
+  const [searchTick, setSearchTick] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputFocusedRef = useRef(false);
   const [searchHistory, setSearchHistory] = useState<SearchEntry[]>(() => loadSearchHistory('anon'));
@@ -121,7 +124,10 @@ function SearchPage() {
   useEffect(() => {
     if (!showSearchOptions) return;
     const close = (e: MouseEvent) => {
-      if (searchOptionsRef.current && !searchOptionsRef.current.contains(e.target as Node)) {
+      const t = e.target as Node;
+      // Ignore clicks on the options toggle itself — it handles its own toggle.
+      if ((t as HTMLElement)?.closest?.('.search-options-btn')) return;
+      if (searchOptionsRef.current && !searchOptionsRef.current.contains(t)) {
         setShowSearchOptions(false);
       }
     };
@@ -281,7 +287,7 @@ function SearchPage() {
 
     searchQuery();
     return () => { cancelled = true; };
-  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations]);
+  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations, searchTick]);
 
   return (
     <div className="search-page">
@@ -293,6 +299,10 @@ function SearchPage() {
               if (q.trim()) {
                 setSearchHistory(recordSearch(historyId, q));
                 setShowSuggestions(false);
+                setShowSearchOptions(false);
+                // If the query is unchanged (e.g. options were just updated),
+                // the URL won't change — force a re-run via the tick.
+                if (q.trim() === query) setSearchTick((t) => t + 1);
                 navigate(`/search?q=${encodeURIComponent(q)}`);
               }
             }}
@@ -696,8 +706,11 @@ function SearchPage() {
         .search-options-menu {
           position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
           background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-          padding: 6px; min-width: 260px; max-width: calc(100vw - 32px); z-index: 200;
+          padding: 6px; min-width: 286px; max-width: calc(100vw - 32px); z-index: 200;
           display: flex; flex-direction: column;
+        }
+        @media (min-width: 768px) {
+          .search-options-menu { min-width: 286px; }
         }
         .search-opt {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
