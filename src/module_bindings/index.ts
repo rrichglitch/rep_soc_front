@@ -97,6 +97,8 @@ import NotificationRow from "./notification_table";
 import OrgMemberRequestRow from "./org_member_request_table";
 import OrganizationRow from "./organization_table";
 import OrganizationMemberRow from "./organization_member_table";
+import SearchRequestRow from "./search_request_table";
+import SearchResultRow from "./search_result_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
 
@@ -187,6 +189,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, OrganizationMemberRow),
+  searchRequest: __table({
+    name: 'search_request',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SearchRequestRow),
+  searchResult: __table({
+    name: 'search_result',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SearchResultRow),
   storyPost: __table({
     name: 'story_post',
     indexes: [
@@ -291,6 +307,10 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
     readonly "org_member_request": Omit<typeof tablesSchema.schemaType.tables["orgMemberRequest"], "accessorName"> & { readonly accessorName: "org_member_request" };
     /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
     readonly "organization_member": Omit<typeof tablesSchema.schemaType.tables["organizationMember"], "accessorName"> & { readonly accessorName: "organization_member" };
+    /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
+    readonly "search_request": Omit<typeof tablesSchema.schemaType.tables["searchRequest"], "accessorName"> & { readonly accessorName: "search_request" };
+    /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
+    readonly "search_result": Omit<typeof tablesSchema.schemaType.tables["searchResult"], "accessorName"> & { readonly accessorName: "search_result" };
     /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
     readonly "story_post": Omit<typeof tablesSchema.schemaType.tables["storyPost"], "accessorName"> & { readonly accessorName: "story_post" };
     /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */
@@ -318,6 +338,8 @@ const tableAccessorAliases = {
   "friend_request": "friendRequest",
   "org_member_request": "orgMemberRequest",
   "organization_member": "organizationMember",
+  "search_request": "searchRequest",
+  "search_result": "searchResult",
   "story_post": "storyPost",
   "user_profile": "userProfile",
   "my_feed": "myFeed",
@@ -347,6 +369,10 @@ export type DbView = __DbViewBase & {
   readonly "org_member_request": __DbViewBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
   readonly "organization_member": __DbViewBase["organizationMember"];
+  /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
+  readonly "search_request": __DbViewBase["searchRequest"];
+  /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
+  readonly "search_result": __DbViewBase["searchResult"];
   /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
   readonly "story_post": __DbViewBase["storyPost"];
   /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */
@@ -363,6 +389,10 @@ export type Tables = __TablesBase & {
   readonly "org_member_request": __TablesBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
   readonly "organization_member": __TablesBase["organizationMember"];
+  /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
+  readonly "search_request": __TablesBase["searchRequest"];
+  /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
+  readonly "search_result": __TablesBase["searchResult"];
   /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
   readonly "story_post": __TablesBase["storyPost"];
   /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */

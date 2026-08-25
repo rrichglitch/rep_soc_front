@@ -255,6 +255,7 @@ export type SearchProfilesResult = __Infer<typeof SearchProfilesResult>;
 
 export const SearchRequest = __t.object("SearchRequest", {
   sender: __t.identity(),
+  boxId: __t.identity(),
   nonce: __t.string(),
   query: __t.string(),
   paramsJson: __t.string(),
@@ -264,6 +265,7 @@ export type SearchRequest = __Infer<typeof SearchRequest>;
 
 export const SearchResult = __t.object("SearchResult", {
   recipient: __t.identity(),
+  boxId: __t.identity(),
   nonce: __t.string(),
   resultsJson: __t.string(),
   reranked: __t.bool(),
