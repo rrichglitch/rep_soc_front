@@ -42,7 +42,13 @@ export interface SearchFilters {
 export type SearchMode = 'stdb' | 'gpu';
 
 export function getSearchProvider(): SearchMode {
-  return (localStorage.getItem('veri_searchProvider') as SearchMode) || 'stdb';
+  const stored = localStorage.getItem('veri_searchProvider') as SearchMode | null;
+  if (stored === 'gpu' || stored === 'stdb') return stored;
+  // Default: descriptive (GPU) search for signed-in users; keyword for anon.
+  try {
+    if (localStorage.getItem('veri_oauth_session')) return 'gpu';
+  } catch { }
+  return 'stdb';
 }
 
 export function setSearchProvider(m: SearchMode): void {
@@ -120,7 +126,7 @@ export async function runSearch(
     activePos: { lat: number; lng: number } | null;
   }
 ): Promise<SearchResult[]> {
-  const provider = getSearchProvider();
+  const provider = opts.tier === 'anon' ? 'stdb' : getSearchProvider();
 
   // Product rule: anonymous callers only see organizations. Enforced here at
   // the provider so no caller (or stale UI state) can widen anonymous scope.

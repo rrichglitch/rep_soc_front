@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { isSignedIn } from '../utils/authState';
 import { useApp } from '../App';
 import { connectToSpacetimeDB, getProfileByEmail, getDbConnection } from '../utils/spacetime';
-import { runSearch as executeSearch, type SearchResult } from '../utils/searchProvider';
+import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
 import { formatMiles } from '../utils/geo';
 
 // Local helper so the identity-resolution path keeps working without leaking
@@ -59,6 +59,11 @@ function SearchPage() {
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
   const [nearbyFirst, setNearbyFirst] = useState<boolean>(() => localStorage.getItem('veri_nearbyFirst') === '1');
   const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
+  const [providerMode, setProviderMode] = useState<SearchMode>(() => getSearchProvider());
+  const switchProvider = (m: SearchMode) => {
+    setSearchProvider(m);
+    setProviderMode(m);
+  };
   const [isDesktop, setIsDesktop] = useState<boolean>(() => window.matchMedia('(min-width: 768px)').matches);
   const [myIdentity, setMyIdentity] = useState<string>('');
   const [swipeIndex, setSwipeIndex] = useState(0);
@@ -354,6 +359,25 @@ function SearchPage() {
           )}
           {showSearchOptions && (
             <div className="search-options-menu" ref={searchOptionsRef}>
+              {isSignedIn() && (
+                <div className="search-opt-section">
+                  <span className="search-opt-label">Search type</span>
+                  <div className="filter-pills">
+                    <button
+                      className={`filter-pill ${providerMode === 'gpu' ? 'selected' : ''}`}
+                      onClick={() => switchProvider('gpu')}
+                    >
+                      Descriptive
+                    </button>
+                    <button
+                      className={`filter-pill ${providerMode === 'stdb' ? 'selected' : ''}`}
+                      onClick={() => switchProvider('stdb')}
+                    >
+                      Keyword
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="search-opt-section">
                 <span className="search-opt-label">Show</span>
                 <div className="filter-pills">
