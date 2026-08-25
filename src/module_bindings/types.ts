@@ -116,6 +116,9 @@ export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
 
+export const MySearchAllowance = __t.object("MySearchAllowance", {});
+export type MySearchAllowance = __Infer<typeof MySearchAllowance>;
+
 export const MySearchResult = __t.object("MySearchResult", {
   nonce: __t.string(),
   resultsJson: __t.string(),
@@ -253,6 +256,24 @@ export const PushSubscription = __t.object("PushSubscription", {
   createdAt: __t.timestamp(),
 });
 export type PushSubscription = __Infer<typeof PushSubscription>;
+
+export const SearchAllowance = __t.object("SearchAllowance", {
+  identity: __t.identity(),
+  banked: __t.u32(),
+  dayKey: __t.string(),
+  usedToday: __t.u32(),
+  lifetimeUsed: __t.u32(),
+  semanticDisabled: __t.bool(),
+});
+export type SearchAllowance = __Infer<typeof SearchAllowance>;
+
+export const SearchAllowanceInfo = __t.object("SearchAllowanceInfo", {
+  banked: __t.u32(),
+  usedToday: __t.u32(),
+  dayKey: __t.string(),
+  disabled: __t.bool(),
+});
+export type SearchAllowanceInfo = __Infer<typeof SearchAllowanceInfo>;
 
 export const SearchProfilesResult = __t.object("SearchProfilesResult", {
   get results() {

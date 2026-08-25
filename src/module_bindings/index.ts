@@ -93,6 +93,7 @@ import FriendRequestRow from "./friend_request_table";
 import FriendshipRow from "./friendship_table";
 import MessageRow from "./message_table";
 import MyFeedRow from "./my_feed_table";
+import MySearchAllowanceRow from "./my_search_allowance_table";
 import MySearchResultsRow from "./my_search_results_table";
 import NotificationRow from "./notification_table";
 import OrgMemberRequestRow from "./org_member_request_table";
@@ -225,6 +226,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyFeedRow),
+  mySearchAllowance: __table({
+    name: 'my_search_allowance',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MySearchAllowanceRow),
   mySearchResults: __table({
     name: 'my_search_results',
     indexes: [
@@ -313,6 +321,8 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
     readonly "user_profile": Omit<typeof tablesSchema.schemaType.tables["userProfile"], "accessorName"> & { readonly accessorName: "user_profile" };
     /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
     readonly "my_feed": Omit<typeof tablesSchema.schemaType.tables["myFeed"], "accessorName"> & { readonly accessorName: "my_feed" };
+    /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
+    readonly "my_search_allowance": Omit<typeof tablesSchema.schemaType.tables["mySearchAllowance"], "accessorName"> & { readonly accessorName: "my_search_allowance" };
     /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
     readonly "my_search_results": Omit<typeof tablesSchema.schemaType.tables["mySearchResults"], "accessorName"> & { readonly accessorName: "my_search_results" };
     /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */
@@ -341,6 +351,7 @@ const tableAccessorAliases = {
   "story_post": "storyPost",
   "user_profile": "userProfile",
   "my_feed": "myFeed",
+  "my_search_allowance": "mySearchAllowance",
   "my_search_results": "mySearchResults",
   "search_requests_for_box": "searchRequestsForBox",
 } as const;
@@ -375,6 +386,8 @@ export type DbView = __DbViewBase & {
   readonly "user_profile": __DbViewBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __DbViewBase["myFeed"];
+  /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
+  readonly "my_search_allowance": __DbViewBase["mySearchAllowance"];
   /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
   readonly "my_search_results": __DbViewBase["mySearchResults"];
   /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */
@@ -395,6 +408,8 @@ export type Tables = __TablesBase & {
   readonly "user_profile": __TablesBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __TablesBase["myFeed"];
+  /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
+  readonly "my_search_allowance": __TablesBase["mySearchAllowance"];
   /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
   readonly "my_search_results": __TablesBase["mySearchResults"];
   /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */

@@ -24,6 +24,7 @@ interface UserProfile {
   created_at: Date;
   age?: number;
   gender?: string;
+  is_pro?: boolean;
 }
 
 interface StoryPost {
@@ -117,6 +118,7 @@ function MyProfilePage() {
           created_at: date,
           age: profileData.age,
           gender: profileData.gender,
+          is_pro: profileData.isPro,
         });
 
         const profileStories = await getMyStoryPosts(identityHex);
@@ -236,9 +238,17 @@ function MyProfilePage() {
             onPictureClick={() => setShowPictureModal(true)}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}
           >
-            <p className="join-date">
-              Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </p>
+            <div className="join-row">
+              <p className="join-date">
+                Joined {profile?.created_at.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+              {!profile?.is_pro && (
+                <button className="upgrade-pro-btn" onClick={() => navigate('/upgrade-pro')}>
+                  Upgrade to Pro
+                </button>
+              )}
+              {profile?.is_pro && <span className="pro-badge">PRO</span>}
+            </div>
           </ProfileDetails>
         </div>
 
@@ -475,6 +485,10 @@ function MyProfilePage() {
           font-size: 13px;
           color: #999;
         }
+        .join-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .upgrade-pro-btn { padding: 5px 14px; background: #f59e0b; color: white; border: none; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+        .upgrade-pro-btn:hover { background: #d97706; }
+        .pro-badge { padding: 3px 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
 
                 }
 

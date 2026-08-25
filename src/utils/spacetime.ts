@@ -129,6 +129,8 @@ async function subscribeToTables(): Promise<void> {
           tables.message,
           tables.organization,
           tables.organization_member,
+          'SELECT * FROM my_search_results',
+          'SELECT * FROM my_search_allowance',
         ]);
     } catch (e) {
       console.error('Subscription error:', e);

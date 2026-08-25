@@ -17,6 +17,7 @@ import LoginPage from './pages/LoginPage';
 import MainFeedPage from './pages/MainFeedPage';
 import ProfilePage from './pages/ProfilePage';
 import MyProfilePage from './pages/MyProfilePage';
+import UpgradeProPage from './pages/UpgradeProPage';
 import FollowPage from './pages/FollowPage';
 import CallbackPage from './pages/CallbackPage';
 import SearchPage from './pages/SearchPage';
@@ -174,6 +175,7 @@ function AppRoutes() {
       <Route path="/register" element={<AuthGate><RegisterPage /></AuthGate>} />
       <Route path="/home" element={<><RedirectHandler /><AuthGate><MainFeedPage /></AuthGate></>} />
       <Route path="/me" element={<AuthGate><MyProfilePage /></AuthGate>} />
+      <Route path="/upgrade-pro" element={<AuthGate><UpgradeProPage /></AuthGate>} />
       <Route path="/follow/:ownerIdentity" element={<AuthGate><FollowPage /></AuthGate>} />
       <Route path="/notifications" element={<AuthGate><NotificationsPage /></AuthGate>} />
       <Route path="/friends" element={<AuthGate><FriendsPage /></AuthGate>} />

@@ -31,14 +31,20 @@ export async function semanticSearch(
 
   // Subscribe BEFORE requesting so the push can't race past us.
   let done: ((r: import('./searchProvider').SearchResult[]) => void) | null = null;
-  const resultPromise = new Promise<import('./searchProvider').SearchResult[]>((resolve) => {
+  let fail: ((e: Error) => void) | null = null;
+  const resultPromise = new Promise<import('./searchProvider').SearchResult[]>((resolve, reject) => {
     done = resolve;
+    fail = reject;
   });
 
   const onInsert = (_ctx: unknown, row: any) => {
     if (row.nonce !== nonce) return;
     try {
       const parsed = JSON.parse(row.resultsJson || '{}');
+      if (parsed.error === 'allowance_exhausted' || parsed.error === 'allowance_disabled') {
+        fail?.(new Error(parsed.error));
+        return;
+      }
       const out = (parsed.results ?? []).map((r: any) => ({
         type: r.type === 'org' ? ('org' as const) : ('person' as const),
         identity: r.identity_hex || '',
@@ -52,14 +58,20 @@ export async function semanticSearch(
         locationLng: r.location_lng ?? undefined,
       }));
       done?.(out);
+      done = null; fail = null;
     } catch (e) {
       console.error('[semantic] bad payload:', e);
       done?.([]);
     }
-    done = null;
   };
 
   (db as any).db.mySearchResults.onInsert(onInsert);
+  const onAllowance = (_ctx: unknown, row: any) => {
+    // Allowance rows update as a side effect of the request reducer; if the
+    // server signalled exhaustion, fail fast with the code the provider maps.
+    void row;
+  };
+  try { (db as any).db.mySearchAllowance.onInsert(onAllowance); } catch {}
 
   try {
     await (db as any).reducers.requestSemanticSearch({ nonce, query, paramsJson: params });
@@ -72,5 +84,6 @@ export async function semanticSearch(
     return results;
   } finally {
     try { (db as any).db.mySearchResults.removeOnInsert(onInsert); } catch {}
+    try { (db as any).db.mySearchAllowance.removeOnInsert(onAllowance); } catch {}
   }
 }

@@ -97,8 +97,9 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
           <button onClick={handleUpgrade} className="upgrade-btn">Upgrade to Pro</button>
         </div>
       ) : !showCreate ? (
-        <div className="create-org-row">
-          <button onClick={() => setShowCreate(true)} className="create-org-btn">+ Create an Organization</button>
+        <div className="claim-org-row">
+          <button onClick={() => setShowCreate(true)} className="claim-org-btn">Claim New Organization</button>
+          <button onClick={() => alert('Claim Existing Organization: search for your organization and tap "Claim" on its profile. Verification coming soon.')} className="claim-org-btn secondary">Claim Existing Organization</button>
         </div>
       ) : (
         <form onSubmit={handleCreate} className="create-org-form">
@@ -130,6 +131,11 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .pro-prompt p { margin: 0 0 8px; color: #92400e; font-size: 14px; }
         .upgrade-btn { padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .create-org-row { display: flex; justify-content: center; margin-top: 20px; }
+        .claim-org-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .claim-org-btn { padding: 10px 22px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .claim-org-btn:hover { background: #16a34a; }
+        .claim-org-btn.secondary { background: white; color: #667eea; border: 1px solid #667eea; }
+        .claim-org-btn.secondary:hover { background: #667eea; color: white; }
         .create-org-btn { padding: 10px 28px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .create-org-btn:hover { background: #16a34a; }
         .create-org-form { display: flex; flex-direction: column; gap: 8px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

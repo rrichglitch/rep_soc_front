@@ -137,7 +137,12 @@ export async function runSearch(
       if (gpuResults.length > 0) return decorate(gpuResults, opts.activePos);
       // Empty semantic results legitimately happen; still fall through to
       // keyword so exact matches are never missed.
-    } catch (e) {
+    } catch (e: any) {
+      if (e?.message === 'allowance_exhausted' || e?.message === 'allowance_disabled') {
+        const err = new Error(e.message);
+        (err as any).code = e.message;
+        throw err;
+      }
       console.warn('GPU search unavailable, falling back to keyword:', e);
     }
   }

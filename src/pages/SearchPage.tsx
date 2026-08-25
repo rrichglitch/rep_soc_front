@@ -28,6 +28,7 @@ function SearchPage() {
   const { email } = useApp();
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [allowanceNotice, setAllowanceNotice] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState(query);
   // Sync the bar whenever the URL query changes (suggestion clicks, submits).
   // The flag marks changes that came from a performed search so the reopen
@@ -222,6 +223,7 @@ function SearchPage() {
     const searchQuery = async () => {
       if (!query.trim()) {
         setResults([]);
+        setAllowanceNotice(null);
         setIsLoading(false);
         return;
       }
@@ -255,8 +257,19 @@ function SearchPage() {
         }
 
         setResults(found);
-      } catch (e) {
-        console.error('Search error:', e);
+      } catch (e: any) {
+        if (e?.message === 'allowance_exhausted') {
+          const { fetchMyAllowance, allowanceMessage } = await import('../utils/allowance');
+          const info = await fetchMyAllowance();
+          setAllowanceNotice(
+            info ? allowanceMessage(info) :
+              'You\'re out of descriptive searches. Unlock unlimited by upgrading to Pro — or earn more by commenting on your friends\' profiles to build your reputation.'
+          );
+        } else if (e?.message === 'allowance_disabled') {
+          setAllowanceNotice('Your ability to earn descriptive searches has been disabled.');
+        } else {
+          console.error('Search error:', e);
+        }
       }
       if (!cancelled) setIsLoading(false);
     };
@@ -450,6 +463,11 @@ function SearchPage() {
           />
         </div>
 
+        {allowanceNotice && (
+          <div className="allowance-notice">
+            <p>{allowanceNotice}</p>
+          </div>
+        )}
         {isLoading ? (
           <div className="loading">
             <div className="spinner"></div>
@@ -585,6 +603,8 @@ function SearchPage() {
       )}
 
       <style>{`
+        .allowance-notice { background: #fff8e1; border: 1px solid #fcd34d; border-radius: 10px; padding: 14px 18px; margin: 12px 16px; }
+        .allowance-notice p { margin: 0; color: #92400e; font-size: 14px; line-height: 1.45; }
         .search-page {
           min-height: 100vh;
           background: #f5f5f5;
