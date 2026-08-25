@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
-import { getMyOrganizations, createOrganization, isPro, upgradeToPro } from '../utils/spacetime';
+import { getMyOrganizations, createOrganization } from '../utils/spacetime';
 import AccountRow from './AccountRow';
 import { geocodeCity } from '../utils/geo';
 
@@ -11,14 +11,12 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   // Read the local cache synchronously at mount so the list is there immediately
   const [orgs, setOrgs] = useState<any[]>(() => getMyOrganizations(profileIdentity));
   const [showCreate, setShowCreate] = useState(false);
-  const [proStatus, setProStatus] = useState(false);
   const [form, setForm] = useState({ name: '', picture: '', city: '', description: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!profileIdentity) return;
     setOrgs(getMyOrganizations(profileIdentity));
-    setProStatus(isPro(profileIdentity));
     const interval = setInterval(() => {
       setOrgs(getMyOrganizations(profileIdentity));
     }, 3000);
@@ -57,15 +55,6 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
     }
   };
 
-  const handleUpgrade = async () => {
-    try {
-      await upgradeToPro();
-      setProStatus(true);
-    } catch (err: any) {
-      alert(err.message || 'Failed');
-    }
-  };
-
   return (
     <div className="org-section-wrap">
       <div className="org-section">
@@ -91,12 +80,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         )}
       </div>
 
-      {!proStatus ? (
-        <div className="pro-prompt">
-          <p>Pro subscription required to create organizations.</p>
-          <button onClick={handleUpgrade} className="upgrade-btn">Upgrade to Pro</button>
-        </div>
-      ) : !showCreate ? (
+      {!showCreate ? (
         <div className="claim-org-row">
           <button onClick={() => setShowCreate(true)} className="claim-org-btn">Claim New Organization</button>
           <button onClick={() => alert('Claim Existing Organization: search for your organization and tap "Claim" on its profile. Verification coming soon.')} className="claim-org-btn secondary">Claim Existing Organization</button>
@@ -129,13 +113,12 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .use-org-btn:hover { background: #667eea; color: white; }
         .pro-prompt { background: #fff8e1; padding: 16px; border-radius: 8px; text-align: center; margin-top: 16px; }
         .pro-prompt p { margin: 0 0 8px; color: #92400e; font-size: 14px; }
-        .upgrade-btn { padding: 8px 20px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .create-org-row { display: flex; justify-content: center; margin-top: 20px; }
         .claim-org-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        .claim-org-btn { padding: 10px 22px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
-        .claim-org-btn:hover { background: #16a34a; }
-        .claim-org-btn.secondary { background: white; color: #667eea; border: 1px solid #667eea; }
-        .claim-org-btn.secondary:hover { background: #667eea; color: white; }
+        .claim-org-btn { padding: 10px 22px; background: #f59e0b; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .claim-org-btn:hover { background: #d97706; }
+        .claim-org-btn.secondary { background: white; color: #f59e0b; border: 1px solid #f59e0b; }
+        .claim-org-btn.secondary:hover { background: #f59e0b; color: white; }
         .create-org-btn { padding: 10px 28px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .create-org-btn:hover { background: #16a34a; }
         .create-org-form { display: flex; flex-direction: column; gap: 8px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

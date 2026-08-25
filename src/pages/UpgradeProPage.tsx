@@ -18,10 +18,9 @@ function UpgradeProPage() {
         <div className="upgrade-card">
           <div className="pro-icon">★</div>
           <h2>Veri Pro</h2>
-          <p className="tagline">Unlimited descriptive searches and organization creation.</p>
+          <p className="tagline">Unlimited descriptive searches. A strictly separate payment from organization claiming.</p>
           <ul className="benefits">
             <li>Unlimited descriptive searches</li>
-            <li>Create and claim organizations</li>
             <li>Support the future of Veri Social</li>
           </ul>
           <button className="buy-btn" onClick={() => alert('Payments coming soon — Pro is free during testing.')}>
