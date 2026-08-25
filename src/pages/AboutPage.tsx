@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
@@ -6,6 +7,7 @@ import { useAuthProfile } from '../hooks/useAuthProfile';
 
 function AboutPage() {
   const navigate = useNavigate();
+  const [searchQ, setSearchQ] = useState('');
   const { isLoggedIn } = useAuthProfile();
   const handleSignIn = () => navigate('/login');
 
@@ -23,7 +25,7 @@ function AboutPage() {
             <img src="/veri.png" alt="Veri Social" />
           </Link>
         }
-        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
+        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
         right={<AuthActions />}
       />

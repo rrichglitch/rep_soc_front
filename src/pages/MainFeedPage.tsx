@@ -10,6 +10,7 @@ import SearchBar from '../components/SearchBar';
 
 function MainFeedPage() {
   const navigate = useNavigate();
+  const [searchQ, setSearchQ] = useState('');
   const { email } = useApp();
   const { activeOrg } = useOrg();
 
@@ -178,7 +179,7 @@ function MainFeedPage() {
     <div className="main-feed-page">
       <TopBar
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
+        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
         right={<AuthActions />}
       />

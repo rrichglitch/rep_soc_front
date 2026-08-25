@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import SearchBar from '../components/SearchBar';
@@ -6,6 +6,7 @@ import AuthActions from '../components/AuthActions';
 
 function TermsOfServicePage() {
   const navigate = useNavigate();
+  const [searchQ, setSearchQ] = useState('');
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -22,7 +23,7 @@ function TermsOfServicePage() {
     <div className="terms-of-service-page">
       <TopBar
         left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
-        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} /></div>}
+        center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
         right={<AuthActions />}
       />

@@ -23,6 +23,19 @@ import { useOrg } from '../contexts/OrgContext';
 
 function SearchPage() {
   const [searchParams] = useSearchParams();
+
+  // Arriving with ?opts=1 (options button tapped on another page) opens the
+  // options menu, then strips the param so refresh/back don't re-trigger.
+  useEffect(() => {
+    if (searchParams.get('opts') === '1') {
+      setShowSearchOptions(true);
+      const p = new URLSearchParams(searchParams);
+      p.delete('opts');
+      const rest = p.toString();
+      navigate(`/search${rest ? `?${rest}` : ''}`, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
   const { email } = useApp();
