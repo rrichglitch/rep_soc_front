@@ -116,6 +116,16 @@ export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
 
+export const MySearchResult = __t.object("MySearchResult", {
+  nonce: __t.string(),
+  resultsJson: __t.string(),
+  reranked: __t.bool(),
+});
+export type MySearchResult = __Infer<typeof MySearchResult>;
+
+export const MySearchResults = __t.object("MySearchResults", {});
+export type MySearchResults = __Infer<typeof MySearchResults>;
+
 export const Notification = __t.object("Notification", {
   id: __t.u64(),
   recipientIdentity: __t.identity(),
@@ -262,6 +272,16 @@ export const SearchRequest = __t.object("SearchRequest", {
   createdAt: __t.timestamp(),
 });
 export type SearchRequest = __Infer<typeof SearchRequest>;
+
+export const SearchRequestForBox = __t.object("SearchRequestForBox", {
+  nonce: __t.string(),
+  query: __t.string(),
+  paramsJson: __t.string(),
+});
+export type SearchRequestForBox = __Infer<typeof SearchRequestForBox>;
+
+export const SearchRequestsForBox = __t.object("SearchRequestsForBox", {});
+export type SearchRequestsForBox = __Infer<typeof SearchRequestsForBox>;
 
 export const SearchResult = __t.object("SearchResult", {
   recipient: __t.identity(),

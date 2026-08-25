@@ -93,12 +93,12 @@ import FriendRequestRow from "./friend_request_table";
 import FriendshipRow from "./friendship_table";
 import MessageRow from "./message_table";
 import MyFeedRow from "./my_feed_table";
+import MySearchResultsRow from "./my_search_results_table";
 import NotificationRow from "./notification_table";
 import OrgMemberRequestRow from "./org_member_request_table";
 import OrganizationRow from "./organization_table";
 import OrganizationMemberRow from "./organization_member_table";
-import SearchRequestRow from "./search_request_table";
-import SearchResultRow from "./search_result_table";
+import SearchRequestsForBoxRow from "./search_requests_for_box_table";
 import StoryPostRow from "./story_post_table";
 import UserProfileRow from "./user_profile_table";
 
@@ -189,20 +189,6 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, OrganizationMemberRow),
-  searchRequest: __table({
-    name: 'search_request',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, SearchRequestRow),
-  searchResult: __table({
-    name: 'search_result',
-    indexes: [
-    ],
-    constraints: [
-    ],
-  }, SearchResultRow),
   storyPost: __table({
     name: 'story_post',
     indexes: [
@@ -239,6 +225,20 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyFeedRow),
+  mySearchResults: __table({
+    name: 'my_search_results',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MySearchResultsRow),
+  searchRequestsForBox: __table({
+    name: 'search_requests_for_box',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, SearchRequestsForBoxRow),
 });
 
 /** The schema information for all reducers in this module. This is defined the same way as the reducers would have been defined in the server, except the body of the reducer is omitted in code generation. */
@@ -307,16 +307,16 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
     readonly "org_member_request": Omit<typeof tablesSchema.schemaType.tables["orgMemberRequest"], "accessorName"> & { readonly accessorName: "org_member_request" };
     /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
     readonly "organization_member": Omit<typeof tablesSchema.schemaType.tables["organizationMember"], "accessorName"> & { readonly accessorName: "organization_member" };
-    /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
-    readonly "search_request": Omit<typeof tablesSchema.schemaType.tables["searchRequest"], "accessorName"> & { readonly accessorName: "search_request" };
-    /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
-    readonly "search_result": Omit<typeof tablesSchema.schemaType.tables["searchResult"], "accessorName"> & { readonly accessorName: "search_result" };
     /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
     readonly "story_post": Omit<typeof tablesSchema.schemaType.tables["storyPost"], "accessorName"> & { readonly accessorName: "story_post" };
     /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */
     readonly "user_profile": Omit<typeof tablesSchema.schemaType.tables["userProfile"], "accessorName"> & { readonly accessorName: "user_profile" };
     /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
     readonly "my_feed": Omit<typeof tablesSchema.schemaType.tables["myFeed"], "accessorName"> & { readonly accessorName: "my_feed" };
+    /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
+    readonly "my_search_results": Omit<typeof tablesSchema.schemaType.tables["mySearchResults"], "accessorName"> & { readonly accessorName: "my_search_results" };
+    /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */
+    readonly "search_requests_for_box": Omit<typeof tablesSchema.schemaType.tables["searchRequestsForBox"], "accessorName"> & { readonly accessorName: "search_requests_for_box" };
   };
 };
 
@@ -338,11 +338,11 @@ const tableAccessorAliases = {
   "friend_request": "friendRequest",
   "org_member_request": "orgMemberRequest",
   "organization_member": "organizationMember",
-  "search_request": "searchRequest",
-  "search_result": "searchResult",
   "story_post": "storyPost",
   "user_profile": "userProfile",
   "my_feed": "myFeed",
+  "my_search_results": "mySearchResults",
+  "search_requests_for_box": "searchRequestsForBox",
 } as const;
 
 function __withTableAccessorAliases<T extends object>(target: T, freeze = false): T {
@@ -369,16 +369,16 @@ export type DbView = __DbViewBase & {
   readonly "org_member_request": __DbViewBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
   readonly "organization_member": __DbViewBase["organizationMember"];
-  /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
-  readonly "search_request": __DbViewBase["searchRequest"];
-  /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
-  readonly "search_result": __DbViewBase["searchResult"];
   /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
   readonly "story_post": __DbViewBase["storyPost"];
   /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */
   readonly "user_profile": __DbViewBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __DbViewBase["myFeed"];
+  /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
+  readonly "my_search_results": __DbViewBase["mySearchResults"];
+  /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */
+  readonly "search_requests_for_box": __DbViewBase["searchRequestsForBox"];
 };
 
 type __TablesBase = __QueryBuilder<typeof tablesSchema.schemaType>;
@@ -389,16 +389,16 @@ export type Tables = __TablesBase & {
   readonly "org_member_request": __TablesBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
   readonly "organization_member": __TablesBase["organizationMember"];
-  /** @deprecated Use `searchRequest` instead. This alias will be removed in the next major version. */
-  readonly "search_request": __TablesBase["searchRequest"];
-  /** @deprecated Use `searchResult` instead. This alias will be removed in the next major version. */
-  readonly "search_result": __TablesBase["searchResult"];
   /** @deprecated Use `storyPost` instead. This alias will be removed in the next major version. */
   readonly "story_post": __TablesBase["storyPost"];
   /** @deprecated Use `userProfile` instead. This alias will be removed in the next major version. */
   readonly "user_profile": __TablesBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __TablesBase["myFeed"];
+  /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
+  readonly "my_search_results": __TablesBase["mySearchResults"];
+  /** @deprecated Use `searchRequestsForBox` instead. This alias will be removed in the next major version. */
+  readonly "search_requests_for_box": __TablesBase["searchRequestsForBox"];
 };
 
 /** The tables available in this remote SpacetimeDB module. Each table reference doubles as a query builder. */
