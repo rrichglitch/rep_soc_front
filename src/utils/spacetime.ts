@@ -131,6 +131,7 @@ async function subscribeToTables(): Promise<void> {
           tables.organization_member,
           'SELECT * FROM my_search_results',
           'SELECT * FROM my_search_allowance',
+          'SELECT * FROM my_pro_subscription',
         ]);
     } catch (e) {
       console.error('Subscription error:', e);
@@ -1245,6 +1246,11 @@ export async function resolveNotification(notificationId: bigint): Promise<void>
 export async function upgradeToPro(): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.upgradeToPro({});
+}
+
+export async function cancelProSubscription(): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.cancelProSubscription({});
 }
 
 export function isPro(identity: string): boolean {

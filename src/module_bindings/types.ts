@@ -116,6 +116,9 @@ export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
 
+export const MyProSubscription = __t.object("MyProSubscription", {});
+export type MyProSubscription = __Infer<typeof MyProSubscription>;
+
 export const MySearchAllowance = __t.object("MySearchAllowance", {});
 export type MySearchAllowance = __Infer<typeof MySearchAllowance>;
 
@@ -209,6 +212,24 @@ export const PendingRegistrationState = __t.object("PendingRegistrationState", {
   profilePicture: __t.option(__t.string()),
 });
 export type PendingRegistrationState = __Infer<typeof PendingRegistrationState>;
+
+export const ProSubscription = __t.object("ProSubscription", {
+  identity: __t.identity(),
+  amountCents: __t.u32(),
+  billingPeriod: __t.string(),
+  nextBillDate: __t.string(),
+  active: __t.bool(),
+  createdAt: __t.timestamp(),
+});
+export type ProSubscription = __Infer<typeof ProSubscription>;
+
+export const ProSubscriptionInfo = __t.object("ProSubscriptionInfo", {
+  active: __t.bool(),
+  amountCents: __t.u32(),
+  billingPeriod: __t.string(),
+  nextBillDate: __t.string(),
+});
+export type ProSubscriptionInfo = __Infer<typeof ProSubscriptionInfo>;
 
 export const ProfileByEmailResult = __t.object("ProfileByEmailResult", {
   found: __t.bool(),

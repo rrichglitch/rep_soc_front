@@ -247,7 +247,11 @@ function MyProfilePage() {
                   Upgrade to Pro
                 </button>
               )}
-              {profile?.is_pro && <span className="pro-badge">PRO</span>}
+              {profile?.is_pro && (
+                <button className="pro-badge" onClick={() => navigate('/upgrade-pro')} aria-label="View Pro subscription">
+                  PRO
+                </button>
+              )}
             </div>
           </ProfileDetails>
         </div>
@@ -488,7 +492,9 @@ function MyProfilePage() {
         .join-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .upgrade-pro-btn { padding: 5px 14px; background: #f59e0b; color: white; border: none; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
         .upgrade-pro-btn:hover { background: #d97706; }
-        .pro-badge { padding: 3px 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; }
+        .pro-badge { padding: 3px 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: filter 0.15s; }
+        .pro-badge:hover { filter: brightness(1.08); }
+        .pro-badge:active { filter: brightness(0.85); }
 
                 }
 

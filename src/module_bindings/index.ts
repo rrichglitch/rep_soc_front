@@ -42,6 +42,7 @@ import AdminSetGenderReducer from "./admin_set_gender_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
 import AdminUpdateProfileReducer from "./admin_update_profile_reducer";
 import CancelFriendRequestReducer from "./cancel_friend_request_reducer";
+import CancelProSubscriptionReducer from "./cancel_pro_subscription_reducer";
 import ClaimProfileReducer from "./claim_profile_reducer";
 import CreateOrganizationReducer from "./create_organization_reducer";
 import CreateProfileReducer from "./create_profile_reducer";
@@ -93,6 +94,7 @@ import FriendRequestRow from "./friend_request_table";
 import FriendshipRow from "./friendship_table";
 import MessageRow from "./message_table";
 import MyFeedRow from "./my_feed_table";
+import MyProSubscriptionRow from "./my_pro_subscription_table";
 import MySearchAllowanceRow from "./my_search_allowance_table";
 import MySearchResultsRow from "./my_search_results_table";
 import NotificationRow from "./notification_table";
@@ -226,6 +228,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyFeedRow),
+  myProSubscription: __table({
+    name: 'my_pro_subscription',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyProSubscriptionRow),
   mySearchAllowance: __table({
     name: 'my_search_allowance',
     indexes: [
@@ -259,6 +268,7 @@ const reducersSchema = __reducers(
   __reducerSchema("admin_set_pro", AdminSetProReducer),
   __reducerSchema("admin_update_profile", AdminUpdateProfileReducer),
   __reducerSchema("cancel_friend_request", CancelFriendRequestReducer),
+  __reducerSchema("cancel_pro_subscription", CancelProSubscriptionReducer),
   __reducerSchema("claim_profile", ClaimProfileReducer),
   __reducerSchema("create_organization", CreateOrganizationReducer),
   __reducerSchema("create_profile", CreateProfileReducer),
@@ -321,6 +331,8 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
     readonly "user_profile": Omit<typeof tablesSchema.schemaType.tables["userProfile"], "accessorName"> & { readonly accessorName: "user_profile" };
     /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
     readonly "my_feed": Omit<typeof tablesSchema.schemaType.tables["myFeed"], "accessorName"> & { readonly accessorName: "my_feed" };
+    /** @deprecated Use `myProSubscription` instead. This alias will be removed in the next major version. */
+    readonly "my_pro_subscription": Omit<typeof tablesSchema.schemaType.tables["myProSubscription"], "accessorName"> & { readonly accessorName: "my_pro_subscription" };
     /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
     readonly "my_search_allowance": Omit<typeof tablesSchema.schemaType.tables["mySearchAllowance"], "accessorName"> & { readonly accessorName: "my_search_allowance" };
     /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
@@ -351,6 +363,7 @@ const tableAccessorAliases = {
   "story_post": "storyPost",
   "user_profile": "userProfile",
   "my_feed": "myFeed",
+  "my_pro_subscription": "myProSubscription",
   "my_search_allowance": "mySearchAllowance",
   "my_search_results": "mySearchResults",
   "search_requests_for_box": "searchRequestsForBox",
@@ -386,6 +399,8 @@ export type DbView = __DbViewBase & {
   readonly "user_profile": __DbViewBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __DbViewBase["myFeed"];
+  /** @deprecated Use `myProSubscription` instead. This alias will be removed in the next major version. */
+  readonly "my_pro_subscription": __DbViewBase["myProSubscription"];
   /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
   readonly "my_search_allowance": __DbViewBase["mySearchAllowance"];
   /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
@@ -408,6 +423,8 @@ export type Tables = __TablesBase & {
   readonly "user_profile": __TablesBase["userProfile"];
   /** @deprecated Use `myFeed` instead. This alias will be removed in the next major version. */
   readonly "my_feed": __TablesBase["myFeed"];
+  /** @deprecated Use `myProSubscription` instead. This alias will be removed in the next major version. */
+  readonly "my_pro_subscription": __TablesBase["myProSubscription"];
   /** @deprecated Use `mySearchAllowance` instead. This alias will be removed in the next major version. */
   readonly "my_search_allowance": __TablesBase["mySearchAllowance"];
   /** @deprecated Use `mySearchResults` instead. This alias will be removed in the next major version. */
