@@ -49,6 +49,7 @@ import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
+import DeliverSearchResultReducer from "./deliver_search_result_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
 import EnsureCleanupSweepReducer from "./ensure_cleanup_sweep_reducer";
 import FollowReducer from "./follow_reducer";
@@ -59,6 +60,7 @@ import PromoteToCoLeaderReducer from "./promote_to_co_leader_reducer";
 import RefreshFeedReducer from "./refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
 import RemoveOrgMemberReducer from "./remove_org_member_reducer";
+import RequestSemanticSearchReducer from "./request_semantic_search_reducer";
 import ResolveNotificationReducer from "./resolve_notification_reducer";
 import SendDirectMessageReducer from "./send_direct_message_reducer";
 import SendFriendRequestReducer from "./send_friend_request_reducer";
@@ -240,6 +242,7 @@ const reducersSchema = __reducers(
   __reducerSchema("decline_friend_request", DeclineFriendRequestReducer),
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
+  __reducerSchema("deliver_search_result", DeliverSearchResultReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
   __reducerSchema("ensure_cleanup_sweep", EnsureCleanupSweepReducer),
   __reducerSchema("follow", FollowReducer),
@@ -250,6 +253,7 @@ const reducersSchema = __reducers(
   __reducerSchema("refresh_feed", RefreshFeedReducer),
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
   __reducerSchema("remove_org_member", RemoveOrgMemberReducer),
+  __reducerSchema("request_semantic_search", RequestSemanticSearchReducer),
   __reducerSchema("resolve_notification", ResolveNotificationReducer),
   __reducerSchema("send_direct_message", SendDirectMessageReducer),
   __reducerSchema("send_friend_request", SendFriendRequestReducer),
