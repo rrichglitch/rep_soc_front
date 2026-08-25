@@ -10,6 +10,7 @@ function NotificationsPage() {
   const navigate = useNavigate();
   const { activeOrg } = useOrg();
   const [notifs, setNotifs] = useState<any[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
   const [currentIdentity, setCurrentIdentity] = useState<string | null>(null);
   const identityRef = { current: null as string | null };
 
@@ -41,20 +42,52 @@ function NotificationsPage() {
   }, [currentIdentity]);
 
   const handleResolve = async (id: bigint) => {
-    await resolveNotification(id);
+    setBusy(`resolve:${id}`);
+    try {
+      await resolveNotification(id);
+      setNotifs(prev => prev.filter(n => n.id !== id));
+    } catch (e: any) {
+      alert(e?.message || 'Failed. Please try again.');
+    } finally {
+      setBusy(null);
+    }
   };
 
   const handleAccept = async (refId: bigint) => {
-    await acceptFriendRequest(refId, activeOrg?.id);
+    setBusy(`accept:${refId}`);
+    try {
+      await acceptFriendRequest(refId, activeOrg?.id);
+      // Clear the original notification immediately
+      setNotifs(prev => prev.filter(n => !(n.type === 'friend_request' && n.referenceId === refId)));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to accept. Please try again.');
+      setBusy(null);
+    }
   };
 
   const handleDecline = async (refId: bigint) => {
-    await declineFriendRequest(refId, activeOrg?.id);
+    setBusy(`decline:${refId}`);
+    try {
+      await declineFriendRequest(refId, activeOrg?.id);
+      // Clear the original notification immediately
+      setNotifs(prev => prev.filter(n => !(n.type === 'friend_request' && n.referenceId === refId)));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to decline. Please try again.');
+      setBusy(null);
+    }
   };
 
   const handleClearAll = async () => {
-    for (const n of notifs.filter(n => !n.resolved)) {
-      try { await resolveNotification(n.id); } catch {}
+    setBusy('clearAll');
+    const targets = notifs.filter(n => !n.resolved);
+    try {
+      for (const n of targets) {
+        try { await resolveNotification(n.id); } catch {}
+      }
+      const ids = new Set(targets.map(n => n.id.toString()));
+      setNotifs(prev => prev.filter(n => !ids.has(n.id.toString())));
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -68,7 +101,7 @@ function NotificationsPage() {
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <h3 style={{margin:0}}>Notifications</h3>
           {pendingNotifs.length > 0 && (
-            <button onClick={handleClearAll} style={{padding:'6px 14px',background:'#ef4444',color:'white',border:'none',borderRadius:6,cursor:'pointer',fontSize:13,fontWeight:600}}>Clear All</button>
+            <button onClick={handleClearAll} disabled={busy !== null} className="notif-btn clear-btn">Clear All</button>
           )}
         </div>
         {pendingNotifs.length > 0 && (
@@ -82,11 +115,11 @@ function NotificationsPage() {
                 </div>
                 {n.type === 'friend_request' ? (
                   <div style={{display:'flex',gap:4,flexShrink:0}}>
-                    <button onClick={() => handleAccept(n.referenceId)} style={{padding:'6px 14px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>Accept</button>
-                    <button onClick={() => handleDecline(n.referenceId)} style={{padding:'6px 14px',background:'#dc2626',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>Decline</button>
+                    <button onClick={() => handleAccept(n.referenceId)} disabled={busy !== null} className="notif-btn accept-btn">Accept</button>
+                    <button onClick={() => handleDecline(n.referenceId)} disabled={busy !== null} className="notif-btn decline-btn">Decline</button>
                   </div>
                 ) : (
-                  <button onClick={() => handleResolve(n.id)} style={{padding:'6px 14px',background:'#22c55e',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontSize:14,fontWeight:600,position:'relative',zIndex:1}}>✓</button>
+                  <button onClick={() => handleResolve(n.id)} disabled={busy !== null} className="notif-btn accept-btn">✓</button>
                 )}
               </div>
             ))}
@@ -118,6 +151,12 @@ function NotificationsPage() {
         .notif-card.resolved { opacity: 0.6; }
         .notif-type { font-size: 11px; text-transform: uppercase; color: #667eea; font-weight: 600; }
         .notif-msg { margin: 4px 0; color: #333; font-size: 14px; }
+        .notif-btn { padding: 6px 14px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 600; position: relative; z-index: 1; transition: filter 0.1s, transform 0.05s; }
+        .notif-btn.accept-btn { background: #22c55e; }
+        .notif-btn.decline-btn { background: #dc2626; }
+        .notif-btn.clear-btn { background: #ef4444; border-radius: 6px; font-size: 13px; }
+        .notif-btn:active { filter: brightness(0.8); transform: scale(0.97); }
+        .notif-btn:disabled { filter: brightness(0.75) saturate(0.7); cursor: default; transform: none; }
         .notif-from { font-size: 12px; color: #999; }
         .empty { text-align: center; padding: 48px; color: #999; }
       `}</style>
