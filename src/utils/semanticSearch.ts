@@ -65,7 +65,15 @@ export async function semanticSearch(
     }
   };
 
-  (db as any).db.mySearchResults.onInsert(onInsert);
+  let subscribed = false;
+  try {
+    (db as any).db.mySearchResults.onInsert(onInsert);
+    subscribed = true;
+  } catch (e) {
+    // Subscription not applied yet (page just loaded) — the reducer still
+    // runs; the cache-poll below picks the result up instead.
+    console.warn('[semantic] push subscription not ready yet; will poll cache', e);
+  }
   const onAllowance = (_ctx: unknown, row: any) => {
     // Allowance rows update as a side effect of the request reducer; if the
     // server signalled exhaustion, fail fast with the code the provider maps.
@@ -73,8 +81,21 @@ export async function semanticSearch(
   };
   try { (db as any).db.mySearchAllowance.onInsert(onAllowance); } catch {}
 
+  let poll: ReturnType<typeof setInterval> | null = null;
   try {
     await (db as any).reducers.requestSemanticSearch({ nonce, query, paramsJson: params });
+    if (!subscribed) {
+      // Poll the locally-cached view until the row lands or we time out.
+      const pollStart = Date.now();
+      poll = setInterval(() => {
+        try {
+          for (const row of (db as any).db.mySearchResults.iter()) {
+            if (row.nonce === nonce) { onInsert(null, row); return; }
+          }
+        } catch { /* cache not ready yet */ }
+        if (Date.now() - pollStart > SEMANTIC_TIMEOUT_MS && poll) clearInterval(poll);
+      }, 200);
+    }
     const results = await Promise.race([
       resultPromise,
       new Promise<never>((_, rej) =>
@@ -83,6 +104,7 @@ export async function semanticSearch(
     ]);
     return results;
   } finally {
+    if (poll) clearInterval(poll);
     try { (db as any).db.mySearchResults.removeOnInsert(onInsert); } catch {}
     try { (db as any).db.mySearchAllowance.removeOnInsert(onAllowance); } catch {}
   }
