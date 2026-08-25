@@ -72,44 +72,8 @@ async function callStdbSearch(params: Record<string, unknown>): Promise<{
   return { results: out, nextCursor: result?.nextCursor ?? undefined };
 }
 
-// GPU-box semantic search. The endpoint is set once the box is provisioned;
-// until then this throws and every caller falls back to STDB.
-async function callGpuSearch(
-  query: string,
-  filters: SearchFilters
-): Promise<SearchResult[]> {
-  const endpoint = localStorage.getItem('veri_searchEndpoint');
-  if (!endpoint) throw new Error('Semantic search not configured');
-  const res = await fetch(`${endpoint}/search`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      q: query,
-      types: [
-        ...(filters.showIndividuals !== false ? ['person'] : []),
-        ...(filters.showOrganizations !== false ? ['org'] : []),
-      ],
-      gender: filters.gender && filters.gender !== 'any' ? filters.gender : undefined,
-      age_min: filters.ageMin,
-      age_max: filters.ageMax,
-      limit: filters.limit ?? 20,
-    }),
-  });
-  if (!res.ok) throw new Error(`GPU search failed: ${res.status}`);
-  const data = await res.json();
-  return (data.results ?? []).map((r: any) => ({
-    type: r.type,
-    identity: r.identity_hex || r.identity || '',
-    orgId: r.org_id !== undefined && r.org_id !== null ? BigInt(r.org_id) : undefined,
-    email: r.email || '',
-    fullName: r.full_name || r.fullName || '',
-    profilePicture: r.profile_picture || r.profilePicture || '',
-    city: r.city || '',
-    description: r.description || '',
-    locationLat: r.location_lat ?? r.locationLat,
-    locationLng: r.location_lng ?? r.locationLng,
-  }));
-}
+// Legacy direct-HTTP GPU search retained for reference; superseded by the
+// SpacetimeDB event-table bridge in ./semanticSearch (no public endpoint).
 
 // One-shot keyword search against SpacetimeDB. Handles pagination internally:
 // keeps pulling cursors until the page is filled or rows are exhausted.
@@ -167,7 +131,9 @@ export async function runSearch(
 
   if (provider === 'gpu') {
     try {
-      const gpuResults = await callGpuSearch(query, filters);
+      // Semantic path: SpacetimeDB event-table bridge to the GPU box.
+      const { semanticSearch } = await import('./semanticSearch');
+      const gpuResults = await semanticSearch(query, filters);
       if (gpuResults.length > 0) return decorate(gpuResults, opts.activePos);
       // Empty semantic results legitimately happen; still fall through to
       // keyword so exact matches are never missed.
