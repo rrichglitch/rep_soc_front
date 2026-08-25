@@ -1,4 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  loadSearchHistory,
+  recordSearch,
+  deleteSearch,
+  toggleSaveSearch,
+  getSearchHistoryId,
+  type SearchEntry,
+} from '../utils/searchHistory';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -10,14 +18,26 @@ interface SearchBarProps {
   onOptionsClick?: () => void;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
-  onSaveToggle?: () => void;
-  starActive?: boolean;
+  /** Explicit shared history bucket id. When omitted, the bar derives one
+   * from the signed-in email (or 'anon') so suggestions follow the user
+   * on every page. */
+  historyId?: string;
 }
 
-function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick, onInputFocus, onInputBlur, onSaveToggle, starActive }: SearchBarProps) {
+function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick, onInputFocus, onInputBlur, historyId }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined;
   const query = isControlled ? value : internalQuery;
+
+  const id = historyId ?? getSearchHistoryId();
+  const [hist, setHist] = useState<SearchEntry[]>(() => loadSearchHistory(id));
+  const [suggest, setSuggest] = useState(false);
+  const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowTouch = useRef<{ q: string; sx: number; sy: number } | null>(null);
+
+  useEffect(() => {
+    setHist(loadSearchHistory(id));
+  }, [id]);
 
   const setQuery = (newValue: string) => {
     if (!isControlled) {
@@ -26,17 +46,57 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
     onChange?.(newValue);
   };
 
+  const suggestions = useMemo(() => {
+    const prefix = query.trim().toLowerCase();
+    return hist
+      .filter((e) => e.q.toLowerCase().startsWith(prefix))
+      .sort((a, b) => (b.saved ? 1 : 0) - (a.saved ? 1 : 0) || b.at - a.at)
+      .slice(0, 5);
+  }, [hist, query]);
+
+  const starActive = !!hist.find((e) => e.q === query.trim() && e.saved);
+
+  const pick = (q: string) => {
+    setQuery(q);
+    setSuggest(false);
+    setHist(recordSearch(id, q));
+    onSearch(q);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    const q = query.trim();
+    if (!q) return;
+    setHist(recordSearch(id, q));
+    setSuggest(false);
+    onSearch(q);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setQuery(newValue);
+    setSuggest(true);
     if (newValue === '') {
       onSearch('');
     }
+  };
+
+  const handleFocus = () => {
+    setSuggest(true);
+    onInputFocus?.();
+  };
+
+  const handleBlur = () => {
+    // Delay so row taps (mousedown) land before the dropdown closes.
+    if (blurTimer.current) clearTimeout(blurTimer.current);
+    blurTimer.current = setTimeout(() => setSuggest(false), 160);
+    onInputBlur?.();
+  };
+
+  const toggleStar = () => {
+    const q = query.trim();
+    if (!q) return;
+    setHist(toggleSaveSearch(id, q));
   };
 
   return (
@@ -48,13 +108,13 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         placeholder={placeholder || 'Find people...'}
         className="search-input"
         autoFocus={autoFocus}
-        onFocus={onInputFocus}
-        onBlur={onInputBlur}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       />
-      {onSaveToggle && (
+      {query.trim() !== '' && (
         <button
           type="button"
-          onClick={onSaveToggle}
+          onClick={toggleStar}
           className={`search-star-btn ${starActive ? 'active' : ''}`}
           aria-label="Save search"
         >
@@ -89,13 +149,64 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         </svg>
       </button>
 
+      {suggest && suggestions.length > 0 && (
+        <div className="search-suggestions">
+          {suggestions.map((s) => (
+            <div
+              key={s.q}
+              className="search-suggestion"
+              onTouchStart={(e) => {
+                const t = e.touches[0];
+                if (t) rowTouch.current = { q: s.q, sx: t.clientX, sy: t.clientY };
+              }}
+              onTouchEnd={(e) => {
+                const g = rowTouch.current;
+                rowTouch.current = null;
+                if (!g || g.q !== s.q) return;
+                const t = e.changedTouches[0];
+                if (!t) return;
+                const dx = t.clientX - g.sx;
+                const dy = t.clientY - g.sy;
+                // Swipe left/right deletes a NON-saved search
+                if (!s.saved && Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                  setHist(deleteSearch(id, s.q));
+                }
+              }}
+            >
+              <button className="suggestion-main" onMouseDown={(e) => { e.preventDefault(); pick(s.q); }}>
+                {s.q}
+              </button>
+              {!s.saved && (
+                <button
+                  className="suggestion-x"
+                  aria-label="Delete search"
+                  onClick={() => setHist(deleteSearch(id, s.q))}
+                >
+                  ✕
+                </button>
+              )}
+              <button
+                className={`suggestion-star ${s.saved ? 'active' : ''}`}
+                aria-label={s.saved ? 'Unsave search' : 'Save search'}
+                onClick={() => setHist(toggleSaveSearch(id, s.q))}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill={s.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <style>{`
         .search-bar {
+          position: relative;
           display: flex;
           align-items: center;
           background: #f5f5f5;
           border-radius: 8px;
-          overflow: hidden;
+          overflow: visible;
           width: 100%;
         }
 
@@ -153,6 +264,66 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         .search-button:hover {
           color: #667eea;
         }
+
+        .search-suggestions {
+          position: absolute;
+          top: calc(100% + 6px);
+          left: 0;
+          right: 0;
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+          z-index: 60;
+          max-height: 260px;
+          overflow-y: auto;
+          padding: 4px 0;
+        }
+
+        .search-suggestion {
+          display: flex;
+          align-items: center;
+          padding: 0;
+        }
+
+        .suggestion-main {
+          flex: 1;
+          min-width: 0;
+          text-align: left;
+          padding: 10px 12px;
+          border: none;
+          background: transparent;
+          font-size: 14px;
+          color: #333;
+          cursor: pointer;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .search-suggestion:hover { background: #f5f7ff; }
+
+        .suggestion-x {
+          flex: 0 0 auto;
+          padding: 8px 6px;
+          border: none;
+          background: transparent;
+          color: #c4c8d0;
+          cursor: pointer;
+          font-size: 13px;
+        }
+        .suggestion-x:hover { color: #dc2626; }
+
+        .suggestion-star {
+          flex: 0 0 auto;
+          padding: 8px 10px 8px 4px;
+          border: none;
+          background: transparent;
+          color: #c4c8d0;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+        }
+        .suggestion-star.active { color: #f59e0b; }
       `}</style>
     </form>
   );

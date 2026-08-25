@@ -10,7 +10,6 @@ import { formatMiles } from '../utils/geo';
 // the connection handle into the search path.
 const getDbConnectionSafe = getDbConnection;
 import {
-  loadSearchHistory, recordSearch, deleteSearch, toggleSaveSearch, type SearchEntry,
 } from '../utils/searchHistory';
 
 import MapView from '../components/MapView';
@@ -59,14 +58,6 @@ function SearchPage() {
     }
   }, [query]);
 
-  // Manual edits while the bar is focused reopen the dropdown (a performed
-  // search hides it; the input stays focused, so the next keystroke brings the
-  // suggestions back). URL-synced changes never reopen it.
-  useEffect(() => {
-    const fromSync = urlSyncRef.current;
-    urlSyncRef.current = false;
-    if (inputFocusedRef.current && !fromSync) setShowSuggestions(true);
-  }, [inputValue]);
   const [isConnected, setIsConnected] = useState(false);
   const signedIn = isSignedIn();
   const [myPos, setMyPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -103,10 +94,6 @@ function SearchPage() {
   // Bumped on every explicit submit so re-running the SAME query still
   // triggers a fresh search (e.g. after changing the options).
   const [searchTick, setSearchTick] = useState(0);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const inputFocusedRef = useRef(false);
-  const [searchHistory, setSearchHistory] = useState<SearchEntry[]>(() => loadSearchHistory('anon'));
-  const rowTouchRef = useRef<{ q: string; sx: number; sy: number } | null>(null);
   const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
   const [ageMin, setAgeMin] = useState<string>(() => localStorage.getItem('veri_ageMin') || '');
   const [ageMax, setAgeMax] = useState<string>(() => localStorage.getItem('veri_ageMax') || '');
@@ -211,31 +198,6 @@ function SearchPage() {
     return () => { alive = false; clearInterval(t); };
   }, [email, isConnected]);
 
-  // Per-account search history: keyed on the resolved identity
-  const historyId = myIdentity || 'anon';
-  useEffect(() => {
-    setSearchHistory(loadSearchHistory(historyId));
-  }, [historyId]);
-
-  // Suggestions: saved searches first, then recency; prefix-filtered by the input.
-  // Only the top 5 render; the rest are reachable by scrolling the dropdown.
-  const suggestions = useMemo(() => {
-    const prefix = inputValue.trim().toLowerCase();
-    return [...searchHistory]
-      .filter((e) => e.q.toLowerCase().startsWith(prefix))
-      .sort((a, b) => (b.saved ? 1 : 0) - (a.saved ? 1 : 0) || b.at - a.at)
-      .slice(0, 5);
-  }, [searchHistory, inputValue]);
-  const starActive = !!searchHistory.find((e) => e.q === inputValue.trim() && e.saved);
-
-  const runSearch = (q: string) => {
-    const query = q.trim();
-    if (!query) return;
-    setSearchHistory(recordSearch(historyId, query));
-    setShowSuggestions(false);
-    navigate(`/search?q=${encodeURIComponent(query)}`);
-  };
-
   // The active reference point: an explicitly set search location wins over the saved one
   const activePos = useMemo(
     () => (searchLoc ? { lat: searchLoc.lat, lng: searchLoc.lng } : myPos),
@@ -310,8 +272,6 @@ function SearchPage() {
           <SearchBar
             onSearch={(q) => {
               if (q.trim()) {
-                setSearchHistory(recordSearch(historyId, q));
-                setShowSuggestions(false);
                 setShowSearchOptions(false);
                 // If the query is unchanged (e.g. options were just updated),
                 // the URL won't change — force a re-run via the tick.
@@ -321,65 +281,9 @@ function SearchPage() {
             }}
             value={inputValue}
             onChange={setInputValue}
-            onOptionsClick={signedIn ? () => { setShowSuggestions(false); setShowSearchOptions((v) => !v); } : undefined}
-            onInputFocus={() => { inputFocusedRef.current = true; setShowSearchOptions(false); setShowSuggestions(true); }}
-            onInputBlur={() => { inputFocusedRef.current = false; setTimeout(() => setShowSuggestions(false), 160); }}
-            onSaveToggle={() => {
-              const q = inputValue.trim();
-              if (!q) return;
-              setSearchHistory(toggleSaveSearch(historyId, q));
-            }}
-            starActive={starActive}
+            onOptionsClick={signedIn ? () => setShowSearchOptions((v) => !v) : undefined}
+            onInputFocus={() => setShowSearchOptions(false)}
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <div className="search-suggestions">
-              {suggestions.map((s) => (
-                <div
-                  key={s.q}
-                  className="search-suggestion"
-                  onTouchStart={(e) => {
-                    const t = e.touches[0];
-                    if (t) rowTouchRef.current = { q: s.q, sx: t.clientX, sy: t.clientY };
-                  }}
-                  onTouchEnd={(e) => {
-                    const g = rowTouchRef.current;
-                    rowTouchRef.current = null;
-                    if (!g || g.q !== s.q) return;
-                    const t = e.changedTouches[0];
-                    if (!t) return;
-                    const dx = t.clientX - g.sx;
-                    const dy = t.clientY - g.sy;
-                    // Swipe left/right deletes a NON-saved search
-                    if (!s.saved && Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
-                      setSearchHistory(deleteSearch(historyId, s.q));
-                    }
-                  }}
-                >
-                  <button className="suggestion-main" onMouseDown={(e) => { e.preventDefault(); runSearch(s.q); }}>
-                    {s.q}
-                  </button>
-                  {!s.saved && (
-                    <button
-                      className="suggestion-x"
-                      aria-label="Delete search"
-                      onClick={() => setSearchHistory(deleteSearch(historyId, s.q))}
-                    >
-                      ✕
-                    </button>
-                  )}
-                  <button
-                    className={`suggestion-star ${s.saved ? 'active' : ''}`}
-                    aria-label={s.saved ? 'Unsave search' : 'Save search'}
-                    onClick={() => setSearchHistory(toggleSaveSearch(historyId, s.q))}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill={s.saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
           {showSearchOptions && (
             <div className="search-options-menu" ref={searchOptionsRef}>
               {isSignedIn() && (

@@ -47,7 +47,7 @@ export async function semanticSearch(
       }
       const out = (parsed.results ?? []).map((r: any) => ({
         type: r.type === 'org' ? ('org' as const) : ('person' as const),
-        identity: r.identity_hex || '',
+        identity: (r.identity_hex || '').startsWith('0x') ? (r.identity_hex || '').slice(2) : (r.identity_hex || ''),
         orgId: r.org_id !== undefined && r.org_id !== null ? BigInt(r.org_id) : undefined,
         email: r.email || '',
         fullName: r.full_name || '',

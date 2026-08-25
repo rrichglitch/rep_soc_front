@@ -65,3 +65,14 @@ export function toggleSaveSearch(id: string, q: string): SearchEntry[] {
   persist(id, list);
   return list;
 }
+
+// The shared history bucket id for the signed-in account: their email
+// (stable across identity re-claims), 'anon' when logged out. Keeps ONE
+// suggestion list across every page with a search bar.
+import { getOAuthSession } from './oauthSession';
+
+export function getSearchHistoryId(): string {
+  const s = getOAuthSession();
+  const email = s?.email?.trim().toLowerCase();
+  return email || 'anon';
+}
