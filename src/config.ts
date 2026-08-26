@@ -1,8 +1,19 @@
 
 export const APP_URL = 'https://veri.social';
 export const BASE_PATH = import.meta.env.VITE_BASE_PATH || '';
-export const SPACETIMEDB_HOST = 'maincloud.spacetimedb.com';
-export const SPACETIMEDB_MODULE = 'repsoc';
+export const SPACETIMEDB_HOST = import.meta.env.VITE_STDB_HOST || 'maincloud.spacetimedb.com';
+
+/**
+ * THE ENVIRONMENT GATE — the single file that differs between deployments.
+ *
+ * The dev frontend (this repo) builds against the `repsoc` database and
+ * deploys to test.veri.social. The production frontend (separate repo,
+ * veri.social) builds the SAME code but points at the `verisocial` database.
+ * Switch via .env (VITE_STDB_MODULE) or by editing this constant.
+ * All runtime code reads backend identity from here — nothing else in the
+ * app knows the database name.
+ */
+export const SPACETIMEDB_MODULE = import.meta.env.VITE_STDB_MODULE || 'repsoc';
 
 // Our own OAuth relay (Google + Facebook) — replaces SpacetimeCloud OIDC
 export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://auth.veri.social';
