@@ -144,7 +144,7 @@ function UpgradeProPage() {
   return (
     <div className="upgrade-page">
       <TopBar
-        left={<button onClick={() => navigate(-1)} className="back-btn">← Back</button>}
+        left={<button onClick={() => (sessionId ? navigate('/me', { replace: true }) : navigate(-1))} className="back-btn">← Back</button>}
         center={<span className="upgrade-title">Veri Pro</span>}
         right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
       />

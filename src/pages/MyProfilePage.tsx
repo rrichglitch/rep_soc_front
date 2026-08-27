@@ -61,9 +61,13 @@ function MyProfilePage() {
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs'>('story');
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs'>(() => {
+    const saved = localStorage.getItem('veri_me_tab');
+    return (saved === 'story' || saved === 'posts' || saved === 'friends' || saved === 'orgs') ? (saved as any) : 'story';
+  });
   const [hideFriends, setHideFriends] = useState(false);
   const [isUpdatingHide, setIsUpdatingHide] = useState(false);
+  const [proConfirmed, setProConfirmed] = useState(false);
    
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
@@ -78,6 +82,37 @@ function MyProfilePage() {
     if (email) {
       loadProfile();
     }
+  }, [email]);
+
+  // Returning from Stripe Checkout after a Pro payment: land on the profile,
+  // show a confirmation banner, and poll until the webhook flips is_pro.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('pro_claim') !== 'success') return;
+    let alive = true;
+    let tries = 0;
+    const poll = async () => {
+      tries += 1;
+      const who = email || '';
+      if (who) {
+        try {
+          const p = await getProfileByEmail(who);
+          if (alive && p?.isPro) {
+            setProConfirmed(true);
+            window.history.replaceState({}, '', '/me');
+            setTimeout(() => { if (alive) setProConfirmed(false); }, 5000);
+            return;
+          }
+        } catch {}
+      }
+      if (tries >= 20) {
+        if (alive) window.history.replaceState({}, '', '/me');
+        return;
+      }
+      setTimeout(poll, 1500);
+    };
+    setTimeout(poll, 1500);
+    return () => { alive = false; };
   }, [email]);
 
   useEffect(() => {
@@ -217,6 +252,7 @@ function MyProfilePage() {
       />
 
       <main className="main-content">
+        {proConfirmed && <div className="pro-confirm-banner">✓ Payment confirmed — welcome to Pro!</div>}
         <div className="profile-section">
           <ProfileDetails
             picture={profile?.profile_picture || ''}
@@ -275,7 +311,7 @@ function MyProfilePage() {
               { key: 'orgs', label: 'Organizations' },
             ]}
             active={activeTab}
-            onChange={(k) => setActiveTab(k as any)}
+            onChange={(k) => { setActiveTab(k as any); localStorage.setItem('veri_me_tab', k); }}
           />
 
           {activeTab === 'orgs' ? (
@@ -490,6 +526,7 @@ function MyProfilePage() {
           color: #999;
         }
         .join-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .pro-confirm-banner { background: #ecfdf5; color: #059669; font-size: 14px; font-weight: 600; text-align: center; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
         .upgrade-pro-btn { padding: 5px 14px; background: #f59e0b; color: white; border: none; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
         .upgrade-pro-btn:hover { background: #d97706; }
         .pro-badge { padding: 3px 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: filter 0.15s; }

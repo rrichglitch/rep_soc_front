@@ -141,40 +141,38 @@ function CreateOrgPage() {
   };
 
   const saveField = (key: string, value: string) => setForm({ ...form, [key]: value });
+  const busy = paying || creating || confirming;
 
   return (
     <div className="create-org-page">
       <TopBar
-        left={<button onClick={() => navigate(-1)} className="back-btn">← Back</button>}
+        left={<button onClick={() => (orgClaimSuccess ? navigate('/me', { replace: true }) : navigate(-1))} className="back-btn">← Back</button>}
         center={<span className="create-org-title">Create Organization</span>}
         right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
       />
       <div className="create-org-body">
-        {confirming ? (
-          <div className="org-confirm-card">
-            <div className="org-confirm-icon">⏳</div>
-            <h2>Confirming your payment…</h2>
-            <p>Your one-time claim fee is being confirmed. Your organization will be created automatically the moment the payment clears.</p>
+        <form onSubmit={handleSubmit} className="create-org-card">
+          <input value={form.name} onChange={e => saveField('name', e.target.value)} placeholder="Organization name" required disabled={busy} className="org-input" />
+          <input type="file" ref={fileInputRef} accept="image/*" onChange={handlePictureChange} style={{ display: 'none' }} disabled={busy} />
+          <div onClick={() => !busy && fileInputRef.current?.click()} className={`org-pic-upload${busy ? ' disabled' : ''}`}>
+            {form.picture ? (
+              <img src={form.picture} alt="Preview" className="org-pic-preview" />
+            ) : (
+              <span>Tap to upload picture</span>
+            )}
           </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="create-org-card">
-            <input value={form.name} onChange={e => saveField('name', e.target.value)} placeholder="Organization name" required className="org-input" />
-            <input type="file" ref={fileInputRef} accept="image/*" onChange={handlePictureChange} style={{ display: 'none' }} />
-            <div onClick={() => fileInputRef.current?.click()} className="org-pic-upload">
-              {form.picture ? (
-                <img src={form.picture} alt="Preview" className="org-pic-preview" />
-              ) : (
-                <span>Tap to upload picture</span>
-              )}
-            </div>
-            <input value={form.city} onChange={e => saveField('city', e.target.value)} placeholder="City" required className="org-input" />
-            <textarea value={form.description} onChange={e => saveField('description', e.target.value)} placeholder="Description" required className="org-input" rows={3} />
-            <button type="submit" className="org-submit" disabled={paying || creating}>
-              {creating ? 'Creating…' : paying ? 'Opening payment…' : feePaid ? 'Create Organization' : 'Pay $19.99 & Create Organization'}
-            </button>
-            {!feePaid && <p className="fee-note">One-time $19.99 claim fee · strictly separate from Pro — you'll be taken to secure Stripe checkout.</p>}
-          </form>
-        )}
+          <input value={form.city} onChange={e => saveField('city', e.target.value)} placeholder="City" required disabled={busy} className="org-input" />
+          <textarea value={form.description} onChange={e => saveField('description', e.target.value)} placeholder="Description" required disabled={busy} className="org-input" rows={3} />
+          <button type="submit" className="org-submit" disabled={busy}>
+            {busy && <span className="btn-spinner" />}
+            {creating ? 'Creating…' : paying ? 'Opening payment…' : confirming ? 'Confirming payment…' : feePaid ? 'Create Organization' : 'Pay $19.99 & Create Organization'}
+          </button>
+          {confirming ? (
+            <p className="confirm-note"><span className="btn-spinner small" /> Confirming your payment — your organization will be created automatically.</p>
+          ) : (
+            !feePaid && <p className="fee-note">One-time $19.99 claim fee · strictly separate from Pro — you'll be taken to secure Stripe checkout.</p>
+          )}
+        </form>
       </div>
       <style>{`
         .create-org-page { min-height: 100vh; background: #f5f5f5; }
@@ -187,15 +185,16 @@ function CreateOrgPage() {
         .org-input:focus { border-color: #667eea; }
         .org-pic-upload { padding: 16px; border: 2px dashed #e0e0e0; border-radius: 8px; text-align: center; cursor: pointer; color: #999; font-size: 14px; display: flex; align-items: center; justify-content: center; min-height: 60px; }
         .org-pic-upload:hover { border-color: #667eea; }
+        .org-pic-upload.disabled { opacity: 0.6; pointer-events: none; }
         .org-pic-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
-        .org-submit { padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
+        .org-submit { padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .org-submit:hover { background: #16a34a; }
         .org-submit:disabled { opacity: 0.7; cursor: default; }
+        .btn-spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: btnspin 0.8s linear infinite; display: inline-block; }
+        .btn-spinner.small { width: 12px; height: 12px; border-width: 2px; vertical-align: -2px; margin-right: 6px; }
+        @keyframes btnspin { to { transform: rotate(360deg); } }
+        .confirm-note { margin: 10px 0 0; color: #667eea; font-size: 13px; font-weight: 600; text-align: center; }
         .fee-note { margin: 2px 0 0; color: #999; font-size: 12px; text-align: center; }
-        .org-confirm-card { background: white; border-radius: 12px; padding: 36px 28px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .org-confirm-icon { font-size: 36px; margin-bottom: 8px; }
-        .org-confirm-card h2 { margin: 0 0 10px; color: #222; font-size: 18px; }
-        .org-confirm-card p { margin: 0; color: #666; font-size: 14px; line-height: 1.5; }
       `}</style>
     </div>
   );

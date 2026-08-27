@@ -79,7 +79,22 @@ function AuthGate({ children }: { children: ReactNode }) {
       setEmail(oauthSession.email);
 
       try {
-        await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
+        // Retry the connection before giving up: a single transient failure
+        // (cold-boot right after a redirect, WS hiccup) must NOT log the user
+        // out — that previously nuked the session and dumped users on the
+        // landing page after Stripe Checkout returns.
+        let connected = false;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          try {
+            await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
+            connected = true;
+            break;
+          } catch (e) {
+            if (attempt === 3) throw e;
+            await new Promise((r) => setTimeout(r, 800 * attempt));
+          }
+        }
+        if (!connected) throw new Error('connect failed');
 
         let profileExists = false;
         for (let i = 0; i < 30; i++) {
