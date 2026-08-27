@@ -262,7 +262,10 @@ function SearchPage() {
 
     searchQuery();
     return () => { cancelled = true; };
-  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations, searchTick]);
+    // signedIn must be a dep: signing in/out after a cold load changes the
+    // tier (anon = orgs only) — without it the stale empty result persists
+    // until the page is remounted.
+  }, [query, isConnected, activePos, nearbyFirst, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations, searchTick, signedIn]);
 
   return (
     <div className="search-page">
