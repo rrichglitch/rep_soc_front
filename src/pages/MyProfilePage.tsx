@@ -2,9 +2,17 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation, disconnectFromSpacetimeDB } from '../utils/spacetime';
+import {
+  getProfileByEmail,
+  getMyStoryPosts,
+  getMyPosts,
+  updateProfile,
+  deleteStoryPost,
+  updateLocation,
+  disconnectFromSpacetimeDB,
+} from '../utils/spacetime';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
-import { repairCheckoutHistory } from '../utils/checkoutReturn';
+import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
@@ -91,7 +99,7 @@ function MyProfilePage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('pro_claim') !== 'success') return;
-    repairCheckoutHistory(navigate);
+    markCheckoutReturn();
     let alive = true;
     let tries = 0;
     const poll = async () => {
@@ -229,6 +237,10 @@ function MyProfilePage() {
     reader.readAsDataURL(file);
   };
 
+  const handleBack = () => {
+    if (!skipCheckoutDetour()) navigate(-1);
+  };
+
   if (activeOrg) {
     return <OrgAccountView />;
   }
@@ -248,7 +260,7 @@ function MyProfilePage() {
   return (
     <div className="my-profile-page">
       <TopBar
-        left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>}
+        left={<button onClick={handleBack} className="topbar-back">← Back</button>}
         center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         right={<AuthActions profileReplacement={<button onClick={handleLogout} className="topbar-signin" style={{background:"#dc2626"}}>Log Out</button>} />}
         absoluteCenter

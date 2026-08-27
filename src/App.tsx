@@ -9,6 +9,7 @@ import {
 } from 'react-router-dom';
 import type { Identity } from 'spacetimedb';
 import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { hasCheckoutReturnMarker, clearCheckoutReturnMarker } from './utils/checkoutReturn';
 import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
 
@@ -172,12 +173,25 @@ function ScrollToTop() {
   return null;
 }
 
+// Clear the checkout-return marker once the user leaves the payment-flow pages
+// (profile, org pages, upgrade page) — otherwise a later back press could
+// over-jump the history. The flow pages keep it so the detour skip stays armed.
+function CheckoutMarkerGuard() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const keep = pathname === '/me' || pathname === '/upgrade-pro' || pathname.startsWith('/org/');
+    if (!keep && hasCheckoutReturnMarker()) clearCheckoutReturnMarker();
+  }, [pathname]);
+  return null;
+}
+
 // Tiny helper so ScrollToTop doesn't need react-router's useLocation inside
 // the same tree as heavy siblings.
 function AppRoutes() {
   return (
     <>
       <ScrollToTop />
+      <CheckoutMarkerGuard />
     <Routes>
       <Route path="/callback" element={<CallbackPage />} />
       <Route path="/login" element={<LoginPage />} />

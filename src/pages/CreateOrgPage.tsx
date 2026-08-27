@@ -5,7 +5,7 @@ import { useApp } from '../App';
 import { isSignedIn } from '../utils/authState';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee } from '../utils/spacetime';
 import { requestCheckout } from '../utils/payments';
-import { repairCheckoutHistory } from '../utils/checkoutReturn';
+import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { geocodeCity } from '../utils/geo';
 
 const PENDING_KEY = 'veri_pending_org';
@@ -67,7 +67,7 @@ function CreateOrgPage() {
   // pending form automatically. No pop-ups — the page state carries the flow.
   useEffect(() => {
     if (!orgClaimSuccess) return;
-    repairCheckoutHistory(navigate);
+    markCheckoutReturn();
     setConfirming(true);
     let alive = true;
     let tries = 0;
@@ -80,15 +80,18 @@ function CreateOrgPage() {
         if (!alive) return;
         setConfirming(false);
         localStorage.removeItem(PENDING_KEY);
-        window.history.replaceState({}, '', '/org/create');
         await doCreate(pending);
         return;
       }
+      // Paid but no pending form — the org was already created in an earlier
+      // pass (user backed into this page). Keep the landing URL intact so the
+      // back button can still skip the Stripe entry.
+      if (paid && !pending) {
+        if (alive) setConfirming(false);
+        return;
+      }
       if (tries >= 20) {
-        if (alive) {
-          setConfirming(false);
-          window.history.replaceState({}, '', '/org/create');
-        }
+        if (alive) setConfirming(false);
         return;
       }
       setTimeout(poll, 2000);
@@ -145,10 +148,14 @@ function CreateOrgPage() {
   const saveField = (key: string, value: string) => setForm({ ...form, [key]: value });
   const busy = paying || creating || confirming;
 
+  const handleBack = () => {
+    if (!skipCheckoutDetour()) navigate(-1);
+  };
+
   return (
     <div className="create-org-page">
       <TopBar
-        left={<button onClick={() => (orgClaimSuccess ? navigate('/me', { replace: true }) : navigate(-1))} className="back-btn">← Back</button>}
+        left={<button onClick={handleBack} className="back-btn">← Back</button>}
         center={<span className="create-org-title">Create Organization</span>}
         right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
       />

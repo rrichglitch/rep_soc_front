@@ -5,7 +5,7 @@ import { useApp } from '../App';
 import { isSignedIn } from '../utils/authState';
 import { getProfileByEmail, getDbConnection, cancelProSubscription } from '../utils/spacetime';
 import { requestCheckout, cancelSubscriptionViaStripe } from '../utils/payments';
-import { repairCheckoutHistory } from '../utils/checkoutReturn';
+import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 
 function UpgradeProPage() {
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ function UpgradeProPage() {
   // then poll until the webhook flips the subscription active.
   useEffect(() => {
     if (!sessionId) return;
-    repairCheckoutHistory(navigate);
+    markCheckoutReturn();
     setConfirming(true);
     let alive = true;
     let tries = 0;
@@ -143,10 +143,14 @@ function UpgradeProPage() {
     ? new Date(sub.nextBillDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
     : '';
 
+  const handleBack = () => {
+    if (!skipCheckoutDetour()) navigate(-1);
+  };
+
   return (
     <div className="upgrade-page">
       <TopBar
-        left={<button onClick={() => (sessionId ? navigate('/me', { replace: true }) : navigate(-1))} className="back-btn">← Back</button>}
+        left={<button onClick={handleBack} className="back-btn">← Back</button>}
         center={<span className="upgrade-title">Veri Pro</span>}
         right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
       />
