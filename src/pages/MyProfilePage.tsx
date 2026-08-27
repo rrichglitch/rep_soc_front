@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useApp } from '../App';
 import { getProfileByEmail, getMyStoryPosts, getMyPosts, updateProfile, deleteStoryPost, updateLocation, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
+import { repairCheckoutHistory } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import AuthActions from '../components/AuthActions';
 import TopBar from '../components/TopBar';
@@ -85,10 +86,12 @@ function MyProfilePage() {
   }, [email]);
 
   // Returning from Stripe Checkout after a Pro payment: land on the profile,
-  // show a confirmation banner, and poll until the webhook flips is_pro.
+  // repair history (skip the Stripe entry), show a confirmation banner, and
+  // poll until the webhook flips is_pro.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('pro_claim') !== 'success') return;
+    repairCheckoutHistory(navigate);
     let alive = true;
     let tries = 0;
     const poll = async () => {

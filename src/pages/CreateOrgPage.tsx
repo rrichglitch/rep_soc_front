@@ -5,6 +5,7 @@ import { useApp } from '../App';
 import { isSignedIn } from '../utils/authState';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee } from '../utils/spacetime';
 import { requestCheckout } from '../utils/payments';
+import { repairCheckoutHistory } from '../utils/checkoutReturn';
 import { geocodeCity } from '../utils/geo';
 
 const PENDING_KEY = 'veri_pending_org';
@@ -66,6 +67,7 @@ function CreateOrgPage() {
   // pending form automatically. No pop-ups — the page state carries the flow.
   useEffect(() => {
     if (!orgClaimSuccess) return;
+    repairCheckoutHistory(navigate);
     setConfirming(true);
     let alive = true;
     let tries = 0;

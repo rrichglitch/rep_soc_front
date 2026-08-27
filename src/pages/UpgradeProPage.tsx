@@ -5,6 +5,7 @@ import { useApp } from '../App';
 import { isSignedIn } from '../utils/authState';
 import { getProfileByEmail, getDbConnection, cancelProSubscription } from '../utils/spacetime';
 import { requestCheckout, cancelSubscriptionViaStripe } from '../utils/payments';
+import { repairCheckoutHistory } from '../utils/checkoutReturn';
 
 function UpgradeProPage() {
   const navigate = useNavigate();
@@ -55,10 +56,11 @@ function UpgradeProPage() {
     return () => { alive = false; clearTimeout(t); };
   }, [email]);
 
-  // Returning from Stripe Checkout: poll until the webhook flips the
-  // subscription active, then drop the ?session_id= from the URL.
+  // Returning from Stripe Checkout: repair history (skip the Stripe entry),
+  // then poll until the webhook flips the subscription active.
   useEffect(() => {
     if (!sessionId) return;
+    repairCheckoutHistory(navigate);
     setConfirming(true);
     let alive = true;
     let tries = 0;
@@ -161,9 +163,9 @@ function UpgradeProPage() {
             </>
           ) : isActive ? (
             <>
-              <p className="tagline">Your subscription is active — and it's a strictly separate payment from organization claiming.</p>
+              <p className="tagline">Your subscription is active.</p>
               <p className="sub-status"><span className="status-dot" /> Active</p>
-              {cancelled && <p className="cancelled-note">Cancellation scheduled — you keep Pro through {billDate || 'the end of this period'}.</p>}
+              {cancelled && <p className="cancelled-note">Cancellation scheduled — Pro stays active until {billDate || 'the end of your billing period'}, then it ends and won't renew.</p>}
               <ul className="benefits">
                 <li>Unlimited descriptive searches</li>
                 <li>Support the future of Veri Social</li>
@@ -179,7 +181,7 @@ function UpgradeProPage() {
             </>
           ) : (
             <>
-              <p className="tagline">Unlimited descriptive searches. A strictly separate payment from organization claiming.</p>
+              <p className="tagline">Unlimited descriptive searches.</p>
               {cancelled && <p className="cancelled-note">Your subscription has ended.</p>}
               <ul className="benefits">
                 <li>Unlimited descriptive searches</li>
