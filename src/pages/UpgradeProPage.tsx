@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import { useApp } from '../App';
-import { isSignedIn } from '../utils/authState';
-import { getProfileByEmail, getDbConnection, cancelProSubscription } from '../utils/spacetime';
+import { getProfileByEmail, getDbConnection, cancelProSubscription, disconnectFromSpacetimeDB } from '../utils/spacetime';
+import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout, cancelSubscriptionViaStripe } from '../utils/payments';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 
@@ -11,6 +12,12 @@ function UpgradeProPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { email } = useApp();
+
+  const handleLogout = () => {
+    clearOAuthSession();
+    disconnectFromSpacetimeDB();
+    navigate('/', { replace: true });
+  };
   const [isPro, setIsPro] = useState<boolean | null>(null);
   const [sub, setSub] = useState<{ active: boolean; amountCents: number; billingPeriod: string; nextBillDate: string } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -150,14 +157,15 @@ function UpgradeProPage() {
   return (
     <div className="upgrade-page">
       <TopBar
-        left={<button onClick={handleBack} className="back-btn">← Back</button>}
-        center={<span className="upgrade-title">Veri Pro</span>}
-        right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<button onClick={handleBack} className="topbar-back">← Back</button>}
+        center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        right={<AuthActions profileReplacement={<button onClick={handleLogout} className="topbar-signin" style={{background:"#dc2626"}}>Log Out</button>} />}
+        absoluteCenter
       />
       <div className="upgrade-body">
+        <h1 className="page-title">Veri Pro</h1>
         <div className="upgrade-card">
           <div className="pro-icon">★</div>
-          <h2>Veri Pro</h2>
 
           {confirming ? (
             <>
@@ -201,10 +209,10 @@ function UpgradeProPage() {
       </div>
       <style>{`
         .upgrade-page { min-height: 100vh; background: #f5f5f5; }
-        .back-btn { background: none; border: none; font-size: 15px; color: #667eea; cursor: pointer; }
-        .upgrade-title { font-weight: 700; font-size: 16px; color: #333; }
+        .topbar-back { background: none; border: none; font-size: 15px; color: #667eea; cursor: pointer; }
         .topbar-logo img { height: 28px; }
-        .upgrade-body { display: flex; justify-content: center; padding: 40px 16px; }
+        .upgrade-body { display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+        .page-title { margin: 0 0 18px; font-size: 20px; font-weight: 700; color: #222; text-align: center; }
         .upgrade-card { background: white; border-radius: 16px; padding: 36px 32px; max-width: 380px; width: 100%; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
         .pro-icon { font-size: 42px; background: linear-gradient(135deg, #f59e0b, #d97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
         .upgrade-card h2 { margin: 0 0 6px; color: #222; }

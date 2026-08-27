@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import TopBar from '../components/TopBar';
+import AuthActions from '../components/AuthActions';
 import { useApp } from '../App';
-import { isSignedIn } from '../utils/authState';
-import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee } from '../utils/spacetime';
+import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee, disconnectFromSpacetimeDB } from '../utils/spacetime';
+import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout } from '../utils/payments';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { geocodeCity } from '../utils/geo';
@@ -14,6 +15,12 @@ function CreateOrgPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { email } = useApp();
+
+  const handleLogout = () => {
+    clearOAuthSession();
+    disconnectFromSpacetimeDB();
+    navigate('/', { replace: true });
+  };
   const [form, setForm] = useState<any>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
@@ -155,11 +162,13 @@ function CreateOrgPage() {
   return (
     <div className="create-org-page">
       <TopBar
-        left={<button onClick={handleBack} className="back-btn">← Back</button>}
-        center={<span className="create-org-title">Create Organization</span>}
-        right={<Link to={isSignedIn() ? '/home' : '/'} className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        left={<button onClick={handleBack} className="topbar-back">← Back</button>}
+        center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
+        right={<AuthActions profileReplacement={<button onClick={handleLogout} className="topbar-signin" style={{background:"#dc2626"}}>Log Out</button>} />}
+        absoluteCenter
       />
       <div className="create-org-body">
+        <h1 className="page-title">Create Organization</h1>
         <form onSubmit={handleSubmit} className="create-org-card">
           <input value={form.name} onChange={e => saveField('name', e.target.value)} placeholder="Organization name" required disabled={busy} className="org-input" />
           <input type="file" ref={fileInputRef} accept="image/*" onChange={handlePictureChange} style={{ display: 'none' }} disabled={busy} />
@@ -185,10 +194,10 @@ function CreateOrgPage() {
       </div>
       <style>{`
         .create-org-page { min-height: 100vh; background: #f5f5f5; }
-        .back-btn { background: none; border: none; font-size: 15px; color: #667eea; cursor: pointer; }
-        .create-org-title { font-weight: 700; font-size: 16px; color: #333; }
+        .topbar-back { background: none; border: none; font-size: 15px; color: #667eea; cursor: pointer; }
         .topbar-logo img { height: 28px; }
-        .create-org-body { display: flex; justify-content: center; padding: 32px 16px; }
+        .create-org-body { display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
+        .page-title { margin: 0 0 18px; font-size: 20px; font-weight: 700; color: #222; text-align: center; }
         .create-org-card { display: flex; flex-direction: column; gap: 10px; background: white; border-radius: 12px; padding: 24px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 380px; width: 100%; }
         .org-input { padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; font-family: inherit; resize: vertical; }
         .org-input:focus { border-color: #667eea; }
