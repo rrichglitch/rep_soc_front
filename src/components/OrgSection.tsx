@@ -64,10 +64,18 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
           <div className="claim-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Claim an Existing Organization</h3>
             <p>
-              To claim an existing organization, search for it, open its profile, and tap the{' '}
-              <strong>Claim</strong> button on that profile. Verification is coming soon.
+              Search for organizations without a leader and tap <strong>Claim</strong> on their
+              profile to take over. Verification is coming soon.
             </p>
-            <button onClick={() => setShowClaimInfo(false)} className="claim-modal-ok">Ok</button>
+            <div className="claim-modal-actions">
+              <button onClick={() => setShowClaimInfo(false)} className="claim-modal-cancel">Cancel</button>
+              <button
+                onClick={() => { setShowClaimInfo(false); navigate('/search?claimable=1'); }}
+                className="claim-modal-search"
+              >
+                Search organizations
+              </button>
+            </div>
           </div>
         </div>,
         document.body
@@ -88,8 +96,11 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .claim-modal { background: white; border-radius: 12px; padding: 24px 22px; max-width: 340px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.15); text-align: center; }
         .claim-modal h3 { margin: 0 0 10px; color: #222; font-size: 17px; }
         .claim-modal p { margin: 0 0 18px; color: #555; font-size: 14px; line-height: 1.5; }
-        .claim-modal-ok { padding: 9px 26px; background: #667eea; color: white; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
-        .claim-modal-ok:hover { background: #5a6fd6; }
+        .claim-modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .claim-modal-cancel { padding: 9px 22px; background: #f3f4f6; color: #374151; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .claim-modal-cancel:hover { background: #e5e7eb; }
+        .claim-modal-search { padding: 9px 22px; background: #667eea; color: white; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .claim-modal-search:hover { background: #5a6fd6; }
       `}</style>
     </div>
   );
