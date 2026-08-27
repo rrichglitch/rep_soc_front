@@ -74,6 +74,7 @@ function SearchPage() {
   const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
   const [providerMode, setProviderMode] = useState<SearchMode>(() => getSearchProvider());
   const switchProvider = (m: SearchMode) => {
+    if (m !== providerMode) dropClaimable();
     setSearchProvider(m);
     setProviderMode(m);
   };
@@ -116,7 +117,21 @@ function SearchPage() {
     return localStorage.getItem('veri_showOrganizations') !== '0';
   });
   // Silent claim-mode: orgs WITHOUT a leader only (backend-seeded, claimable).
-  const [claimableOnly] = useState<boolean>(() => new URLSearchParams(window.location.search).get('claimable') === '1');
+  const [claimableOnly, setClaimableOnly] = useState<boolean>(() => new URLSearchParams(window.location.search).get('claimable') === '1');
+  // Any option change EXCEPT location exits claim mode: the leaderless
+  // restriction is a curated flow, so once the user starts adjusting search
+  // criteria it quietly reverts to a normal search. The URL param is stripped
+  // too (replace, no history entry) so the current page no longer carries it.
+  const dropClaimable = () => {
+    if (!claimableOnly) return;
+    setClaimableOnly(false);
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('claimable') === '1') {
+      p.delete('claimable');
+      const rest = p.toString();
+      navigate(`/search${rest ? `?${rest}` : ''}`, { replace: true });
+    }
+  };
   const searchOptionsRef = useRef<HTMLDivElement>(null);
   const [locInput, setLocInput] = useState('');
   const [locSuggestions, setLocSuggestions] = useState<{ place_id: number; display_name: string; lat: string; lon: string }[]>([]);
@@ -390,7 +405,7 @@ function SearchPage() {
                     <input
                       type="checkbox"
                       checked={showIndividuals}
-                      onChange={(e) => setShowIndividuals(e.target.checked)}
+                      onChange={(e) => { dropClaimable(); setShowIndividuals(e.target.checked); }}
                       style={{ display: 'none' }}
                     />
                     Individuals
@@ -399,7 +414,7 @@ function SearchPage() {
                     <input
                       type="checkbox"
                       checked={showOrganizations}
-                      onChange={(e) => setShowOrganizations(e.target.checked)}
+                      onChange={(e) => { dropClaimable(); setShowOrganizations(e.target.checked); }}
                       style={{ display: 'none' }}
                     />
                     Organizations
@@ -430,7 +445,7 @@ function SearchPage() {
                     <button
                       key={v}
                       className={`filter-pill ${genderFilter === v ? 'selected' : ''}`}
-                      onClick={() => setGenderFilter(v)}
+                      onClick={() => { if (v !== genderFilter) dropClaimable(); setGenderFilter(v); }}
                     >
                       {label}
                     </button>
@@ -446,7 +461,7 @@ function SearchPage() {
                     max={120}
                     placeholder="Min"
                     value={ageMin}
-                    onChange={(e) => setAgeMin(e.target.value)}
+                    onChange={(e) => { dropClaimable(); setAgeMin(e.target.value); }}
                     className="age-filter-input"
                   />
                   <span className="age-filter-sep">–</span>
@@ -456,7 +471,7 @@ function SearchPage() {
                     max={120}
                     placeholder="Max"
                     value={ageMax}
-                    onChange={(e) => setAgeMax(e.target.value)}
+                    onChange={(e) => { dropClaimable(); setAgeMax(e.target.value); }}
                     className="age-filter-input"
                   />
                 </div>
