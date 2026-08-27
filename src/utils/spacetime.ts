@@ -132,6 +132,7 @@ async function subscribeToTables(): Promise<void> {
           'SELECT * FROM my_search_results',
           'SELECT * FROM my_search_allowance',
           'SELECT * FROM my_pro_subscription',
+          'SELECT * FROM my_org_claim_fee',
         ]);
     } catch (e) {
       console.error('Subscription error:', e);
@@ -1257,5 +1258,17 @@ export function isPro(identity: string): boolean {
   if (!dbConnection) return false;
   const p = dbConnection.db.user_profile.identity.find(Identity.fromString(identity));
   return p?.isPro ?? false;
+}
+
+// One-time org claim fee rows for the current caller (my_org_claim_fee view).
+export function getMyOrgClaimFee(): any[] {
+  if (!dbConnection) return [];
+  try {
+    const rows: any[] = [];
+    for (const r of (dbConnection as any).db.myOrgClaimFee.iter()) rows.push(r);
+    return rows;
+  } catch {
+    return [];
+  }
 }
 

@@ -116,6 +116,9 @@ export type MonthlyVerificationCap = __Infer<typeof MonthlyVerificationCap>;
 export const MyFeed = __t.object("MyFeed", {});
 export type MyFeed = __Infer<typeof MyFeed>;
 
+export const MyOrgClaimFee = __t.object("MyOrgClaimFee", {});
+export type MyOrgClaimFee = __Infer<typeof MyOrgClaimFee>;
+
 export const MyProSubscription = __t.object("MyProSubscription", {});
 export type MyProSubscription = __Infer<typeof MyProSubscription>;
 
@@ -151,6 +154,20 @@ export const OAuthClaimResult = __t.object("OAuthClaimResult", {
   error: __t.option(__t.string()),
 });
 export type OAuthClaimResult = __Infer<typeof OAuthClaimResult>;
+
+export const OrgClaimFee = __t.object("OrgClaimFee", {
+  identity: __t.identity(),
+  amountCents: __t.u32(),
+  stripeSessionId: __t.string(),
+  paidAt: __t.timestamp(),
+});
+export type OrgClaimFee = __Infer<typeof OrgClaimFee>;
+
+export const OrgClaimFeeInfo = __t.object("OrgClaimFeeInfo", {
+  amountCents: __t.u32(),
+  paidAt: __t.timestamp(),
+});
+export type OrgClaimFeeInfo = __Infer<typeof OrgClaimFeeInfo>;
 
 export const OrgMemberRequest = __t.object("OrgMemberRequest", {
   id: __t.u64(),

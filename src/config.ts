@@ -18,6 +18,9 @@ export const SPACETIMEDB_MODULE = import.meta.env.VITE_STDB_MODULE || 'repsoc';
 // Our own OAuth relay (Google + Facebook) — replaces SpacetimeCloud OIDC
 export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://auth.veri.social';
 
+// Stripe payments relay — Checkout session creation + cancellation (same host)
+export const PAYMENTS_RELAY_URL = import.meta.env.VITE_PAYMENTS_RELAY_URL || 'https://auth.veri.social/payments';
+
 export const CHAR_LIMITS = {
   fullName: 100,
   city: 100,

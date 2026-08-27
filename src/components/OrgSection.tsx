@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
-import { getMyOrganizations, createOrganization } from '../utils/spacetime';
+import { getMyOrganizations, createOrganization, getMyOrgClaimFee } from '../utils/spacetime';
+import { requestCheckout } from '../utils/payments';
+import { currentUserEmail } from '../utils/authState';
 import AccountRow from './AccountRow';
 import { geocodeCity } from '../utils/geo';
 
@@ -12,6 +14,8 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   const [orgs, setOrgs] = useState<any[]>(() => getMyOrganizations(profileIdentity));
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ name: '', picture: '', city: '', description: '' });
+  const [feePaid, setFeePaid] = useState<boolean>(() => getMyOrgClaimFee().length > 0);
+  const [paidNote, setPaidNote] = useState<boolean>(() => new URLSearchParams(window.location.search).get('org_claim') === 'success');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -19,6 +23,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
     setOrgs(getMyOrganizations(profileIdentity));
     const interval = setInterval(() => {
       setOrgs(getMyOrganizations(profileIdentity));
+      setFeePaid(getMyOrgClaimFee().length > 0);
     }, 3000);
     return () => clearInterval(interval);
   }, [profileIdentity]);
@@ -40,6 +45,24 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
     img.src = URL.createObjectURL(file);
   };
 
+  // One-time $19.99 claim fee (strictly separate from Pro). Unpaid users go
+  // through Stripe Checkout; paid users go straight to the create form.
+  const startOrgCheckout = async () => {
+    try {
+      const { url } = await requestCheckout('org', profileIdentity, currentUserEmail() || undefined);
+      window.location.assign(url);
+    } catch (e: any) {
+      alert(e?.message || 'Failed to start checkout. Please try again.');
+    }
+  };
+
+  const handleClaimClick = () => {
+    if (feePaid) { setShowCreate(true); return; }
+    if (window.confirm('Claiming an organization requires a one-time $19.99 fee (strictly separate from Pro). Continue to payment?')) {
+      startOrgCheckout();
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name) return;
@@ -48,9 +71,16 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
       const geo = await geocodeCity(form.city);
       await createOrganization(form.name, form.picture || '/veri.png', form.city, form.description, geo?.lat, geo?.lng);
       setShowCreate(false);
+      setPaidNote(false);
       setForm({ name: '', picture: '', city: '', description: '' });
       setOrgs(getMyOrganizations(profileIdentity));
     } catch (err: any) {
+      if (/claim fee/i.test(err?.message || '')) {
+        if (window.confirm('This organization needs a one-time $19.99 claim fee (strictly separate from Pro). Continue to payment?')) {
+          startOrgCheckout();
+        }
+        return;
+      }
       alert(err.message || 'Failed to create');
     }
   };
@@ -81,9 +111,13 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
       </div>
 
       {!showCreate ? (
-        <div className="claim-org-row">
-          <button onClick={() => setShowCreate(true)} className="claim-org-btn">Claim New Organization</button>
-          <button onClick={() => alert('Claim Existing Organization: search for your organization and tap "Claim" on its profile. Verification coming soon.')} className="claim-org-btn secondary">Claim Existing Organization</button>
+        <div>
+          {paidNote && <p className="paid-note">✓ Claim fee paid — you can now create your organization.</p>}
+          <div className="claim-org-row">
+            <button onClick={handleClaimClick} className="claim-org-btn">Claim New Organization</button>
+            <button onClick={() => alert('Claim Existing Organization: search for your organization and tap "Claim" on its profile. Verification coming soon.')} className="claim-org-btn secondary">Claim Existing Organization</button>
+          </div>
+          {!feePaid && <p className="fee-note">One-time $19.99 claim fee · strictly separate from Pro</p>}
         </div>
       ) : (
         <form onSubmit={handleCreate} className="create-org-form">
@@ -119,6 +153,8 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .claim-org-btn:hover { background: #d97706; }
         .claim-org-btn.secondary { background: white; color: #f59e0b; border: 1px solid #f59e0b; }
         .claim-org-btn.secondary:hover { background: #f59e0b; color: white; }
+        .fee-note { text-align: center; color: #999; font-size: 12px; margin: 10px 0 0; }
+        .paid-note { background: #ecfdf5; color: #059669; font-size: 13px; font-weight: 600; text-align: center; border-radius: 8px; padding: 10px 14px; margin: 0 0 12px; }
         .create-org-btn { padding: 10px 28px; background: #22c55e; color: white; border: none; border-radius: 24px; font-weight: 600; font-size: 14px; cursor: pointer; }
         .create-org-btn:hover { background: #16a34a; }
         .create-org-form { display: flex; flex-direction: column; gap: 8px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

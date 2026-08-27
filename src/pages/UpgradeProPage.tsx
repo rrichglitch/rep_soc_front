@@ -1,17 +1,23 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import { useApp } from '../App';
 import { isSignedIn } from '../utils/authState';
-import { getProfileByEmail, getDbConnection, cancelProSubscription, upgradeToPro } from '../utils/spacetime';
+import { getProfileByEmail, getDbConnection, cancelProSubscription } from '../utils/spacetime';
+import { requestCheckout, cancelSubscriptionViaStripe } from '../utils/payments';
 
 function UpgradeProPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { email } = useApp();
   const [isPro, setIsPro] = useState<boolean | null>(null);
   const [sub, setSub] = useState<{ active: boolean; amountCents: number; billingPeriod: string; nextBillDate: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [cancelled, setCancelled] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [myIdentity, setMyIdentity] = useState('');
+
+  const sessionId = new URLSearchParams(location.search).get('session_id');
 
   useEffect(() => {
     let alive = true;
@@ -22,6 +28,7 @@ function UpgradeProPage() {
         const p = await getProfileByEmail(who);
         if (!alive) return;
         setIsPro(!!p?.isPro);
+        if (p?.identity) setMyIdentity(p.identity.toHexString());
         const db = getDbConnection();
         if (db) {
           try {
@@ -48,12 +55,56 @@ function UpgradeProPage() {
     return () => { alive = false; clearTimeout(t); };
   }, [email]);
 
+  // Returning from Stripe Checkout: poll until the webhook flips the
+  // subscription active, then drop the ?session_id= from the URL.
+  useEffect(() => {
+    if (!sessionId) return;
+    setConfirming(true);
+    let alive = true;
+    let tries = 0;
+    const poll = async () => {
+      tries += 1;
+      const who = email || '';
+      if (who) {
+        try {
+          const p = await getProfileByEmail(who);
+          if (alive && p?.isPro) {
+            setConfirming(false);
+            window.history.replaceState({}, '', '/upgrade');
+            return;
+          }
+        } catch {}
+      }
+      if (tries >= 24) { // ~60s of polling
+        if (alive) {
+          setConfirming(false);
+          window.history.replaceState({}, '', '/upgrade');
+        }
+        return;
+      }
+      setTimeout(poll, 2500);
+    };
+    setTimeout(poll, 2500);
+    return () => { alive = false; };
+  }, [sessionId, email]);
+
   const isActive = isPro === true && sub?.active !== false && !cancelled;
 
   const handleCancel = async () => {
-    if (!window.confirm('Cancel your Pro subscription? You will lose unlimited descriptive searches at the end of the current billing period.')) return;
+    if (!window.confirm('Cancel your Pro subscription? You will keep Pro through the end of your current billing period, then it will not renew.')) return;
     setBusy(true);
     try {
+      if (myIdentity) {
+        try {
+          await cancelSubscriptionViaStripe(myIdentity);
+          setCancelled(true);
+          setBusy(false);
+          return;
+        } catch (e: any) {
+          if (e?.status !== 404) throw e;
+          // No Stripe subscription on file (legacy free trial) — cancel locally.
+        }
+      }
       await cancelProSubscription();
       setCancelled(true);
       setIsPro(false);
@@ -61,25 +112,31 @@ function UpgradeProPage() {
     } catch (e: any) {
       alert(e?.message || 'Failed to cancel. Please try again.');
     } finally {
-      setBusy(false);
+      if (busy) setBusy(false);
     }
   };
 
   const handleUpgrade = async () => {
     setBusy(true);
     try {
-      await upgradeToPro();
-      // reflect instantly; the page reloads state via the cache shortly after
-      setIsPro(true);
-      alert('You are now Pro! (Testing phase: no payment taken.)');
+      const who = email || '';
+      if (!who) throw new Error('Not signed in');
+      let identity = myIdentity;
+      if (!identity) {
+        const p = await getProfileByEmail(who);
+        identity = p?.identity?.toHexString() || '';
+        if (identity) setMyIdentity(identity);
+      }
+      if (!identity) throw new Error('Could not resolve your account identity');
+      const { url } = await requestCheckout('pro', identity, who);
+      window.location.assign(url);
     } catch (e: any) {
-      alert(e?.message || 'Failed to upgrade. Please try again.');
-    } finally {
+      alert(e?.message || 'Failed to start checkout. Please try again.');
       setBusy(false);
     }
   };
 
-  const amount = sub?.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : '$4.99';
+  const amount = sub?.amountCents ? `$${(sub.amountCents / 100).toFixed(2)}` : '$10.00';
   const period = sub?.billingPeriod === 'monthly' ? 'month' : sub?.billingPeriod || 'month';
   const billDate = sub?.nextBillDate
     ? new Date(sub.nextBillDate + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -97,27 +154,34 @@ function UpgradeProPage() {
           <div className="pro-icon">★</div>
           <h2>Veri Pro</h2>
 
-          {isActive ? (
+          {confirming ? (
+            <>
+              <p className="tagline">Confirming your payment…</p>
+              <p className="sub-status"><span className="status-dot pulse" /> Waiting for Stripe</p>
+              <p className="fine-print">Your Pro activates as soon as the payment is confirmed. This page updates automatically.</p>
+            </>
+          ) : isActive ? (
             <>
               <p className="tagline">Your subscription is active — and it's a strictly separate payment from organization claiming.</p>
               <p className="sub-status"><span className="status-dot" /> Active</p>
+              {cancelled && <p className="cancelled-note">Cancellation scheduled — you keep Pro through {billDate || 'the end of this period'}.</p>}
               <ul className="benefits">
                 <li>Unlimited descriptive searches</li>
                 <li>Support the future of Veri Social</li>
               </ul>
               <div className="billing-box">
-                <div className="bill-row"><span>Next bill</span><strong>{billDate}</strong></div>
+                <div className="bill-row"><span>Next bill</span><strong>{cancelled ? '—' : billDate}</strong></div>
                 <div className="bill-row"><span>Amount</span><strong>{amount} / {period}</strong></div>
               </div>
-              <button className="cancel-btn" onClick={handleCancel} disabled={busy}>
-                {busy ? 'Cancelling…' : 'Cancel subscription'}
+              <button className="cancel-btn" onClick={handleCancel} disabled={busy || cancelled}>
+                {busy ? 'Cancelling…' : cancelled ? 'Cancellation scheduled' : 'Cancel subscription'}
               </button>
               <p className="fine-print">You keep Pro through the end of the current billing period.</p>
             </>
           ) : (
             <>
               <p className="tagline">Unlimited descriptive searches. A strictly separate payment from organization claiming.</p>
-              {cancelled && <p className="cancelled-note">Your subscription was cancelled.</p>}
+              {cancelled && <p className="cancelled-note">Your subscription has ended.</p>}
               <ul className="benefits">
                 <li>Unlimited descriptive searches</li>
                 <li>Support the future of Veri Social</li>
@@ -125,7 +189,7 @@ function UpgradeProPage() {
               <button className="buy-btn" onClick={handleUpgrade} disabled={busy}>
                 {busy ? 'Working…' : `Upgrade — ${amount} / ${period}`}
               </button>
-              <p className="fine-print">Testing phase: Pro is free to try right now.</p>
+              <p className="fine-print">${amount.replace('$', '')} per month · Cancel anytime · Secure checkout by Stripe.</p>
             </>
           )}
         </div>
@@ -142,6 +206,8 @@ function UpgradeProPage() {
         .tagline { color: #666; font-size: 14px; margin: 0 0 16px; }
         .sub-status { display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #059669; font-size: 13px; font-weight: 700; border-radius: 14px; padding: 4px 12px; margin-bottom: 14px; }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+        .status-dot.pulse { background: #f59e0b; animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         .benefits { list-style: none; padding: 0; margin: 0 0 20px; text-align: left; }
         .benefits li { padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #444; }
         .benefits li:before { content: '✓'; color: #22c55e; font-weight: 700; margin-right: 10px; }
