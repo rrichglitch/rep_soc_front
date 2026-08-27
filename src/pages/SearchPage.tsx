@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { isSignedIn } from '../utils/authState';
+import { getOAuthSession } from '../utils/oauthSession';
 import { useApp } from '../App';
 import { connectToSpacetimeDB, getProfileByEmail, getDbConnection } from '../utils/spacetime';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
@@ -159,7 +160,19 @@ function SearchPage() {
   useEffect(() => {
     const init = async () => {
       try {
-        await connectToSpacetimeDB('', undefined);
+        // /search is OUTSIDE AuthGate, so it must establish the right
+        // connection itself: with the session token when one exists
+        // (descriptive search + allowance run under the user identity),
+        // anonymous otherwise. Connecting anonymously here — as it
+        // previously did — runs the search as the anon identity (orgs-only
+        // tier, no gpu allowance) and results stay empty after login until
+        // the page remounts.
+        const session = getOAuthSession();
+        if (session) {
+          await connectToSpacetimeDB(session.email, session.stToken);
+        } else {
+          await connectToSpacetimeDB('', undefined);
+        }
         setIsConnected(true);
       } catch (e) {
         console.log('Connect failed:', e);
