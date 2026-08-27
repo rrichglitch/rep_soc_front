@@ -160,6 +160,7 @@ export const OrgClaimFee = __t.object("OrgClaimFee", {
   amountCents: __t.u32(),
   stripeSessionId: __t.string(),
   paidAt: __t.timestamp(),
+  consumed: __t.bool(),
 });
 export type OrgClaimFee = __Infer<typeof OrgClaimFee>;
 
