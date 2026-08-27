@@ -17,4 +17,5 @@ export default {
   description: __t.string(),
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
+  locationPrecision: __t.option(__t.string()),
 };

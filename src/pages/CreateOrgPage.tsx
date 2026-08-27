@@ -2,14 +2,30 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
+import PreciseLocationToggle, { type LocationPrecision } from '../components/PreciseLocationToggle';
 import { useApp } from '../App';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout } from '../utils/payments';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
-import { geocodeCity } from '../utils/geo';
+import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
 
 const PENDING_KEY = 'veri_pending_org';
+
+interface PendingOrg {
+  name: string;
+  picture: string;
+  description: string;
+  city: string;
+  lat: number;
+  lng: number;
+  precision: 'exact' | 'approx';
+}
+
+const LOC_ERR_COPY = (e: any) =>
+  e?.message === 'Geolocation not supported on this device'
+    ? 'This device does not support location services.'
+    : 'Could not get your location. Check that location permissions are enabled for this site.';
 
 function CreateOrgPage() {
   const navigate = useNavigate();
@@ -21,13 +37,26 @@ function CreateOrgPage() {
     disconnectFromSpacetimeDB();
     navigate('/', { replace: true });
   };
-  const [form, setForm] = useState<any>(() => {
+
+  const [form, setForm] = useState<{ name: string; picture: string; description: string }>(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
-      if (saved && saved.name !== undefined) return saved;
+      if (saved && saved.name !== undefined) {
+        return { name: saved.name, picture: saved.picture || '', description: saved.description || '' };
+      }
     } catch {}
-    return { name: '', picture: '', city: '', description: '' };
+    return { name: '', picture: '', description: '' };
   });
+  const [precision, setPrecision] = useState<LocationPrecision>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+      if (saved && (saved.precision === 'exact' || saved.precision === 'approx')) return saved.precision;
+    } catch {}
+    return 'exact';
+  });
+  const [locCoords, setLocCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locCity, setLocCity] = useState<string | null>(null);
+  const [locStatus, setLocStatus] = useState<'idle' | 'fetching' | 'done'>('idle');
   const [identity, setIdentity] = useState('');
   const [feePaid, setFeePaid] = useState<boolean>(() => getMyOrgClaimFee().length > 0);
   const [paying, setPaying] = useState(false);
@@ -55,11 +84,35 @@ function CreateOrgPage() {
     return () => { alive = false; clearInterval(t); };
   }, [email]);
 
-  const doCreate = async (data: any) => {
+  // Get (or refresh) the location fix + derive the city from it.
+  const handleLocate = async (): Promise<{ lat: number; lng: number } | null> => {
+    setLocStatus('fetching');
+    try {
+      const pos = await getBrowserLocation();
+      const city = await reverseGeocodeResilient(pos.lat, pos.lng);
+      setLocCoords(pos);
+      if (city) setLocCity(city);
+      setLocStatus('done');
+      return pos;
+    } catch (e: any) {
+      setLocStatus('idle');
+      alert(LOC_ERR_COPY(e));
+      return null;
+    }
+  };
+
+  const doCreate = async (data: PendingOrg) => {
     setCreating(true);
     try {
-      const geo = await geocodeCity(data.city);
-      await createOrganization(data.name, data.picture || '/veri.png', data.city, data.description, geo?.lat, geo?.lng);
+      await createOrganization(
+        data.name,
+        data.picture || '/veri.png',
+        data.city,
+        data.description,
+        data.lat,
+        data.lng,
+        data.precision,
+      );
       const mine = getMyOrganizations(identity);
       const created = mine.find((o: any) => o.name === data.name);
       if (created) navigate(`/org/${created.id.toString()}`);
@@ -82,8 +135,8 @@ function CreateOrgPage() {
       tries += 1;
       const paid = getMyOrgClaimFee().length > 0;
       setFeePaid(paid);
-      const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
-      if (paid && pending && pending.name) {
+      const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null') as PendingOrg | null;
+      if (paid && pending && pending.name && pending.lat !== undefined) {
         if (!alive) return;
         setConfirming(false);
         localStorage.removeItem(PENDING_KEY);
@@ -125,25 +178,62 @@ function CreateOrgPage() {
     img.src = URL.createObjectURL(file);
   };
 
+  // Location is REQUIRED: fetch the fix if not captured yet, derive the city,
+  // and jitter client-side when the toggle is off (approx). The backend stores
+  // exactly what is sent, at the claimed precision.
+  const resolveLocation = async (): Promise<{ city: string; lat: number; lng: number; precision: 'exact' | 'approx' } | null> => {
+    let coords = locCoords;
+    let city = locCity;
+    if (!coords) {
+      const pos = await handleLocate();
+      if (!pos) return null;
+      coords = pos;
+    }
+    if (!city) {
+      try {
+        city = await reverseGeocodeResilient(coords.lat, coords.lng);
+        if (city) setLocCity(city);
+      } catch {}
+    }
+    if (!city) {
+      alert('Could not determine your city from your location. Please try again.');
+      return null;
+    }
+    const isExact = precision === 'exact';
+    const toSend = isExact ? coords : jitterLocation(coords.lat, coords.lng, 5);
+    return { city, lat: toSend.lat, lng: toSend.lng, precision: isExact ? 'exact' : 'approx' };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.city || !form.description) {
-      alert('Please fill in organization name, city and description.');
+    if (!form.name || !form.description) {
+      alert('Please fill in organization name and description.');
       return;
     }
     if (!identity) {
       alert('Could not resolve your account — please refresh and try again.');
       return;
     }
+    const loc = await resolveLocation();
+    if (!loc) return;
+    const pending: PendingOrg = {
+      name: form.name.trim(),
+      picture: form.picture,
+      description: form.description.trim(),
+      city: loc.city,
+      lat: loc.lat,
+      lng: loc.lng,
+      precision: loc.precision,
+    };
     const paid = feePaid || getMyOrgClaimFee().length > 0;
     if (paid) {
-      await doCreate(form);
+      await doCreate(pending);
       return;
     }
-    // Fee unpaid: save the form, pay, then create automatically on return.
+    // Fee unpaid: save the form (+ location), pay, then create automatically on return.
     setPaying(true);
     try {
-      localStorage.setItem(PENDING_KEY, JSON.stringify({ ...form, name: form.name.trim(), city: form.city.trim(), description: form.description.trim() }));
+      localStorage.setItem(PENDING_KEY, JSON.stringify(pending));
       const { url } = await requestCheckout('org', identity, email || undefined);
       window.location.assign(url);
     } catch (err: any) {
@@ -169,6 +259,13 @@ function CreateOrgPage() {
       />
       <div className="create-org-body">
         <h1 className="page-title">Create Organization</h1>
+        <div className="loc-settings-wrap">
+          <PreciseLocationToggle
+            isExact={precision === 'exact'}
+            onEnable={async () => setPrecision('exact')}
+            onDisable={async () => setPrecision('approx')}
+          />
+        </div>
         <form onSubmit={handleSubmit} className="create-org-card">
           <input value={form.name} onChange={e => saveField('name', e.target.value)} placeholder="Organization name" required disabled={busy} className="org-input" />
           <input type="file" ref={fileInputRef} accept="image/*" onChange={handlePictureChange} style={{ display: 'none' }} disabled={busy} />
@@ -179,8 +276,21 @@ function CreateOrgPage() {
               <span>Tap to upload picture</span>
             )}
           </div>
-          <input value={form.city} onChange={e => saveField('city', e.target.value)} placeholder="City" required disabled={busy} className="org-input" />
           <textarea value={form.description} onChange={e => saveField('description', e.target.value)} placeholder="Description" required disabled={busy} className="org-input" rows={3} />
+          <div className="loc-row">
+            {locCity ? (
+              <>
+                <p className="loc-city">📍 {locCity}</p>
+                <button type="button" className="loc-refresh" onClick={handleLocate} disabled={busy || locStatus === 'fetching'}>
+                  {locStatus === 'fetching' ? 'Locating…' : 'Update'}
+                </button>
+              </>
+            ) : (
+              <button type="button" className="loc-btn" onClick={handleLocate} disabled={busy || locStatus === 'fetching'}>
+                {locStatus === 'fetching' ? 'Getting location…' : '📍 Get my location'}
+              </button>
+            )}
+          </div>
           <button type="submit" className="org-submit" disabled={busy}>
             {busy && <span className="btn-spinner" />}
             {creating ? 'Creating…' : paying ? 'Opening payment…' : confirming ? 'Confirming payment…' : feePaid ? 'Create Organization' : 'Pay $19.99 & Create Organization'}
@@ -198,6 +308,8 @@ function CreateOrgPage() {
         .topbar-logo img { height: 28px; }
         .create-org-body { display: flex; flex-direction: column; align-items: center; padding: 24px 16px; }
         .page-title { margin: 0 0 18px; font-size: 20px; font-weight: 700; color: #222; text-align: center; }
+        .loc-settings-wrap { width: 100%; max-width: 380px; margin-bottom: 14px; }
+        .loc-settings-wrap .location-settings { margin-bottom: 0; }
         .create-org-card { display: flex; flex-direction: column; gap: 10px; background: white; border-radius: 12px; padding: 24px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); max-width: 380px; width: 100%; }
         .org-input { padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; font-family: inherit; resize: vertical; }
         .org-input:focus { border-color: #667eea; }
@@ -205,6 +317,13 @@ function CreateOrgPage() {
         .org-pic-upload:hover { border-color: #667eea; }
         .org-pic-upload.disabled { opacity: 0.6; pointer-events: none; }
         .org-pic-preview { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; }
+        .loc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 2px; }
+        .loc-city { margin: 0; font-size: 14px; font-weight: 600; color: #333; }
+        .loc-btn { padding: 9px 16px; background: white; color: #667eea; border: 1px solid #667eea; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+        .loc-btn:hover { background: #667eea; color: white; }
+        .loc-btn:disabled { opacity: 0.6; cursor: default; }
+        .loc-refresh { background: none; border: none; color: #667eea; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .loc-refresh:disabled { opacity: 0.6; cursor: default; }
         .org-submit { padding: 12px; background: #22c55e; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .org-submit:hover { background: #16a34a; }
         .org-submit:disabled { opacity: 0.7; cursor: default; }

@@ -852,14 +852,18 @@ export async function getFollowedStories(currentIdentityHex: string) {
 
 // ─── Organization APIs ───────────────────────────────────────────
 
+// Location is mandatory for org creation: caller passes the geolocation fix
+// (jittered client-side when approx) + the city derived from it + precision.
 export async function createOrganization(
-  name: string, picture: string, city: string, description: string, locationLat?: number, locationLng?: number
+  name: string, picture: string, city: string, description: string,
+  locationLat: number, locationLng: number, locationPrecision: 'exact' | 'approx' = 'exact',
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.createOrganization({
     name, picture, city, description,
-    locationLat: locationLat ?? undefined,
-    locationLng: locationLng ?? undefined,
+    locationLat,
+    locationLng,
+    locationPrecision,
   });
 }
 
