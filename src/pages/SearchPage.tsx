@@ -369,7 +369,14 @@ function SearchPage() {
                 // If the query is unchanged (e.g. options were just updated),
                 // the URL won't change — force a re-run via the tick.
                 if (q.trim() === query) setSearchTick((t) => t + 1);
-                navigate(`/search?q=${encodeURIComponent(q)}`);
+                // A new query KEEPS claim mode: describing the org you want
+                // to claim must not drop the leaderless criteria (only option
+                // changes do, via dropClaimable). Preserving the param in the
+                // URL also keeps it across remounts (refresh, back-nav).
+                const p = new URLSearchParams(window.location.search);
+                p.set('q', q.trim());
+                if (!claimableOnly) p.delete('claimable');
+                navigate(`/search?${p.toString()}`);
               }
             }}
             value={inputValue}
