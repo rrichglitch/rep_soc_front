@@ -6,11 +6,16 @@ import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
 import { getOrganizationById, getOrganizationMembers, sendOrgMemberRequest, connectToSpacetimeDB, getProfileByEmail, promoteToCoLeader, demoteCoLeader, transferLeadership } from '../utils/spacetime';
+import { skipCheckoutDetour } from '../utils/checkoutReturn';
 
 function OrgProfilePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { loginAsOrg, activeOrg, logoutOrg } = useOrg();
+
+  const handleBack = () => {
+    if (!skipCheckoutDetour()) navigate(-1);
+  };
 
   const [org, setOrg] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
@@ -107,7 +112,7 @@ function OrgProfilePage() {
 
   return (
     <div className="org-page">
-      <TopBar left={<button onClick={() => navigate(-1)} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={isOwnOrg ? <AuthActions profileReplacement={<button onClick={() => { logoutOrg(); navigate('/me', { replace: true }); }} className="topbar-signin" style={{background:"#dc2626"}}>Back to my account</button>} /> : <AuthActions />} />
+      <TopBar left={<button onClick={handleBack} className="topbar-back">← Back</button>} center={<Link to="/home" className="topbar-logo"><img src="/veri.png" alt="Veri" /></Link>} right={isOwnOrg ? <AuthActions profileReplacement={<button onClick={() => { logoutOrg(); navigate('/me', { replace: true }); }} className="topbar-signin" style={{background:"#dc2626"}}>Back to my account</button>} /> : <AuthActions />} />
       <main className="main-content">
         <div className="org-header">
           <div className="org-picture-container">
