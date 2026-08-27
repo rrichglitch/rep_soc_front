@@ -91,7 +91,6 @@ function UpgradeProPage() {
   const isActive = isPro === true && sub?.active !== false && !cancelled;
 
   const handleCancel = async () => {
-    if (!window.confirm('Cancel your Pro subscription? You will keep Pro through the end of your current billing period, then it will not renew.')) return;
     setBusy(true);
     try {
       if (myIdentity) {
