@@ -74,7 +74,6 @@ function SearchPage() {
   const [mode, setMode] = useState<'list' | 'map' | 'swipe'>(() => (localStorage.getItem('veri_searchMode') as 'list' | 'map' | 'swipe') || 'list');
   const [providerMode, setProviderMode] = useState<SearchMode>(() => getSearchProvider());
   const switchProvider = (m: SearchMode) => {
-    if (m !== providerMode) dropClaimable();
     setSearchProvider(m);
     setProviderMode(m);
   };
@@ -118,10 +117,13 @@ function SearchPage() {
   });
   // Silent claim-mode: orgs WITHOUT a leader only (backend-seeded, claimable).
   const [claimableOnly, setClaimableOnly] = useState<boolean>(() => new URLSearchParams(window.location.search).get('claimable') === '1');
-  // Any option change EXCEPT location exits claim mode: the leaderless
-  // restriction is a curated flow, so once the user starts adjusting search
-  // criteria it quietly reverts to a normal search. The URL param is stripped
-  // too (replace, no history entry) so the current page no longer carries it.
+  // Search-option changes exit claim mode: the leaderless restriction is a
+  // curated flow, so once the user starts narrowing what's being searched
+  // (Show toggles, gender, age) it quietly reverts to a normal search. The
+  // query field, the keyword/descriptive provider toggle, and location do NOT
+  // drop it — they only change how/where the same leaderless set is searched.
+  // The URL param is stripped too (replace, no history entry) so the current
+  // page no longer carries it.
   const dropClaimable = () => {
     if (!claimableOnly) return;
     setClaimableOnly(false);
