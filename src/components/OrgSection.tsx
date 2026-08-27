@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
 import { getMyOrganizations } from '../utils/spacetime';
@@ -19,6 +20,14 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
     }, 3000);
     return () => clearInterval(interval);
   }, [profileIdentity]);
+
+  // Close the claim-info modal on Escape
+  useEffect(() => {
+    if (!showClaimInfo) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowClaimInfo(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showClaimInfo]);
 
   return (
     <div className="org-section-wrap">
@@ -50,7 +59,7 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         <button onClick={() => setShowClaimInfo(true)} className="claim-org-btn secondary">Claim Existing Organization</button>
       </div>
 
-      {showClaimInfo && (
+      {showClaimInfo && createPortal(
         <div className="claim-modal-backdrop" onClick={() => setShowClaimInfo(false)}>
           <div className="claim-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Claim an Existing Organization</h3>
@@ -58,9 +67,10 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
               To claim an existing organization, search for it, open its profile, and tap the{' '}
               <strong>Claim</strong> button on that profile. Verification is coming soon.
             </p>
-            <button onClick={() => setShowClaimInfo(false)} className="claim-modal-ok">Got it</button>
+            <button onClick={() => setShowClaimInfo(false)} className="claim-modal-ok">Ok</button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
