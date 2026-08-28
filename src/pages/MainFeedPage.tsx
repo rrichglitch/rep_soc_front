@@ -33,6 +33,9 @@ function MainFeedPage() {
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  // "newest first" / "oldest first" tooltip shown next to the order button
+  const [orderTip, setOrderTip] = useState<string | null>(null);
+  const orderTipTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Following is always newest-first — the most recent posts sit at the top.
   const FOLLOWING_ORDER_OLD_TO_NEW = false;
@@ -114,7 +117,14 @@ function MainFeedPage() {
   };
 
   const handleToggleMyStoryOrder = () => {
-    setMyStoryNewestFirst((v) => !v);
+    setMyStoryNewestFirst((v) => {
+      const next = !v;
+      // Show which direction the story now appears in, briefly.
+      setOrderTip(next ? 'newest first' : 'oldest first');
+      if (orderTipTimer.current) clearTimeout(orderTipTimer.current);
+      orderTipTimer.current = setTimeout(() => setOrderTip(null), 1800);
+      return next;
+    });
   };
 
   const handleScroll = useCallback(async () => {
@@ -188,6 +198,7 @@ function MainFeedPage() {
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
+        centerWidth={600}
         right={<AuthActions />}
       />
 
@@ -202,16 +213,19 @@ function MainFeedPage() {
             onChange={(k) => setActiveTab(k as 'following' | 'mystory')}
           />
           {activeTab === 'mystory' && (
-            <button
-              className="story-order-btn"
-              onClick={handleToggleMyStoryOrder}
-              aria-label={myStoryNewestFirst ? 'Show oldest first' : 'Show newest first'}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M8 17V6M8 6l-3.5 3.5M8 6l3.5 3.5" />
-                <path d="M16 7v11M16 18l-3.5-3.5M16 18l3.5-3.5" />
-              </svg>
-            </button>
+            <div className="story-order-wrap">
+              <button
+                className="story-order-btn"
+                onClick={handleToggleMyStoryOrder}
+                aria-label={myStoryNewestFirst ? 'Show oldest first' : 'Show newest first'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 17V6M8 6l-3.5 3.5M8 6l3.5 3.5" />
+                  <path d="M16 7v11M16 18l-3.5-3.5M16 18l3.5-3.5" />
+                </svg>
+              </button>
+              {orderTip && <span className="story-order-tip">{orderTip}</span>}
+            </div>
           )}
         </div>
 
@@ -308,7 +322,6 @@ function MainFeedPage() {
         .org-banner-stop:hover { background: #dc2626; }
         .topbar-search-wrap {
           width: 100%;
-          max-width: 500px;
         }
 
         .main-feed-page {
@@ -336,6 +349,11 @@ function MainFeedPage() {
           border-bottom: none;
         }
 
+        .story-order-wrap {
+          position: relative;
+          flex-shrink: 0;
+        }
+
         .story-order-btn {
           display: flex;
           align-items: center;
@@ -349,12 +367,32 @@ function MainFeedPage() {
           color: #667eea;
           cursor: pointer;
           transition: all 0.2s;
-          flex-shrink: 0;
         }
 
         .story-order-btn:hover {
           background: #667eea;
           color: white;
+        }
+
+        .story-order-tip {
+          position: absolute;
+          right: calc(100% + 8px);
+          top: 50%;
+          transform: translateY(-50%);
+          white-space: nowrap;
+          background: #333;
+          color: white;
+          font-size: 12px;
+          font-weight: 500;
+          padding: 5px 10px;
+          border-radius: 6px;
+          pointer-events: none;
+          animation: order-tip-in 0.15s ease-out;
+        }
+
+        @keyframes order-tip-in {
+          from { opacity: 0; transform: translateY(-50%) translateX(4px); }
+          to { opacity: 1; transform: translateY(-50%) translateX(0); }
         }
 
         .loading-more-indicator {

@@ -27,6 +27,7 @@ function AboutPage() {
         }
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
+        centerWidth={700}
         right={<AuthActions />}
       />
 
@@ -98,7 +99,6 @@ function AboutPage() {
       <style>{`
         .topbar-search-wrap {
           width: 100%;
-          max-width: 500px;
         }
 
         .about-page {

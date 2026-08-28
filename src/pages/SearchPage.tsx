@@ -490,6 +490,7 @@ function SearchPage() {
         </div>}
         right={<AuthActions />}
         absoluteCenter
+        centerWidth={600}
       />
 
       <main className="search-content">

@@ -25,6 +25,7 @@ function TermsOfServicePage() {
         left={<Link to="/" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
+        centerWidth={800}
         right={<AuthActions />}
       />
 
@@ -283,7 +284,6 @@ function TermsOfServicePage() {
         }
         .topbar-search-wrap {
           width: 100%;
-          max-width: 400px;
         }
         @media (max-width: 600px) {
           .terms-content {
