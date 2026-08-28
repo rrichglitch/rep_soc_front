@@ -944,15 +944,47 @@ export function getMyOrganizations(identity: string) {
   for (const org of dbConnection.db.organization.iter()) {
     orgCache.set(org.id, org);
   }
+  // organization_member is ROLES ONLY (leader/co-leader) — membership is a
+  // friendship row with the org's account identity. Role rows still imply
+  // membership (a leader/co-leader is by definition a member).
+  const seen = new Set<string>();
+  for (const f of dbConnection.db.friendship.iter()) {
+    const a = f.userA.toHexString();
+    const b = f.userB.toHexString();
+    const other = a === identity ? b : b === identity ? a : null;
+    if (!other) continue;
+    if (!(other.length === 64 && other.startsWith('4f'))) continue;
+    const orgId = BigInt('0x' + other.slice(2));
+    const org = orgCache.get(orgId);
+    if (!org || seen.has(other)) continue;
+    seen.add(other);
+    orgs.push({ ...org, role: getOrgRole(orgId, identity) });
+  }
+  // Role rows: orgs where I'm leader/co-leader but not (yet) a friend (should
+  // not normally happen — role rows are created through membership).
   for (const m of dbConnection.db.organization_member.iter()) {
     if (m.memberIdentity.toHexString() === identity) {
       const org = orgCache.get(m.orgId);
-      if (org) {
+      const orgHex = orgAccountIdentityHex(m.orgId);
+      if (org && !seen.has(orgHex)) {
+        seen.add(orgHex);
         orgs.push({ ...org, role: m.role });
       }
     }
   }
   return orgs;
+}
+
+// Roles live in organization_member (leader/co-leader); a plain member has no
+// row there, so the default role is 'member'.
+function getOrgRole(orgId: bigint, identity: string): string {
+  if (!dbConnection) return 'member';
+  for (const m of dbConnection.db.organization_member.iter()) {
+    if (m.orgId === orgId && m.memberIdentity.toHexString() === identity) {
+      if (m.role === 'leader' || m.role === 'co_leader') return m.role;
+    }
+  }
+  return 'member';
 }
 
 export function getOrganizationById(orgId: bigint) {
@@ -971,15 +1003,43 @@ export function getOrganizationMembers(orgId: bigint) {
   for (const p of dbConnection.db.user_profile.iter()) {
     cities.set(p.identity.toHexString(), p.city || '');
   }
+  // Members ARE friends of the org's account identity: iterate FRIENDSHIP,
+  // not organization_member (that table is ROLES ONLY). Role overlay for
+  // leader/co-leader comes from organization_member rows.
+  const orgHex = orgAccountIdentityHex(orgId);
+  const seen = new Set<string>();
+  for (const f of dbConnection.db.friendship.iter()) {
+    const a = f.userA.toHexString();
+    const b = f.userB.toHexString();
+    const other = a === orgHex ? b : b === orgHex ? a : null;
+    if (!other) continue;
+    if (seen.has(other)) continue;
+    seen.add(other);
+    const profile = profileCache.get(other);
+    members.push({
+      identity: other,
+      role: getOrgRole(orgId, other),
+      fullName: profile?.name || 'Unknown',
+      picture: profile?.picture || '',
+      city: cities.get(other) || '',
+      joinedAt: f.createdAt?.toDate() ?? new Date(),
+    });
+  }
+  // Role rows imply membership — include any leader/co-leader not already in
+  // the friendship list (legacy orgs created before membership became
+  // friendship may only have the role row).
   for (const m of dbConnection.db.organization_member.iter()) {
-    if (m.orgId === orgId) {
-      const profile = profileCache.get(m.memberIdentity.toHexString());
+    if (m.orgId === orgId && (m.role === 'leader' || m.role === 'co_leader')) {
+      const hex = m.memberIdentity.toHexString();
+      if (seen.has(hex)) continue;
+      seen.add(hex);
+      const profile = profileCache.get(hex);
       members.push({
-        identity: m.memberIdentity.toHexString(),
+        identity: hex,
         role: m.role,
         fullName: profile?.name || 'Unknown',
         picture: profile?.picture || '',
-        city: cities.get(m.memberIdentity.toHexString()) || '',
+        city: cities.get(hex) || '',
         joinedAt: m.joinedAt?.toDate() ?? new Date(),
       });
     }
@@ -1119,11 +1179,12 @@ export async function sendOrgMemberRequest(orgId: bigint, actingAsOrgId?: bigint
   });
 }
 
-// Leave an organization = sever the FRIENDSHIP with the org's account
-// identity (membership ≡ friendship). Follows of the org are unaffected.
+// Leave an organization = UNFRIEND the org's account identity (membership ≡
+// friendship; the unfriend reducer drops the member row + pending request
+// when the target is an org identity). Follows of the org are unaffected.
 export async function leaveOrg(orgId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.leaveOrg({ orgId });
+  await unfriend(orgAccountIdentityHex(orgId));
 }
 
 // ─── Messaging APIs ───────────────────────────────────────────────
