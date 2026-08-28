@@ -235,6 +235,9 @@ function MyProfilePage() {
       // All posts the account made were deleted server-side — reflect that now.
       setMyPosts([]);
       setShowDisableModal(false);
+      // Disabling logs the user out — the account is now in enable-only mode
+      // until they sign back in and re-enable.
+      handleLogout();
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
     }
