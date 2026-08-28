@@ -6,7 +6,7 @@ import { useOrg } from '../contexts/OrgContext';
 import { currentUserIdentityHex } from '../utils/authState';
 
 export default function AuthActions({ profileReplacement, hideChat }: { profileReplacement?: ReactNode; hideChat?: boolean }) {
-  const { isLoggedIn, profilePicture } = useAuthProfile();
+  const { isLoggedIn, profilePicture, booted } = useAuthProfile();
   const { activeOrg } = useOrg();
   const navigate = useNavigate();
   const [unreadNotifs, setUnreadNotifs] = useState(0);
@@ -25,6 +25,12 @@ export default function AuthActions({ profileReplacement, hideChat }: { profileR
     const interval = setInterval(update, 5000);
     return () => clearInterval(interval);
   }, [isLoggedIn, notifIdentity]);
+
+  // Session boot still in flight (only the very first mount of a fresh page
+  // load): render a neutral spacer instead of a wrong "Sign In" flash.
+  if (!booted) {
+    return <div className="auth-actions" aria-hidden="true" />;
+  }
 
   if (!isLoggedIn) {
     // Single entry point — flow selection happens on the /login page

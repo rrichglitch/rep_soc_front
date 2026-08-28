@@ -8,9 +8,10 @@ import {
   useLocation,
 } from 'react-router-dom';
 import { Identity } from 'spacetimedb';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, getDbConnection, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { getDbConnection } from './utils/spacetime';
+import { ensureGateBoot, getGateBootSnapshot, isGateBootDone, setGateBootHasProfile, type GateBoot } from './utils/gateBoot';
 import { hasCheckoutReturnMarker, clearCheckoutReturnMarker } from './utils/checkoutReturn';
-import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
+import { getOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
 
 import RegisterPage from './pages/RegisterPage';
@@ -56,72 +57,21 @@ export const useApp = () => useContext(AppContext);
 // own instance). The session boot (connect + profile check) must therefore
 // run ONCE per SPA session; later mounts reuse it so navigation is instant —
 // no loading shell, no reconnect, no RPC polling on every page change.
-interface GateBoot {
-  email: string | null;
-  identityHex: string | null;
-  hasProfile: boolean;
-}
-let gateBoot: GateBoot = { email: null, identityHex: null, hasProfile: false };
-let gateBootPromise: Promise<void> | null = null;
-let gateBootDone = false;
-
-async function ensureGateBoot(): Promise<void> {
-  if (gateBootPromise) return gateBootPromise;
-  gateBootPromise = (async () => {
-    const oauthSession = getOAuthSession();
-    if (!oauthSession) return;
-    gateBoot.email = oauthSession.email;
-    gateBoot.identityHex = oauthSession.identityHex;
-    try {
-      // Retry the connection: a single transient failure (cold-boot right
-      // after a redirect, WS hiccup) must NOT log the user out.
-      let connected = false;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
-          connected = true;
-          break;
-        } catch (e) {
-          if (attempt === 3) throw e;
-          await new Promise((r) => setTimeout(r, 800 * attempt));
-        }
-      }
-      if (!connected) throw new Error('connect failed');
-
-      let profileExists = false;
-      for (let i = 0; i < 30; i++) {
-        profileExists = await checkProfileExistsByEmail(oauthSession.email);
-        if (profileExists) break;
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
-      gateBoot.hasProfile = profileExists;
-    } catch (e) {
-      console.error('Error connecting to SpacetimeDB:', e);
-      // Session token is stale/invalid — drop it and go to the landing page
-      clearOAuthSession();
-      disconnectFromSpacetimeDB();
-      gateBoot.email = null;
-      gateBoot.identityHex = null;
-      gateBoot.hasProfile = false;
-    } finally {
-      gateBootDone = true;
-    }
-  })();
-  return gateBootPromise;
-}
+// The singleton itself lives in utils/gateBoot.ts (shared with the top-bar
+// auth hook); this file only consumes it.
 
 // Wraps signed-in-only subtrees. Holds children in a loading state only until
 // the (once-per-session) boot resolves — after that, mounts are instant.
 function AuthGate({ children }: { children: ReactNode }) {
   const pathname = window.location.pathname;
-  const [boot, setBoot] = useState<GateBoot>(gateBoot);
-  const [ready, setReady] = useState(gateBootDone);
+  const [boot, setBoot] = useState<GateBoot>(getGateBootSnapshot());
+  const [ready, setReady] = useState(isGateBootDone());
 
   useEffect(() => {
     let alive = true;
     ensureGateBoot().then(() => {
       if (!alive) return;
-      setBoot(gateBoot);
+      setBoot(getGateBootSnapshot());
       setReady(true);
     });
     return () => { alive = false; };
@@ -129,7 +79,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   }, []);
 
   const setHasProfile = (has: boolean) => {
-    gateBoot.hasProfile = has;
+    setGateBootHasProfile(has);
     setBoot((b) => ({ ...b, hasProfile: has }));
   };
 
