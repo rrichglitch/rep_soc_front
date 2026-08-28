@@ -192,14 +192,28 @@ function MainFeedPage() {
       />
 
       <main className="main-content" ref={feedContainerRef}>
-        <ProfileTabs
-          tabs={[
-            { key: 'following', label: 'Following' },
-            { key: 'mystory', label: 'My Story' },
-          ]}
-          active={activeTab}
-          onChange={(k) => setActiveTab(k as 'following' | 'mystory')}
-        />
+        <div className="feed-tab-row">
+          <ProfileTabs
+            tabs={[
+              { key: 'following', label: 'Following' },
+              { key: 'mystory', label: 'My Story' },
+            ]}
+            active={activeTab}
+            onChange={(k) => setActiveTab(k as 'following' | 'mystory')}
+          />
+          {activeTab === 'mystory' && (
+            <button
+              className="story-order-btn"
+              onClick={handleToggleMyStoryOrder}
+              aria-label={myStoryNewestFirst ? 'Show oldest first' : 'Show newest first'}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M8 17V6M8 6l-3.5 3.5M8 6l3.5 3.5" />
+                <path d="M16 7v11M16 18l-3.5-3.5M16 18l3.5-3.5" />
+              </svg>
+            </button>
+          )}
+        </div>
 
         {activeTab === 'following' ? (
           !hasContent ? (
@@ -252,19 +266,6 @@ function MainFeedPage() {
           )
         ) : (
           <>
-            <div className="feed-controls">
-              <button
-                className="story-order-btn"
-                onClick={handleToggleMyStoryOrder}
-                aria-label={myStoryNewestFirst ? 'Show oldest first' : 'Show newest first'}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 10l6-6 6 6" />
-                  <path d="M6 14l6 6 6-6" />
-                </svg>
-              </button>
-            </div>
-
             {myStories.length === 0 ? (
               <div className="empty-story">
                 <p>No stories about you yet.</p>
@@ -321,18 +322,26 @@ function MainFeedPage() {
           padding: 24px;
         }
 
-        .feed-controls {
+        .feed-tab-row {
           display: flex;
-          justify-content: flex-end;
-          margin-bottom: 16px;
+          align-items: center;
+          gap: 12px;
+          border-bottom: 1px solid #e0e0e0;
+          margin-bottom: 20px;
+        }
+
+        .feed-tab-row .profile-tabs {
+          flex: 1;
+          margin-bottom: 0;
+          border-bottom: none;
         }
 
         .story-order-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 38px;
-          height: 38px;
+          width: 34px;
+          height: 34px;
           padding: 0;
           background: white;
           border: 1px solid #667eea;
@@ -340,6 +349,7 @@ function MainFeedPage() {
           color: #667eea;
           cursor: pointer;
           transition: all 0.2s;
+          flex-shrink: 0;
         }
 
         .story-order-btn:hover {
