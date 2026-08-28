@@ -232,6 +232,8 @@ function MyProfilePage() {
     try {
       await setProfileDisabled(true);
       setProfile((p) => (p ? { ...p, disabled: true } : p));
+      // All posts the account made were deleted server-side — reflect that now.
+      setMyPosts([]);
       setShowDisableModal(false);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
