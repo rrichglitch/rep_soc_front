@@ -61,6 +61,7 @@ function NotificationsPage() {
       setNotifs(prev => prev.filter(n => !(n.type === 'friend_request' && n.referenceId === refId)));
     } catch (e: any) {
       alert(e?.message || 'Failed to accept. Please try again.');
+    } finally {
       setBusy(null);
     }
   };
@@ -73,6 +74,7 @@ function NotificationsPage() {
       setNotifs(prev => prev.filter(n => !(n.type === 'friend_request' && n.referenceId === refId)));
     } catch (e: any) {
       alert(e?.message || 'Failed to decline. Please try again.');
+    } finally {
       setBusy(null);
     }
   };
