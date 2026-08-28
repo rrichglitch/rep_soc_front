@@ -6,6 +6,7 @@ import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import SearchBar from '../components/SearchBar';
+import ProfileTabs from '../components/ProfileTabs';
 
 
 function MainFeedPage() {
@@ -26,11 +27,16 @@ function MainFeedPage() {
   });
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
-  const [orderOldToNew, setOrderOldToNew] = useState(true);
+  const [activeTab, setActiveTab] = useState<'following' | 'mystory'>('following');
+  // My Story starts newest-first; the order button flips it.
+  const [myStoryNewestFirst, setMyStoryNewestFirst] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  
+
+  // Following is always newest-first — the most recent posts sit at the top.
+  const FOLLOWING_ORDER_OLD_TO_NEW = false;
+
   const lastSaveTimeRef = useRef<number>(0);
   const currentIdentityHexRef = useRef<string>('');
   const feedContainerRef = useRef<HTMLDivElement>(null);
@@ -41,13 +47,13 @@ function MainFeedPage() {
       setIsLoading(false);
       return;
     }
-    
+
     try {
       if (activeOrg) {
         // Org account: feed = org's story + org's follows
         const myFeed = await getMyStoryPosts(activeOrg.identity);
         setMyStories(myFeed);
-        const { stories, hasMore: more } = getPaginatedOrgFeedStories(activeOrg.identity, orderOldToNew, 0);
+        const { stories, hasMore: more } = getPaginatedOrgFeedStories(activeOrg.identity, FOLLOWING_ORDER_OLD_TO_NEW, 0);
         allStoriesRef.current = stories;
         setFollowedStories(stories);
         setHasMore(more);
@@ -66,8 +72,8 @@ function MainFeedPage() {
         if (refresh) {
           await refreshFeed();
         }
-        
-        const { stories, hasMore: more } = getPaginatedFeedStories(orderOldToNew, 0);
+
+        const { stories, hasMore: more } = getPaginatedFeedStories(FOLLOWING_ORDER_OLD_TO_NEW, 0);
         allStoriesRef.current = stories;
         setFollowedStories(stories);
         setHasMore(more);
@@ -77,7 +83,7 @@ function MainFeedPage() {
       console.error('Error loading profile:', e);
     }
     setIsLoading(false);
-  }, [email, orderOldToNew, activeOrg]);
+  }, [email, activeOrg]);
 
   useEffect(() => {
     if (email) {
@@ -87,19 +93,19 @@ function MainFeedPage() {
 
   const loadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
-    
+
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
     const { stories, hasMore: more } = activeOrg
-      ? getPaginatedOrgFeedStories(activeOrg.identity, orderOldToNew, nextPage)
-      : getPaginatedFeedStories(orderOldToNew, nextPage);
-    
+      ? getPaginatedOrgFeedStories(activeOrg.identity, FOLLOWING_ORDER_OLD_TO_NEW, nextPage)
+      : getPaginatedFeedStories(FOLLOWING_ORDER_OLD_TO_NEW, nextPage);
+
     allStoriesRef.current = [...allStoriesRef.current, ...stories];
     setFollowedStories(allStoriesRef.current);
     setHasMore(more);
     setCurrentPage(nextPage);
     setIsLoadingMore(false);
-  }, [currentPage, hasMore, isLoadingMore, orderOldToNew, activeOrg]);
+  }, [currentPage, hasMore, isLoadingMore, activeOrg]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -107,22 +113,16 @@ function MainFeedPage() {
     }
   };
 
-  const handleToggleOrder = async () => {
-    const newOrder = !orderOldToNew;
-    setOrderOldToNew(newOrder);
-    allStoriesRef.current = [];
-    const { stories, hasMore: more } = activeOrg
-      ? getPaginatedOrgFeedStories(activeOrg.identity, newOrder, 0)
-      : getPaginatedFeedStories(newOrder, 0);
-    allStoriesRef.current = stories;
-    setFollowedStories(stories);
-    setHasMore(more);
-    setCurrentPage(0);
+  const handleToggleMyStoryOrder = () => {
+    setMyStoryNewestFirst((v) => !v);
   };
 
   const handleScroll = useCallback(async () => {
     const identity = currentIdentityHexRef.current;
     if (!identity) return;
+
+    // Endless scroll only applies to the Following tab.
+    if (activeTab !== 'following') return;
 
     const container = feedContainerRef.current;
     if (!container) return;
@@ -138,21 +138,12 @@ function MainFeedPage() {
       loadMore();
     }
 
-    let timestampToSave: Date | null = null;
-
-    if (orderOldToNew) {
-      if (isAtBottom && followedStories.length > 0) {
-        const oldestStory = followedStories[followedStories.length - 1];
-        timestampToSave = new Date(oldestStory.createdAt);
-      }
-    } else {
-      if (isAtTop && followedStories.length > 0) {
-        const newestStory = followedStories[0];
-        timestampToSave = new Date(newestStory.createdAt);
-      }
-    }
-
-    if (timestampToSave) {
+    // Following is newest-first: the newest stories sit at the top, so when
+    // the user scrolls back up to the top we remember the newest story's
+    // timestamp as the scroll position.
+    if (isAtTop && followedStories.length > 0) {
+      const newestStory = followedStories[0];
+      const timestampToSave = new Date(newestStory.createdAt);
       const now = Date.now();
       if (now - lastSaveTimeRef.current > 30000) {
         try {
@@ -164,7 +155,7 @@ function MainFeedPage() {
         }
       }
     }
-  }, [orderOldToNew, followedStories, hasMore, isLoadingMore, loadMore]);
+  }, [activeTab, followedStories, hasMore, isLoadingMore, loadMore]);
 
   useEffect(() => {
     const container = feedContainerRef.current;
@@ -174,7 +165,14 @@ function MainFeedPage() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const hasContent = myStories.length > 0 || followedStories.length > 0;
+  // My Story can be displayed in either direction — flip without mutating state.
+  const displayedMyStories = myStoryNewestFirst
+    ? myStories
+    : [...myStories].reverse();
+
+  const hasContent = activeTab === 'following'
+    ? followedStories.length > 0
+    : myStories.length > 0;
 
   if (isLoading) {
     return (
@@ -194,96 +192,109 @@ function MainFeedPage() {
       />
 
       <main className="main-content" ref={feedContainerRef}>
-        {!hasContent ? (
-          <div className="empty-feed">
-            <p>No posts yet. Follow some people to see their stories!</p>
-            <Link to="/search" className="find-people-link">
-              Find People
-            </Link>
-          </div>
+        <ProfileTabs
+          tabs={[
+            { key: 'following', label: 'Following' },
+            { key: 'mystory', label: 'My Story' },
+          ]}
+          active={activeTab}
+          onChange={(k) => setActiveTab(k as 'following' | 'mystory')}
+        />
+
+        {activeTab === 'following' ? (
+          !hasContent ? (
+            <div className="empty-feed">
+              <p>No posts yet. Follow some people to see their stories!</p>
+              <Link to="/search" className="find-people-link">
+                Find People
+              </Link>
+            </div>
+          ) : (
+            <div className="feed">
+              <div className="stories-list">
+                {followedStories.map((story) => (
+                  <div key={story.id.toString()} className="story-card">
+                    <div className="story-people-row">
+                      <Link to={`/profile/${story.posterIdentity.toHexString()}`} className="story-person-col">
+                        {story.posterPicture ? (
+                          <img src={story.posterPicture} alt={story.posterName} className="person-avatar-lg" />
+                        ) : (
+                          <div className="person-avatar-placeholder-lg" />
+                        )}
+                        <span className="person-name-lg">{story.posterName}</span>
+                      </Link>
+                      <div className="story-middle-col">
+                        <span className="small-arrow">→</span>
+                        <span className="small-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <Link to={`/profile/${story.profileOwnerIdentityHex}`} className="story-person-col">
+                        {story.profileOwnerPicture ? (
+                          <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="person-avatar-lg" />
+                        ) : (
+                          <div className="person-avatar-placeholder-lg" />
+                        )}
+                        <span className="person-name-lg">{story.profileOwnerName}</span>
+                      </Link>
+                    </div>
+                    <p className="story-content">{story.content}</p>
+                    {story.mediaData && story.mediaData.length > 0 && (
+                      <img src={story.mediaData} alt="Story media" className="story-media" />
+                    )}
+                  </div>
+                ))}
+              </div>
+              {isLoadingMore && (
+                <div className="loading-more-indicator">
+                  Loading more...
+                </div>
+              )}
+            </div>
+          )
         ) : (
-          <div className="feed">
+          <>
             <div className="feed-controls">
-              <button 
-                className={`order-toggle ${orderOldToNew ? 'active' : ''}`}
-                onClick={handleToggleOrder}
+              <button
+                className="story-order-btn"
+                onClick={handleToggleMyStoryOrder}
+                aria-label={myStoryNewestFirst ? 'Show oldest first' : 'Show newest first'}
               >
-                {orderOldToNew ? '↓ Oldest First' : '↑ Newest First'}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 10l6-6 6 6" />
+                  <path d="M6 14l6 6 6-6" />
+                </svg>
               </button>
             </div>
 
-            {myStories.length > 0 && (
-              <div className="feed-section">
-                <h2 className="feed-section-title">Your Story</h2>
-                <div className="stories-list">
-                  {myStories.map((story) => (
-                    <div key={story.id.toString()} className="story-card">
-                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
-                        <div className="story-header">
-                          {story.posterPicture ? (
-                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                          ) : (
-                            <div className="story-avatar-placeholder" />
-                          )}
-                          <div className="story-meta">
-                            <span className="story-author">{story.posterName}</span>
-                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </Link>
-                      <p className="story-content">{story.content}</p>
-                      {story.mediaData && story.mediaData.length > 0 && (
-                        <img src={story.mediaData} alt="Story media" className="story-media" />
-                      )}
-                    </div>
-                  ))}
-                </div>
+            {myStories.length === 0 ? (
+              <div className="empty-story">
+                <p>No stories about you yet.</p>
               </div>
-            )}
-
-            {followedStories.length > 0 && (
-              <div className="feed-section">
-                <h2 className="feed-section-title">Following</h2>
-                <div className="stories-list">
-                  {followedStories.map((story) => (
-                    <div key={story.id.toString()} className="story-card">
-                      <div className="story-people-row">
-                        <Link to={`/profile/${story.posterIdentity.toHexString()}`} className="story-person-col">
-                          {story.posterPicture ? (
-                            <img src={story.posterPicture} alt={story.posterName} className="person-avatar-lg" />
-                          ) : (
-                            <div className="person-avatar-placeholder-lg" />
-                          )}
-                          <span className="person-name-lg">{story.posterName}</span>
-                        </Link>
-                        <div className="story-middle-col">
-                          <span className="small-arrow">→</span>
-                          <span className="small-date">{new Date(story.createdAt).toLocaleDateString()}</span>
+            ) : (
+              <div className="stories-list">
+                {displayedMyStories.map((story) => (
+                  <div key={story.id.toString()} className="story-card">
+                    <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
+                      <div className="story-header">
+                        {story.posterPicture ? (
+                          <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
+                        ) : (
+                          <div className="story-avatar-placeholder" />
+                        )}
+                        <div className="story-meta">
+                          <span className="story-author">{story.posterName}</span>
+                          <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <Link to={`/profile/${story.profileOwnerIdentityHex}`} className="story-person-col">
-                          {story.profileOwnerPicture ? (
-                            <img src={story.profileOwnerPicture} alt={story.profileOwnerName} className="person-avatar-lg" />
-                          ) : (
-                            <div className="person-avatar-placeholder-lg" />
-                          )}
-                          <span className="person-name-lg">{story.profileOwnerName}</span>
-                        </Link>
                       </div>
-                      <p className="story-content">{story.content}</p>
-                      {story.mediaData && story.mediaData.length > 0 && (
-                        <img src={story.mediaData} alt="Story media" className="story-media" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                {isLoadingMore && (
-                  <div className="loading-more-indicator">
-                    Loading more...
+                    </Link>
+                    <p className="story-content">{story.content}</p>
+                    {story.mediaData && story.mediaData.length > 0 && (
+                      <img src={story.mediaData} alt="Story media" className="story-media" />
+                    )}
                   </div>
-                )}
+                ))}
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
@@ -316,25 +327,24 @@ function MainFeedPage() {
           margin-bottom: 16px;
         }
 
-        .order-toggle {
-          padding: 8px 16px;
+        .story-order-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 38px;
+          height: 38px;
+          padding: 0;
           background: white;
-          border: 1px solid #ddd;
-          border-radius: 20px;
-          font-size: 14px;
+          border: 1px solid #667eea;
+          border-radius: 50%;
+          color: #667eea;
           cursor: pointer;
-          color: #666;
           transition: all 0.2s;
         }
 
-        .order-toggle:hover {
-          background: #f5f5f5;
-        }
-
-        .order-toggle.active {
+        .story-order-btn:hover {
           background: #667eea;
           color: white;
-          border-color: #667eea;
         }
 
         .loading-more-indicator {
@@ -366,15 +376,16 @@ function MainFeedPage() {
           font-weight: 600;
         }
 
-        .feed-section {
-          margin-bottom: 32px;
+        .empty-story {
+          text-align: center;
+          padding: 48px 24px;
+          background: white;
+          border-radius: 12px;
         }
 
-        .feed-section-title {
-          font-size: 16px;
+        .empty-story p {
           color: #666;
-          margin: 0 0 16px;
-          font-weight: 600;
+          margin: 0;
         }
 
         .stories-list {

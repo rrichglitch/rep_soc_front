@@ -5,7 +5,6 @@ import { useApp } from '../App';
 import {
   getProfileByEmail,
   getProfileRowByEmail,
-  getMyStoryPosts,
   getMyPosts,
   updateProfile,
   setProfileDisabled,
@@ -39,17 +38,6 @@ interface UserProfile {
   gender?: string;
   is_pro?: boolean;
   disabled?: boolean;
-}
-
-interface StoryPost {
-  id: bigint;
-  content: string;
-  mediaData: string;
-  mediaTypes: string;
-  createdAt: Date;
-  posterIdentity: string;
-  posterName: string;
-  posterPicture: string;
 }
 
 function MyProfilePage() {
@@ -93,11 +81,10 @@ function MyProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(() => buildProfileFromCache(email || ''));
   const [isLoading, setIsLoading] = useState(() => !getProfileRowByEmail(email || ''));
   const [showQR, setShowQR] = useState(false);
-  const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs' | 'settings'>(() => {
+  const [activeTab, setActiveTab] = useState<'posts' | 'friends' | 'orgs' | 'settings'>(() => {
     const saved = localStorage.getItem('veri_me_tab');
-    return (saved === 'story' || saved === 'posts' || saved === 'friends' || saved === 'orgs' || saved === 'settings') ? (saved as any) : 'story';
+    return (saved === 'posts' || saved === 'friends' || saved === 'orgs' || saved === 'settings') ? (saved as any) : 'posts';
   });
   const [hideFriends, setHideFriends] = useState(false);
   const [isUpdatingHide, setIsUpdatingHide] = useState(false);
@@ -185,9 +172,6 @@ function MyProfilePage() {
         const identityHex = profileData.identity.toHexString();
         
         setProfile(buildProfileFromCache(email));
-
-        const profileStories = await getMyStoryPosts(identityHex);
-        setStories(profileStories);
 
         const userPosts = await getMyPosts(identityHex);
         setMyPosts(userPosts);
@@ -375,7 +359,6 @@ function MyProfilePage() {
         <div className="story-section">
           <ProfileTabs
             tabs={[
-              { key: 'story', label: 'Story' },
               { key: 'posts', label: 'Posts' },
               { key: 'friends', label: 'Friends' },
               { key: 'orgs', label: 'Organizations' },
@@ -407,42 +390,6 @@ function MyProfilePage() {
               dangerHint={profile?.disabled ? 'Your profile is disabled — it will not appear in searches.' : undefined}
               onDanger={() => (profile?.disabled ? setShowEnableModal(true) : setShowDisableModal(true))}
             />
-          ) : activeTab === 'story' ? (
-            <>
-              <div className="no-post-own-story">
-                <p>You cannot post on your own story. Others can share stories about you.</p>
-              </div>
-
-              {stories.length === 0 ? (
-                <div className="empty-story">
-                  <p>No stories about you yet.</p>
-                </div>
-              ) : (
-                <div className="stories-list">
-                  {stories.map((story) => (
-                    <div key={story.id.toString()} className="story-card">
-                      <Link to={`/profile/${story.posterIdentity}`} className="story-header-link">
-                        <div className="story-header">
-                          {story.posterPicture ? (
-                            <img src={story.posterPicture} alt={story.posterName} className="story-avatar" />
-                          ) : (
-                            <div className="story-avatar-placeholder" />
-                          )}
-                          <div className="story-meta">
-                            <span className="story-author">{story.posterName}</span>
-                            <span className="story-date">{new Date(story.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </Link>
-                      <p className="story-content">{story.content}</p>
-                      {story.mediaData && story.mediaData.length > 0 && (
-                        <img src={story.mediaData} alt="Story media" className="story-media" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
           ) : (
             <>
               {myPosts.length === 0 ? (
@@ -647,21 +594,6 @@ function MyProfilePage() {
           font-size: 16px;
           color: #666;
           margin: 0 0 16px;
-        }
-
-        .no-post-own-story {
-          background: white;
-          border-radius: 12px;
-          padding: 16px;
-          text-align: center;
-          margin-bottom: 16px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        .no-post-own-story p {
-          margin: 0;
-          color: #666;
-          font-size: 14px;
         }
 
         .stories-list {
