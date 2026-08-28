@@ -7,8 +7,8 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
-import type { Identity } from 'spacetimedb';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, getProfileByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { Identity } from 'spacetimedb';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, getDbConnection, disconnectFromSpacetimeDB } from './utils/spacetime';
 import { hasCheckoutReturnMarker, clearCheckoutReturnMarker } from './utils/checkoutReturn';
 import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
@@ -51,115 +51,130 @@ const AppContext = createContext<AppContextType>({
 // eslint-disable-next-line react-refresh/only-export-components
 export const useApp = () => useContext(AppContext);
 
-// Wraps signed-in-only subtrees. Resolves the OAuth session ONCE and holds
-// children in a loading state until the SpacetimeDB connection is ready —
-// so pages never render "logged out" and then snap to logged-in.
-function AuthGate({ children }: { children: ReactNode }) {
-  const location = window.location.pathname;
-  const [isLoading, setIsLoading] = useState(true);
-  const [identity, setIdentity] = useState<Identity | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [hasProfile, setHasProfileState] = useState(false);
+// ─── Session boot singleton ────────────────────────────────────────────────
+// AuthGate mounts FRESH on every route change (each protected route wraps its
+// own instance). The session boot (connect + profile check) must therefore
+// run ONCE per SPA session; later mounts reuse it so navigation is instant —
+// no loading shell, no reconnect, no RPC polling on every page change.
+interface GateBoot {
+  email: string | null;
+  identityHex: string | null;
+  hasProfile: boolean;
+}
+let gateBoot: GateBoot = { email: null, identityHex: null, hasProfile: false };
+let gateBootPromise: Promise<void> | null = null;
+let gateBootDone = false;
 
-  const setHasProfile = (has: boolean) => {
-    setHasProfileState(has);
-  };
+async function ensureGateBoot(): Promise<void> {
+  if (gateBootPromise) return gateBootPromise;
+  gateBootPromise = (async () => {
+    const oauthSession = getOAuthSession();
+    if (!oauthSession) return;
+    gateBoot.email = oauthSession.email;
+    gateBoot.identityHex = oauthSession.identityHex;
+    try {
+      // Retry the connection: a single transient failure (cold-boot right
+      // after a redirect, WS hiccup) must NOT log the user out.
+      let connected = false;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
+          connected = true;
+          break;
+        } catch (e) {
+          if (attempt === 3) throw e;
+          await new Promise((r) => setTimeout(r, 800 * attempt));
+        }
+      }
+      if (!connected) throw new Error('connect failed');
+
+      let profileExists = false;
+      for (let i = 0; i < 30; i++) {
+        profileExists = await checkProfileExistsByEmail(oauthSession.email);
+        if (profileExists) break;
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      gateBoot.hasProfile = profileExists;
+    } catch (e) {
+      console.error('Error connecting to SpacetimeDB:', e);
+      // Session token is stale/invalid — drop it and go to the landing page
+      clearOAuthSession();
+      disconnectFromSpacetimeDB();
+      gateBoot.email = null;
+      gateBoot.identityHex = null;
+      gateBoot.hasProfile = false;
+    } finally {
+      gateBootDone = true;
+    }
+  })();
+  return gateBootPromise;
+}
+
+// Wraps signed-in-only subtrees. Holds children in a loading state only until
+// the (once-per-session) boot resolves — after that, mounts are instant.
+function AuthGate({ children }: { children: ReactNode }) {
+  const pathname = window.location.pathname;
+  const [boot, setBoot] = useState<GateBoot>(gateBoot);
+  const [ready, setReady] = useState(gateBootDone);
 
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
+    ensureGateBoot().then(() => {
+      if (!alive) return;
+      setBoot(gateBoot);
+      setReady(true);
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    const initAuth = async () => {
-      const oauthSession = getOAuthSession();
-      if (!oauthSession) {
-        setIsLoading(false);
-        return;
+  const setHasProfile = (has: boolean) => {
+    gateBoot.hasProfile = has;
+    setBoot((b) => ({ ...b, hasProfile: has }));
+  };
+
+  // Cheap per-navigation routing — SYNC reads from the local table cache, no
+  // RPC, no reconnect: pin disabled accounts to the enable flow, send
+  // profile-less users to register.
+  useEffect(() => {
+    if (!ready || !boot.email) return;
+    if (!boot.hasProfile) {
+      if (!pathname.includes('/register')) {
+        window.location.replace('/register');
       }
-
-      console.log('Authenticated via OAuth relay:', oauthSession.provider);
-      setIdentity({ toHexString: () => oauthSession.identityHex } as unknown as Identity);
-      setEmail(oauthSession.email);
-
-      try {
-        // Retry the connection before giving up: a single transient failure
-        // (cold-boot right after a redirect, WS hiccup) must NOT log the user
-        // out — that previously nuked the session and dumped users on the
-        // landing page after Stripe Checkout returns.
-        let connected = false;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            await connectToSpacetimeDB(oauthSession.email, oauthSession.stToken);
-            connected = true;
-            break;
-          } catch (e) {
-            if (attempt === 3) throw e;
-            await new Promise((r) => setTimeout(r, 800 * attempt));
-          }
-        }
-        if (!connected) throw new Error('connect failed');
-
-        let profileExists = false;
-        for (let i = 0; i < 30; i++) {
-          if (cancelled) return;
-          profileExists = await checkProfileExistsByEmail(oauthSession.email);
-          if (profileExists) break;
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        console.log('Profile exists in DB:', profileExists);
-        setHasProfileState(profileExists);
-
-        if (profileExists) {
-          // Disabled account: login is allowed ONLY to reach the enable flow.
-          // Pin the user to /me?enable_profile=1 (Settings tab + enable modal)
-          // until they re-enable — everything else is off-limits.
-          try {
-            const me = await getProfileByEmail(oauthSession.email);
-            if (me?.disabled && !location.includes('/me')) {
-              window.location.replace('/me?enable_profile=1');
-              return;
-            }
-          } catch {
-            // profile lookup failed — fall through to normal routing
-          }
-        }
-
-        if (!profileExists && !location.includes('/register')) {
-          console.log('No profile found, redirecting to register');
-          setIsLoading(false);
-          window.location.replace('/register');
-          return;
-        }
-      } catch (e) {
-        console.error('Error connecting to SpacetimeDB:', e);
-        // Session token is stale/invalid — drop it and go to the landing page
-        clearOAuthSession();
-        disconnectFromSpacetimeDB();
-        setIsLoading(false);
-        window.location.replace('/');
-        return;
-      }
-
-      if (!cancelled) setIsLoading(false);
-    };
-
-    initAuth();
-    return () => { cancelled = true; };
-  }, [location]);
-
-  // Hold the whole subtree in the loading shell until session + profile state
-  // are resolved. This is what eliminates the logged-out → logged-in flash.
-  if (isLoading || getOAuthSession()) {
-    if (isLoading) {
-      return <div className="loading">Loading...</div>;
+      return;
     }
-  }
+    let meDisabled = false;
+    try {
+      // Own-row lookup via the primary-key index from the local cache.
+      const myHex = boot.identityHex ? `0x${boot.identityHex.replace(/^0x/, '')}` : '';
+      const me = myHex ? getDbConnection()?.db.user_profile.identity.find(Identity.fromString(myHex)) : null;
+      meDisabled = !!(me && me.disabled);
+    } catch {
+      // cache not synced yet — treat as ordinary navigation
+    }
+    if (meDisabled && !pathname.includes('/me')) {
+      window.location.replace('/me?enable_profile=1');
+    }
+  }, [ready, boot, pathname]);
 
   if (!getOAuthSession()) {
     return <Navigate to="/" replace />;
   }
+  if (!ready) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
-    <AppContext.Provider value={{ identity, email, isLoading: false, hasProfile, setHasProfile }}>
+    <AppContext.Provider
+      value={{
+        identity: boot.identityHex ? ({ toHexString: () => boot.identityHex } as unknown as Identity) : null,
+        email: boot.email,
+        isLoading: false,
+        hasProfile: boot.hasProfile,
+        setHasProfile,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );
