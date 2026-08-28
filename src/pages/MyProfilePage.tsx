@@ -580,8 +580,8 @@ function MyProfilePage() {
         <ConfirmTypeModal
           title="Enable Your Profile?"
           warning="Your profile will become visible again in searches, and you will be able to log in and post normally."
-          phrase="Re-Enable My Account"
-          confirmLabel="Re-Enable My Account"
+          phrase="Re-Enable My Profile"
+          confirmLabel="Re-Enable My Profile"
           onConfirm={handleEnable}
           onCancel={() => {
             setShowEnableModal(false);
