@@ -4,9 +4,10 @@ import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
 import { currentUserEmail } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import { QRCodeSVG } from 'qrcode.react';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox } from '../utils/spacetime';
+import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox, deleteOrganization } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
+import ProfileSettingsTab from './ProfileSettingsTab';
 import ProfileDetails from './ProfileDetails';
 import ProfileTabs from './ProfileTabs';
 import HideToggle from './HideToggle';
@@ -26,7 +27,7 @@ function OrgAccountView() {
   const [myRole, setMyRole] = useState<string | null>(null);
   const [stories, setStories] = useState<any[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'members'>('story');
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'members' | 'settings'>('story');
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
   const [showQR, setShowQR] = useState(false);
 
@@ -119,6 +120,14 @@ function OrgAccountView() {
     setOrgPrecision('exact');
   };
 
+  // Settings tab: permanently delete the org (leader only). After the reducer
+  // lands, drop the org session and land on the individual's own /me.
+  const handleDeleteOrg = async () => {
+    await deleteOrganization(org.id);
+    logoutOrg();
+    navigate('/me', { replace: true });
+  };
+
   const handleOrgToggleDisable = async () => {
     // Toggle OFF: backend jitters the last stored precise org location
     await jitterOrgToApprox(org.id);
@@ -181,14 +190,6 @@ function OrgAccountView() {
           </ProfileDetails>
         </div>
 
-        {canManage && (
-          <PreciseLocationToggle
-            isExact={orgPrecision === 'exact'}
-            onEnable={handleOrgToggleEnable}
-            onDisable={handleOrgToggleDisable}
-          />
-        )}
-
         {showQR && (
           <div className="qr-modal" onClick={() => setShowQR(false)}>
             <div className="qr-content" onClick={(e) => e.stopPropagation()}>
@@ -212,6 +213,7 @@ function OrgAccountView() {
               { key: 'story', label: 'Story' },
               { key: 'posts', label: 'Posts' },
               { key: 'members', label: 'Members' },
+              { key: 'settings', label: 'Settings' },
             ]}
             active={activeTab}
             onChange={(k) => setActiveTab(k as any)}
@@ -263,6 +265,21 @@ function OrgAccountView() {
                 />
               )}
             </div>
+          ) : activeTab === 'settings' ? (
+            <ProfileSettingsTab
+              locationControl={canManage ? (
+                <PreciseLocationToggle
+                  isExact={orgPrecision === 'exact'}
+                  onEnable={handleOrgToggleEnable}
+                  onDisable={handleOrgToggleDisable}
+                />
+              ) : null}
+              dangerLabel={myRole === 'leader' ? 'Delete This Organization' : undefined}
+              dangerHint="This permanently deletes the organization, its members, membership requests, and chat messages. This cannot be undone."
+              onDanger={handleDeleteOrg}
+              confirmRequired
+              confirmLabel="Confirm Delete This Organization"
+            />
           ) : activeTab === 'story' ? (
             <>
               <div className="no-post-own-story">

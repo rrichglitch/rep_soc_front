@@ -7,6 +7,7 @@ import {
   getMyStoryPosts,
   getMyPosts,
   updateProfile,
+  setProfileDisabled,
   deleteStoryPost,
   updateLocation,
   disconnectFromSpacetimeDB,
@@ -19,6 +20,7 @@ import TopBar from '../components/TopBar';
 import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
 import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
+import ProfileSettingsTab from '../components/ProfileSettingsTab';
 import ProfileDetails from '../components/ProfileDetails';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
@@ -34,6 +36,7 @@ interface UserProfile {
   age?: number;
   gender?: string;
   is_pro?: boolean;
+  disabled?: boolean;
 }
 
 interface StoryPost {
@@ -70,9 +73,9 @@ function MyProfilePage() {
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs'>(() => {
+  const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'friends' | 'orgs' | 'settings'>(() => {
     const saved = localStorage.getItem('veri_me_tab');
-    return (saved === 'story' || saved === 'posts' || saved === 'friends' || saved === 'orgs') ? (saved as any) : 'story';
+    return (saved === 'story' || saved === 'posts' || saved === 'friends' || saved === 'orgs' || saved === 'settings') ? (saved as any) : 'story';
   });
   const [hideFriends, setHideFriends] = useState(false);
   const [isUpdatingHide, setIsUpdatingHide] = useState(false);
@@ -165,6 +168,7 @@ function MyProfilePage() {
           age: profileData.age,
           gender: profileData.gender,
           is_pro: profileData.isPro,
+          disabled: !!profileData.disabled,
         });
 
         const profileStories = await getMyStoryPosts(identityHex);
@@ -215,6 +219,17 @@ function MyProfilePage() {
       alert(e?.message || 'Failed to update');
     } finally {
       setIsUpdatingHide(false);
+    }
+  };
+
+  // Settings tab: disable/enable the profile (disabled = invisible to search).
+  const handleToggleDisabled = async () => {
+    const next = !profile?.disabled;
+    try {
+      await setProfileDisabled(next);
+      setProfile((p) => (p ? { ...p, disabled: next } : p));
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
     }
   };
 
@@ -307,8 +322,6 @@ function MyProfilePage() {
           </ProfileDetails>
         </div>
 
-        <LocationSettings currentPrecision={locPrecision} onChanged={setLocPrecision} />
-
         <input
           type="file"
           ref={fileInputRef}
@@ -324,6 +337,7 @@ function MyProfilePage() {
               { key: 'posts', label: 'Posts' },
               { key: 'friends', label: 'Friends' },
               { key: 'orgs', label: 'Organizations' },
+              { key: 'settings', label: 'Settings' },
             ]}
             active={activeTab}
             onChange={(k) => { setActiveTab(k as any); localStorage.setItem('veri_me_tab', k); }}
@@ -341,6 +355,15 @@ function MyProfilePage() {
                 onChange: handleHideFriendsToggle,
                 busy: isUpdatingHide,
               }}
+            />
+          ) : activeTab === 'settings' ? (
+            <ProfileSettingsTab
+              locationControl={
+                <LocationSettings currentPrecision={locPrecision} onChanged={setLocPrecision} />
+              }
+              dangerLabel={profile?.disabled ? 'Enable Your Profile' : 'Disable Your Profile'}
+              dangerHint={profile?.disabled ? 'Your profile is disabled — it will not appear in searches.' : undefined}
+              onDanger={handleToggleDisabled}
             />
           ) : activeTab === 'story' ? (
             <>
