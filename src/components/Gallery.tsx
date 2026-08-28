@@ -73,7 +73,7 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
   if (photos.length === 0 && !isOwn) return null;
 
   return (
-    <div className="gallery-section">
+    <div className={`gallery-section ${photos.length === 0 ? 'gallery-empty' : ''}`}>
       <div className="gallery-head">
         <h3 className="gallery-title">Photos</h3>
         {isOwn && (
@@ -183,10 +183,14 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
         .gallery-sub { font-size: 13px; color: #999; }
         .gallery-count { margin-left: auto; font-size: 13px; color: #999; font-weight: 600; }
         .gallery-first-btn {
+          margin-left: auto;
           background: none; border: none; padding: 0; color: #667eea;
           font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;
         }
         .gallery-first-btn:disabled { opacity: 0.6; cursor: default; }
+        /* Collapsed empty state: no grid below the head, so drop the head's
+           bottom margin to keep the card's vertical padding symmetric. */
+        .gallery-empty .gallery-head { margin-bottom: 0; }
         .gallery-error { margin: 0 0 10px; color: #dc2626; font-size: 13px; }
         .gallery-grid {
           display: grid;
