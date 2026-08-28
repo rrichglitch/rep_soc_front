@@ -8,6 +8,7 @@ import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers,
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
 import ProfileSettingsTab from './ProfileSettingsTab';
+import ConfirmTypeModal from './ConfirmTypeModal';
 import ProfileDetails from './ProfileDetails';
 import ProfileTabs from './ProfileTabs';
 import HideToggle from './HideToggle';
@@ -30,6 +31,7 @@ function OrgAccountView() {
   const [activeTab, setActiveTab] = useState<'story' | 'posts' | 'members' | 'settings'>('story');
   const [createdAt, setCreatedAt] = useState<Date | null>(null);
   const [showQR, setShowQR] = useState(false);
+  const [showDeleteOrgModal, setShowDeleteOrgModal] = useState(false);
 
   const refreshOrg = async () => {
     if (!org) return;
@@ -275,10 +277,7 @@ function OrgAccountView() {
                 />
               ) : null}
               dangerLabel={myRole === 'leader' ? 'Delete This Organization' : undefined}
-              dangerHint="This permanently deletes the organization, its members, membership requests, and chat messages. This cannot be undone."
-              onDanger={handleDeleteOrg}
-              confirmRequired
-              confirmLabel="Confirm Delete This Organization"
+              onDanger={() => setShowDeleteOrgModal(true)}
             />
           ) : activeTab === 'story' ? (
             <>
@@ -346,6 +345,17 @@ function OrgAccountView() {
           )}
         </div>
       </main>
+
+      {showDeleteOrgModal && (
+        <ConfirmTypeModal
+          title="Delete This Organization?"
+          warning="This permanently deletes the organization, its members, membership requests, and chat messages. This cannot be undone."
+          phrase="Delete My Organization"
+          confirmLabel="Delete My Organization"
+          onConfirm={handleDeleteOrg}
+          onCancel={() => setShowDeleteOrgModal(false)}
+        />
+      )}
 
       <style>{`
         .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }

@@ -8,7 +8,7 @@ import {
   useLocation,
 } from 'react-router-dom';
 import type { Identity } from 'spacetimedb';
-import { connectToSpacetimeDB, checkProfileExistsByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
+import { connectToSpacetimeDB, checkProfileExistsByEmail, getProfileByEmail, disconnectFromSpacetimeDB } from './utils/spacetime';
 import { hasCheckoutReturnMarker, clearCheckoutReturnMarker } from './utils/checkoutReturn';
 import { getOAuthSession, clearOAuthSession } from './utils/oauthSession';
 import { OrgProvider } from './contexts/OrgContext';
@@ -107,6 +107,21 @@ function AuthGate({ children }: { children: ReactNode }) {
 
         console.log('Profile exists in DB:', profileExists);
         setHasProfileState(profileExists);
+
+        if (profileExists) {
+          // Disabled account: login is allowed ONLY to reach the enable flow.
+          // Pin the user to /me?enable_profile=1 (Settings tab + enable modal)
+          // until they re-enable — everything else is off-limits.
+          try {
+            const me = await getProfileByEmail(oauthSession.email);
+            if (me?.disabled && !location.includes('/me')) {
+              window.location.replace('/me?enable_profile=1');
+              return;
+            }
+          } catch {
+            // profile lookup failed — fall through to normal routing
+          }
+        }
 
         if (!profileExists && !location.includes('/register')) {
           console.log('No profile found, redirecting to register');

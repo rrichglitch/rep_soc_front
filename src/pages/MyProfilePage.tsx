@@ -21,6 +21,7 @@ import OrgSection from '../components/OrgSection';
 import OrgAccountView from '../components/OrgAccountView';
 import LocationSettings, { type LocationPrecision } from '../components/LocationSettings';
 import ProfileSettingsTab from '../components/ProfileSettingsTab';
+import ConfirmTypeModal from '../components/ConfirmTypeModal';
 import ProfileDetails from '../components/ProfileDetails';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
@@ -84,6 +85,8 @@ function MyProfilePage() {
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDisableModal, setShowDisableModal] = useState(false);
+  const [showEnableModal, setShowEnableModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState<any | null>(null);
   const [locPrecision, setLocPrecision] = useState<LocationPrecision>('off');
   const [isLocUpdating, setIsLocUpdating] = useState(false);
@@ -222,16 +225,38 @@ function MyProfilePage() {
     }
   };
 
-  // Settings tab: disable/enable the profile (disabled = invisible to search).
-  const handleToggleDisabled = async () => {
-    const next = !profile?.disabled;
+  // Settings tab: disable/enable the profile. Both go through the typed
+  // confirmation modal — disabling deletes all posts and blocks login until
+  // re-enabled; re-enabling makes the profile visible again.
+  const handleDisable = async () => {
     try {
-      await setProfileDisabled(next);
-      setProfile((p) => (p ? { ...p, disabled: next } : p));
+      await setProfileDisabled(true);
+      setProfile((p) => (p ? { ...p, disabled: true } : p));
+      setShowDisableModal(false);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
     }
   };
+
+  const handleEnable = async () => {
+    try {
+      await setProfileDisabled(false);
+      setProfile((p) => (p ? { ...p, disabled: false } : p));
+      setShowEnableModal(false);
+    } catch (e: any) {
+      alert(e?.message || 'Failed to update');
+    }
+  };
+
+  // Disabled account logging back in: AuthGate bounces them to
+  // /me?enable_profile=1 — land on the Settings tab with the enable modal open.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('enable_profile') !== '1') return;
+    window.history.replaceState({}, '', '/me');
+    setActiveTab('settings');
+    setShowEnableModal(true);
+  }, []);
 
   const handlePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -363,7 +388,7 @@ function MyProfilePage() {
               }
               dangerLabel={profile?.disabled ? 'Enable Your Profile' : 'Disable Your Profile'}
               dangerHint={profile?.disabled ? 'Your profile is disabled — it will not appear in searches.' : undefined}
-              onDanger={handleToggleDisabled}
+              onDanger={() => (profile?.disabled ? setShowEnableModal(true) : setShowDisableModal(true))}
             />
           ) : activeTab === 'story' ? (
             <>
@@ -536,6 +561,28 @@ function MyProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showDisableModal && (
+        <ConfirmTypeModal
+          title="Disable Your Profile?"
+          warning="Disabling your profile deletes ALL posts you have made, hides your profile from searches, and prevents you from logging back in until you re-enable your account."
+          phrase="Disable My Profile"
+          confirmLabel="Disable My Profile"
+          onConfirm={handleDisable}
+          onCancel={() => setShowDisableModal(false)}
+        />
+      )}
+
+      {showEnableModal && (
+        <ConfirmTypeModal
+          title="Enable Your Profile?"
+          warning="Your profile will become visible again in searches, and you will be able to log in and post normally."
+          phrase="Re-Enable My Account"
+          confirmLabel="Re-Enable My Account"
+          onConfirm={handleEnable}
+          onCancel={() => setShowEnableModal(false)}
+        />
       )}
 
       <style>{`
