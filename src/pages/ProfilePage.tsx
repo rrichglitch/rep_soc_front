@@ -5,6 +5,7 @@ import { getOAuthSession } from '../utils/oauthSession';
 import ProfileHeader from '../components/ProfileHeader';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
+import Gallery from '../components/Gallery';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -312,6 +313,12 @@ function ProfilePage() {
           isOrgMember={isMember}
           isOrgLeader={isLeader}
           onLeaveOrg={handleLeave}
+        />
+
+        {/* Gallery — right under the top info section, like Instagram/Facebook */}
+        <Gallery
+          ownerIdentityHex={isOrgView ? orgIdentityHex : profileIdentity!}
+          isOwn={!isOrgView && isOwnProfile}
         />
 
         <ProfileTabs

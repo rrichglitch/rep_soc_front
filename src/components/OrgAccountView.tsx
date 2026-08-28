@@ -12,6 +12,7 @@ import ConfirmTypeModal from './ConfirmTypeModal';
 import ProfileDetails from './ProfileDetails';
 import ProfileTabs from './ProfileTabs';
 import HideToggle from './HideToggle';
+import Gallery from './Gallery';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 
@@ -191,6 +192,14 @@ function OrgAccountView() {
             </p>
           </ProfileDetails>
         </div>
+
+        {/* Gallery — right under the top info section (org account owns via acting-as-org) */}
+        <Gallery
+          ownerIdentityHex={org.identity}
+          isOwn
+          actingAsOrgId={org.id}
+          actingAsOrgIdentityHex={org.identity}
+        />
 
         {showQR && (
           <div className="qr-modal" onClick={() => setShowQR(false)}>

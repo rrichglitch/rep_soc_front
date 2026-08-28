@@ -82,6 +82,16 @@ export const Friendship = __t.object("Friendship", {
 });
 export type Friendship = __Infer<typeof Friendship>;
 
+export const GalleryPhoto = __t.object("GalleryPhoto", {
+  id: __t.u64(),
+  ownerIdentity: __t.identity(),
+  s3Key: __t.string(),
+  url: __t.string(),
+  bytes: __t.u64(),
+  createdAt: __t.timestamp(),
+});
+export type GalleryPhoto = __Infer<typeof GalleryPhoto>;
+
 export const InitiateDiditResult = __t.object("InitiateDiditResult", {
   success: __t.bool(),
   url: __t.option(__t.string()),

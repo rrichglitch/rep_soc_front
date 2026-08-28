@@ -21,6 +21,14 @@ export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://au
 // Stripe payments relay — Checkout session creation + cancellation (same host)
 export const PAYMENTS_RELAY_URL = import.meta.env.VITE_PAYMENTS_RELAY_URL || 'https://auth.veri.social/payments';
 
+// Images relay — S3-backed gallery uploads/proxy (same host, /images/ path)
+export const IMAGES_RELAY_URL = import.meta.env.VITE_IMAGES_RELAY_URL || 'https://auth.veri.social/images';
+
+// Gallery: client-side WebP compression target + hard cap (must match the
+// module's GALLERY_MAX_BYTES and the relay's MAX_IMAGE_BYTES).
+export const GALLERY_MAX_BYTES = 500 * 1024; // relay+module hard reject at 500KB; compress under this
+export const GALLERY_MAX_PHOTOS = 8;
+
 export const CHAR_LIMITS = {
   fullName: 100,
   city: 100,

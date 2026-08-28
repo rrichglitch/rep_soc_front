@@ -25,6 +25,7 @@ import ConfirmTypeModal from '../components/ConfirmTypeModal';
 import ProfileDetails from '../components/ProfileDetails';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
+import Gallery from '../components/Gallery';
 import { useOrg } from '../contexts/OrgContext';
 
 interface UserProfile {
@@ -347,6 +348,12 @@ function MyProfilePage() {
             </div>
           </ProfileDetails>
         </div>
+
+        {/* Gallery — own view: add/remove photos (right under the top info section) */}
+        <Gallery
+          ownerIdentityHex={profile?.identity || ''}
+          isOwn
+        />
 
         <input
           type="file"

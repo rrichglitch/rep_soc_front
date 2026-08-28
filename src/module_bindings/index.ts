@@ -36,6 +36,7 @@ import {
 // Import all reducer arg schemas
 import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
+import AddGalleryPhotoReducer from "./add_gallery_photo_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
 import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetGenderReducer from "./admin_set_gender_reducer";
@@ -49,6 +50,7 @@ import CreateProfileReducer from "./create_profile_reducer";
 import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
+import DeleteGalleryPhotoReducer from "./delete_gallery_photo_reducer";
 import DeleteOrganizationReducer from "./delete_organization_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DeliverSearchResultReducer from "./deliver_search_result_reducer";
@@ -96,6 +98,7 @@ import * as SearchProfilesProcedure from "./search_profiles_procedure";
 import FollowingRow from "./following_table";
 import FriendRequestRow from "./friend_request_table";
 import FriendshipRow from "./friendship_table";
+import GalleryPhotoRow from "./gallery_photo_table";
 import MessageRow from "./message_table";
 import MyFeedRow from "./my_feed_table";
 import MyOrgClaimFeeRow from "./my_org_claim_fee_table";
@@ -143,6 +146,20 @@ const tablesSchema = __schema({
       { name: 'friendship_id_key', constraint: 'unique', columns: ['id'] },
     ],
   }, FriendshipRow),
+  galleryPhoto: __table({
+    name: 'gallery_photo',
+    indexes: [
+      { accessor: 'created_at', name: 'gallery_photo_created_at_idx_btree', algorithm: 'btree', columns: [
+        'createdAt',
+      ] },
+      { accessor: 'id', name: 'gallery_photo_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'gallery_photo_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, GalleryPhotoRow),
   message: __table({
     name: 'message',
     indexes: [
@@ -274,6 +291,7 @@ const tablesSchema = __schema({
 const reducersSchema = __reducers(
   __reducerSchema("accept_friend_request", AcceptFriendRequestReducer),
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
+  __reducerSchema("add_gallery_photo", AddGalleryPhotoReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
   __reducerSchema("admin_set_birthday", AdminSetBirthdayReducer),
   __reducerSchema("admin_set_gender", AdminSetGenderReducer),
@@ -287,6 +305,7 @@ const reducersSchema = __reducers(
   __reducerSchema("create_story_post", CreateStoryPostReducer),
   __reducerSchema("decline_friend_request", DeclineFriendRequestReducer),
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
+  __reducerSchema("delete_gallery_photo", DeleteGalleryPhotoReducer),
   __reducerSchema("delete_organization", DeleteOrganizationReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("deliver_search_result", DeliverSearchResultReducer),
@@ -337,6 +356,8 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
   tables: typeof tablesSchema.schemaType.tables & {
     /** @deprecated Use `friendRequest` instead. This alias will be removed in the next major version. */
     readonly "friend_request": Omit<typeof tablesSchema.schemaType.tables["friendRequest"], "accessorName"> & { readonly accessorName: "friend_request" };
+    /** @deprecated Use `galleryPhoto` instead. This alias will be removed in the next major version. */
+    readonly "gallery_photo": Omit<typeof tablesSchema.schemaType.tables["galleryPhoto"], "accessorName"> & { readonly accessorName: "gallery_photo" };
     /** @deprecated Use `orgMemberRequest` instead. This alias will be removed in the next major version. */
     readonly "org_member_request": Omit<typeof tablesSchema.schemaType.tables["orgMemberRequest"], "accessorName"> & { readonly accessorName: "org_member_request" };
     /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
@@ -376,6 +397,7 @@ const REMOTE_MODULE = {
 
 const tableAccessorAliases = {
   "friend_request": "friendRequest",
+  "gallery_photo": "galleryPhoto",
   "org_member_request": "orgMemberRequest",
   "organization_member": "organizationMember",
   "story_post": "storyPost",
@@ -408,6 +430,8 @@ type __DbViewBase = __DbConnectionImpl<typeof REMOTE_MODULE>["db"];
 export type DbView = __DbViewBase & {
   /** @deprecated Use `friendRequest` instead. This alias will be removed in the next major version. */
   readonly "friend_request": __DbViewBase["friendRequest"];
+  /** @deprecated Use `galleryPhoto` instead. This alias will be removed in the next major version. */
+  readonly "gallery_photo": __DbViewBase["galleryPhoto"];
   /** @deprecated Use `orgMemberRequest` instead. This alias will be removed in the next major version. */
   readonly "org_member_request": __DbViewBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */
@@ -434,6 +458,8 @@ type __TablesBase = __QueryBuilder<typeof tablesSchema.schemaType>;
 export type Tables = __TablesBase & {
   /** @deprecated Use `friendRequest` instead. This alias will be removed in the next major version. */
   readonly "friend_request": __TablesBase["friendRequest"];
+  /** @deprecated Use `galleryPhoto` instead. This alias will be removed in the next major version. */
+  readonly "gallery_photo": __TablesBase["galleryPhoto"];
   /** @deprecated Use `orgMemberRequest` instead. This alias will be removed in the next major version. */
   readonly "org_member_request": __TablesBase["orgMemberRequest"];
   /** @deprecated Use `organizationMember` instead. This alias will be removed in the next major version. */

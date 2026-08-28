@@ -1,6 +1,7 @@
 import { DbConnection, tables } from '../module_bindings';
 import { Identity, Timestamp } from 'spacetimedb';
-import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE } from '../config';
+import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL } from '../config';
+import { getOAuthSession } from './oauthSession';
 
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
@@ -129,6 +130,7 @@ async function subscribeToTables(): Promise<void> {
           tables.message,
           tables.organization,
           tables.organization_member,
+          tables.gallery_photo,
           'SELECT * FROM my_search_results',
           'SELECT * FROM my_search_allowance',
           'SELECT * FROM my_pro_subscription',
@@ -1399,5 +1401,93 @@ export function getMyOrgClaimFee(): any[] {
   } catch {
     return [];
   }
+}
+
+// ─── Gallery (S3-backed photos) ───────────────────────────────────
+
+export interface GalleryPhoto {
+  id: bigint;
+  ownerIdentity: string;
+  s3Key: string;
+  url: string;
+  bytes: number;
+  createdAt: Date;
+}
+
+// All gallery photos for an identity, oldest first.
+export function getGallery(ownerIdentity: string): GalleryPhoto[] {
+  if (!dbConnection) return [];
+  const photos: GalleryPhoto[] = [];
+  for (const g of dbConnection.db.gallery_photo.iter()) {
+    if (g.ownerIdentity.toHexString() === ownerIdentity) {
+      photos.push({
+        id: g.id,
+        ownerIdentity: g.ownerIdentity.toHexString(),
+        s3Key: g.s3Key,
+        url: g.url,
+        bytes: Number(g.bytes),
+        createdAt: g.createdAt.toDate(),
+      });
+    }
+  }
+  return photos.sort((a, b) => (a.createdAt.getTime() - b.createdAt.getTime()));
+}
+
+// Upload a compressed WebP blob to the images relay. The relay stores it in
+// S3 AND records the gallery row in SpacetimeDB using the caller's identity
+// token (the upload itself is the auth). Returns the relay's {key, url}.
+export async function uploadGalleryPhoto(
+  blob: Blob,
+  actingAsOrgId?: bigint,
+  actingAsOrgIdentityHex?: string,
+): Promise<{ key: string; url: string; bytes: number }> {
+  const token = getOAuthSession()?.stToken;
+  if (!token) throw new Error('Not signed in');
+  const headers: Record<string, string> = {
+    'Content-Type': blob.type || 'image/webp',
+    Authorization: `Bearer ${token}`,
+  };
+  if (actingAsOrgId !== undefined && actingAsOrgIdentityHex) {
+    headers['X-Acting-Org-Id'] = actingAsOrgId.toString();
+    headers['X-Acting-Org-Identity'] = actingAsOrgIdentityHex;
+  }
+  const resp = await fetch(`${IMAGES_RELAY_URL}/upload`, {
+    method: 'POST',
+    headers,
+    body: blob,
+  });
+  const text = await resp.text();
+  let data: any = null;
+  try { data = JSON.parse(text); } catch { /* non-JSON */ }
+  if (!resp.ok) {
+    throw new Error(data?.error || `Upload failed (${resp.status})`);
+  }
+  return { key: data.key, url: data.url, bytes: data.bytes };
+}
+
+// Delete a gallery photo: row (owner-checked reducer) + S3 object (relay).
+export async function deleteGalleryPhoto(
+  photo: GalleryPhoto,
+  actingAsOrgId?: bigint,
+  actingAsOrgIdentityHex?: string,
+): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.deleteGalleryPhoto({
+    photoId: photo.id,
+    actingAsOrgId: actingAsOrgId ?? undefined,
+    actingAsOrgIdentity: actingAsOrgIdentityHex ? Identity.fromString(actingAsOrgIdentityHex) : undefined,
+  });
+  // Best-effort object removal from S3 (row deletion is the source of truth).
+  const token = getOAuthSession()?.stToken;
+  if (!token) return;
+  try {
+    await fetch(`${IMAGES_RELAY_URL}/img/${photo.s3Key}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(actingAsOrgIdentityHex ? { 'X-Acting-Org-Identity': actingAsOrgIdentityHex } : {}),
+      },
+    });
+  } catch { /* orphan object is harmless; row is gone */ }
 }
 
