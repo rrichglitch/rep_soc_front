@@ -8,7 +8,7 @@ import FriendsList from '../components/FriendsList';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail } from '../utils/spacetime';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg } from '../utils/spacetime';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
@@ -23,12 +23,21 @@ interface StoryPost {
   posterPicture: string;
 }
 
+// ONE page for BOTH other-individual profiles (/profile/:identity) and
+// other-organization profiles (/org/:id) — same styles, same features. The
+// only differences for organizations: an Organization badge, a Join/Leave
+// button (membership ≡ friendship with the org's account identity) instead
+// of Add Friend/Unfriend, and the Friends tab labeled Members.
 function ProfilePage() {
-  const { identity: profileIdentity } = useParams<{ identity: string }>();
+  const { identity: profileIdentity, id: orgIdParam } = useParams<{ identity?: string; id?: string }>();
   const navigate = useNavigate();
+  const { activeOrg } = useOrg();
+
+  const isOrgView = orgIdParam !== undefined;
+  const orgId = isOrgView ? BigInt(orgIdParam || '0') : 0n;
+  const orgIdentityHex = isOrgView ? orgAccountIdentityHex(orgId) : '';
 
   const [currentUserIdentity, setCurrentUserIdentity] = useState<string | null>(null);
-  const { activeOrg } = useOrg();
 
   // Background: try to connect and get current user identity
   useEffect(() => {
@@ -65,12 +74,15 @@ function ProfilePage() {
       initAuth();
     }
   }, []);
-  
+
   const [profile, setProfile] = useState<any>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [requestPending, setRequestPending] = useState(false);
+  const [isLeader, setIsLeader] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [stories, setStories] = useState<StoryPost[]>([]);
-  
+
   const [storyContent, setStoryContent] = useState('');
   const [storyMedia, setStoryMedia] = useState<File | null>(null);
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
@@ -81,38 +93,71 @@ function ProfilePage() {
 
   const currentIdentityHex = currentUserIdentity;
   const isOwnProfile = currentIdentityHex === profileIdentity;
-  const canPost = !!currentIdentityHex && !isOwnProfile && currentIdentityHex !== profileIdentity;
 
-  // Separate effect for redirect - runs when identity is available
+  // Own org (acting as it) → the account page is /me, like own profiles.
   useEffect(() => {
-    if (currentIdentityHex && profileIdentity && currentIdentityHex === profileIdentity) {
+    if (isOrgView && activeOrg && BigInt(orgIdParam || '0') === activeOrg.id) {
       navigate('/me', { replace: true });
     }
-  }, [currentIdentityHex, profileIdentity, navigate]);
+  }, [isOrgView, activeOrg, orgIdParam, navigate]);
+
+  // Individual profiles: viewing your own redirects to /me.
+  useEffect(() => {
+    if (!isOrgView && currentIdentityHex && profileIdentity && currentIdentityHex === profileIdentity) {
+      navigate('/me', { replace: true });
+    }
+  }, [isOrgView, currentIdentityHex, profileIdentity, navigate]);
 
   useEffect(() => {
     const loadProfile = async () => {
-      // Skip if looking at own profile (redirect will handle it)
-      if (currentIdentityHex === profileIdentity) {
+      if (!isOrgView && currentIdentityHex === profileIdentity) {
         setIsLoading(false);
         return;
       }
-
-      if (!profileIdentity) {
+      if (!profileIdentity && !isOrgView) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const profileData = await getProfileByIdentity(profileIdentity);
-        setProfile(profileData);
+        if (isOrgView) {
+          const org = getOrganizationById(orgId);
+          if (!org) {
+            setIsLoading(false);
+            return;
+          }
+          setProfile({
+            identity: orgIdentityHex,
+            fullName: org.name,
+            profilePicture: org.picture,
+            city: org.city,
+            description: org.description,
+            createdAt: org.createdAt,
+            gender: org.gender,
+            hideMembers: !!org.hideMembers,
+            leaderIdentityHex: org.leaderIdentity.toHexString(),
+          });
+          if (currentIdentityHex) {
+            // Following the org is a SEPARATE quantity from membership.
+            setIsFollowing(await checkIsFollowing(orgIdentityHex, currentIdentityHex));
+            // Membership ≡ friendship with the org's account identity.
+            setIsMember(checkIsFriend(currentIdentityHex, orgIdentityHex));
+            setRequestPending(getOrgMemberRequestStatus(orgId, currentIdentityHex) === 'pending');
+            setIsLeader(org.leaderIdentity.toHexString() === currentIdentityHex);
+            const profileStories = await getStoriesForProfile(orgIdentityHex);
+            setStories(profileStories);
+          }
+        } else {
+          const profileData = await getProfileByIdentity(profileIdentity!);
+          setProfile(profileData);
 
-        if (profileData && currentIdentityHex) {
-          const following = await checkIsFollowing(profileIdentity, currentIdentityHex);
-          setIsFollowing(following);
+          if (profileData && currentIdentityHex) {
+            const following = await checkIsFollowing(profileIdentity!, currentIdentityHex);
+            setIsFollowing(following);
 
-          const profileStories = await getStoriesForProfile(profileIdentity);
-          setStories(profileStories);
+            const profileStories = await getStoriesForProfile(profileIdentity!);
+            setStories(profileStories);
+          }
         }
       } catch (e) {
         console.error('Error loading profile:', e);
@@ -121,7 +166,9 @@ function ProfilePage() {
     };
 
     loadProfile();
-  }, [profileIdentity, currentIdentityHex]);
+    const t = setInterval(loadProfile, 2000);
+    return () => clearInterval(t);
+  }, [profileIdentity, orgIdParam, isOrgView, currentIdentityHex]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -135,6 +182,24 @@ function ProfilePage() {
 
   const handleFollowChange = (following: boolean) => {
     setIsFollowing(following);
+  };
+
+  const handleJoin = async () => {
+    try {
+      await sendOrgMemberRequest(orgId);
+      setRequestPending(true);
+    } catch (e: any) {
+      alert(e.message || 'Failed to send request');
+    }
+  };
+
+  const handleLeave = async () => {
+    try {
+      await leaveOrg(orgId);
+      setIsMember(false);
+    } catch (e: any) {
+      alert(e.message || 'Failed to leave organization');
+    }
   };
 
   const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,7 +225,7 @@ function ProfilePage() {
 
   const handleSubmitStory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!storyContent.trim() || !profileIdentity || isOwnProfile) return;
+    if (!storyContent.trim() || isOwnProfile) return;
 
     setIsPosting(true);
     setPostError(null);
@@ -174,14 +239,15 @@ function ProfilePage() {
         mediaTypes = [storyMedia.type];
       }
 
-      await createStoryPost(profileIdentity, storyContent.trim(), mediaData, mediaTypes, activeOrg?.id);
-      
+      const ownerIdentity = isOrgView ? orgIdentityHex : profileIdentity!;
+      await createStoryPost(ownerIdentity, storyContent.trim(), mediaData, mediaTypes, activeOrg?.id);
+
       setStoryContent('');
       setStoryMedia(null);
       setMediaPreview(null);
-      
+
       // Refresh stories
-      const updatedStories = await getStoriesForProfile(profileIdentity);
+      const updatedStories = await getStoriesForProfile(ownerIdentity);
       setStories(updatedStories);
     } catch (error) {
       console.error('Failed to post story:', error);
@@ -195,7 +261,7 @@ function ProfilePage() {
     return (
       <div className="loading-page">
         <div className="spinner"></div>
-        <p>Loading profile...</p>
+        <p>Loading{isOrgView ? ' organization' : ' profile'}...</p>
       </div>
     );
   }
@@ -211,13 +277,15 @@ function ProfilePage() {
         />
         <main className="main-content">
           <div className="not-found">
-            <p>Profile not found</p>
+            <p>{isOrgView ? 'Organization not found' : 'Profile not found'}</p>
             <Link to="/" className="home-link">Go Home</Link>
           </div>
         </main>
       </div>
     );
   }
+
+  const canPost = !!currentIdentityHex && currentIdentityHex !== (isOrgView ? orgIdentityHex : profileIdentity);
 
   return (
     <div className="profile-page">
@@ -231,7 +299,7 @@ function ProfilePage() {
       <main className="main-content">
         <ProfileHeader
           profile={{
-            identity: profileIdentity!,
+            identity: isOrgView ? orgIdentityHex : profileIdentity!,
             full_name: profile.fullName,
             profile_picture: profile.profilePicture,
             city: profile.city,
@@ -240,24 +308,32 @@ function ProfilePage() {
             age: profile.age,
             gender: profile.gender,
           }}
-          isOwnProfile={isOwnProfile}
+          isOwnProfile={isOwnProfile && !isOrgView}
           isFollowing={isFollowing}
           onFollowChange={handleFollowChange}
           onPictureClick={() => setShowPictureModal(true)}
           currentIdentityHex={currentIdentityHex || undefined}
+          isOrgProfile={isOrgView}
+          onJoinRequest={handleJoin}
+          requestPending={requestPending}
+          isOrgMember={isMember}
+          isOrgLeader={isLeader}
+          onLeaveOrg={handleLeave}
         />
 
         <ProfileTabs
           tabs={[
             { key: 'story', label: 'Story' },
-            ...(!profile.hideFriends ? [{ key: 'friends', label: 'Friends' }] : []),
+            ...(isOrgView
+              ? (!profile.hideMembers ? [{ key: 'friends', label: 'Members' }] : [])
+              : (!profile.hideFriends ? [{ key: 'friends', label: 'Friends' }] : [])),
           ]}
           active={activeTab}
           onChange={(k) => setActiveTab(k as any)}
         />
 
         {activeTab === 'friends' ? (
-          <FriendsList identity={profileIdentity!} emptyText="No friends yet." />
+          <FriendsList identity={isOrgView ? orgIdentityHex : profileIdentity!} emptyText={isOrgView ? 'No members yet.' : 'No friends yet.'} />
         ) : (
         <>
         {canPost && (

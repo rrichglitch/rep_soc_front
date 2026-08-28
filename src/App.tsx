@@ -26,7 +26,6 @@ import SearchPage from './pages/SearchPage';
 import AboutPage from './pages/AboutPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
-import OrgProfilePage from './pages/OrgProfilePage';
 import CreateOrgPage from './pages/CreateOrgPage';
 import NotificationsPage from './pages/NotificationsPage';
 import FriendsPage from './pages/FriendsPage';
@@ -181,7 +180,7 @@ function AppRoutes() {
       <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="/search" element={<SearchPage />} />
       <Route path="/profile/:identity" element={<ProfilePage />} />
-      <Route path="/org/:id" element={<OrgProfilePage />} />
+      <Route path="/org/:id" element={<ProfilePage />} />
       <Route path="/org/create" element={<AuthGate><CreateOrgPage /></AuthGate>} />
       <Route path="/register" element={<AuthGate><RegisterPage /></AuthGate>} />
       <Route path="/home" element={<><RedirectHandler /><AuthGate><MainFeedPage /></AuthGate></>} />

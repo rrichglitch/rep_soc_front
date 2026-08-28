@@ -1119,6 +1119,13 @@ export async function sendOrgMemberRequest(orgId: bigint, actingAsOrgId?: bigint
   });
 }
 
+// Leave an organization = sever the FRIENDSHIP with the org's account
+// identity (membership ≡ friendship). Follows of the org are unaffected.
+export async function leaveOrg(orgId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await dbConnection.reducers.leaveOrg({ orgId });
+}
+
 // ─── Messaging APIs ───────────────────────────────────────────────
 
 export async function sendDirectMessage(recipientIdentity: string, content: string, actingAsOrgId?: bigint): Promise<void> {

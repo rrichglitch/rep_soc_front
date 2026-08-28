@@ -57,6 +57,7 @@ import EnsureCleanupSweepReducer from "./ensure_cleanup_sweep_reducer";
 import FollowReducer from "./follow_reducer";
 import JitterOrgToApproxReducer from "./jitter_org_to_approx_reducer";
 import JitterToApproxReducer from "./jitter_to_approx_reducer";
+import LeaveOrgReducer from "./leave_org_reducer";
 import ManualCreateProfileReducer from "./manual_create_profile_reducer";
 import PromoteToCoLeaderReducer from "./promote_to_co_leader_reducer";
 import RecordOrgClaimFeeReducer from "./record_org_claim_fee_reducer";
@@ -295,6 +296,7 @@ const reducersSchema = __reducers(
   __reducerSchema("follow", FollowReducer),
   __reducerSchema("jitter_org_to_approx", JitterOrgToApproxReducer),
   __reducerSchema("jitter_to_approx", JitterToApproxReducer),
+  __reducerSchema("leave_org", LeaveOrgReducer),
   __reducerSchema("manual_create_profile", ManualCreateProfileReducer),
   __reducerSchema("promote_to_co_leader", PromoteToCoLeaderReducer),
   __reducerSchema("record_org_claim_fee", RecordOrgClaimFeeReducer),
