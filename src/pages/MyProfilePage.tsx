@@ -583,7 +583,13 @@ function MyProfilePage() {
           phrase="Re-Enable My Account"
           confirmLabel="Re-Enable My Account"
           onConfirm={handleEnable}
-          onCancel={() => setShowEnableModal(false)}
+          onCancel={() => {
+            setShowEnableModal(false);
+            // Cancel while disabled = leave the app entirely (login is
+            // pinned to this modal until the account is re-enabled).
+            handleLogout();
+          }}
+          blockBackdropClose
         />
       )}
 

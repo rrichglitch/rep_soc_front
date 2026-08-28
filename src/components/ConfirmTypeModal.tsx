@@ -8,6 +8,10 @@ interface ConfirmTypeModalProps {
   confirmLabel: string;
   onConfirm: () => Promise<void> | void;
   onCancel: () => void;
+  // When true, backdrop clicks and Escape do nothing — the modal can only be
+  // dismissed through its buttons (used for the re-enable modal, where Cancel
+  // means "log me back out").
+  blockBackdropClose?: boolean;
 }
 
 // Type-to-confirm modal for irreversible account actions (disable profile,
@@ -20,6 +24,7 @@ function ConfirmTypeModal({
   confirmLabel,
   onConfirm,
   onCancel,
+  blockBackdropClose,
 }: ConfirmTypeModalProps) {
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -28,11 +33,11 @@ function ConfirmTypeModal({
   useEffect(() => {
     inputRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Escape' && !blockBackdropClose) onCancel();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [onCancel, blockBackdropClose]);
 
   const valid = typed === phrase;
 
@@ -49,7 +54,7 @@ function ConfirmTypeModal({
   };
 
   return (
-    <div className="confirm-type-backdrop" onClick={onCancel}>
+    <div className="confirm-type-backdrop" onClick={blockBackdropClose ? undefined : onCancel}>
       <div className="confirm-type-modal" onClick={(e) => e.stopPropagation()}>
         <h3>{title}</h3>
         <p className="confirm-type-warning">{warning}</p>
