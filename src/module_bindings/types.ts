@@ -263,6 +263,7 @@ export const ProfileByEmailResult = __t.object("ProfileByEmailResult", {
   gender: __t.option(__t.string()),
   age: __t.option(__t.u8()),
   hideFriends: __t.bool(),
+  disabled: __t.bool(),
   createdAtMicros: __t.option(__t.i64()),
   isPro: __t.bool(),
 });
@@ -282,6 +283,7 @@ export const ProfileByIdentityResult = __t.object("ProfileByIdentityResult", {
   gender: __t.option(__t.string()),
   age: __t.option(__t.u8()),
   hideFriends: __t.bool(),
+  disabled: __t.bool(),
   createdAtMicros: __t.option(__t.i64()),
   isPro: __t.bool(),
 });

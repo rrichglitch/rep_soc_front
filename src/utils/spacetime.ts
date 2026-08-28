@@ -182,6 +182,7 @@ export interface ProfileLookupRow {
   gender?: string;
   age?: number;
   hideFriends: boolean;
+  disabled?: boolean;
   createdAtMicros?: bigint;
   isPro: boolean;
 }
@@ -201,6 +202,7 @@ function rowFromProcedure(r: any): ProfileLookupRow | null {
     gender: r.gender ?? undefined,
     age: r.age ?? undefined,
     hideFriends: !!r.hideFriends,
+    disabled: !!r.disabled,
     createdAtMicros: r.createdAtMicros ?? undefined,
     isPro: !!r.isPro,
   };
@@ -245,6 +247,24 @@ export async function updateProfile(
     hideFriends: hideFriends ?? undefined,
     gender: gender ?? undefined,
   });
+}
+
+// Self-service disable/enable: a disabled profile is excluded from searches
+// (keyword + semantic) until the owner turns it back on from Settings.
+export async function setProfileDisabled(disabled: boolean): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+  await dbConnection.reducers.setProfileDisabled({ disabled });
+}
+
+// Permanently deletes an organization (leader only) along with its members,
+// pending requests, chat messages, and org-tied stories/follows.
+export async function deleteOrganization(orgId: bigint): Promise<void> {
+  if (!dbConnection) {
+    throw new Error('Not connected to SpaceTimeDB');
+  }
+  await dbConnection.reducers.deleteOrganization({ orgId });
 }
 
 export async function initiateDiditVerification(
