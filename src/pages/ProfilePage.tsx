@@ -94,13 +94,6 @@ function ProfilePage() {
   const currentIdentityHex = currentUserIdentity;
   const isOwnProfile = currentIdentityHex === profileIdentity;
 
-  // Own org (acting as it) → the account page is /me, like own profiles.
-  useEffect(() => {
-    if (isOrgView && activeOrg && BigInt(orgIdParam || '0') === activeOrg.id) {
-      navigate('/me', { replace: true });
-    }
-  }, [isOrgView, activeOrg, orgIdParam, navigate]);
-
   // Individual profiles: viewing your own redirects to /me.
   useEffect(() => {
     if (!isOrgView && currentIdentityHex && profileIdentity && currentIdentityHex === profileIdentity) {
