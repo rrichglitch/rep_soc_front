@@ -129,7 +129,13 @@ function ProfileHeader({
           activeOrg ? (
             <span className="profile-note">Organizations cannot join other organizations</span>
           ) : isOrgLeader ? (
-            <span className="profile-note">You lead this organization</span>
+            // The leader follows the org like anyone else (their identity
+            // differs from the org account). Join/Leave don't apply — the
+            // leader can't leave via unfriend (backend blocks it).
+            <>
+              <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
+              <span className="profile-note">You lead this organization</span>
+            </>
           ) : (
             <>
               <FollowButton targetIdentity={profile.identity} isFollowing={isFollowing} onFollowChange={onFollowChange} />
