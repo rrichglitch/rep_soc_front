@@ -30,4 +30,5 @@ export default __t.row({
   birthday: __t.option(__t.string()),
   gender: __t.option(__t.string()),
   age: __t.option(__t.u8()),
+  disabled: __t.bool(),
 });

@@ -10,11 +10,6 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
-export default __t.row({
-  recipient: __t.identity(),
-  boxId: __t.identity().name("box_id"),
-  nonce: __t.string(),
-  resultsJson: __t.string().name("results_json"),
-  reranked: __t.bool(),
-  createdAt: __t.timestamp().name("created_at"),
-});
+export default {
+  disabled: __t.bool(),
+};

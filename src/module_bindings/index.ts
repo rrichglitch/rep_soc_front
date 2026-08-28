@@ -49,6 +49,7 @@ import CreateProfileReducer from "./create_profile_reducer";
 import CreateStoryPostReducer from "./create_story_post_reducer";
 import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
+import DeleteOrganizationReducer from "./delete_organization_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DeliverSearchResultReducer from "./deliver_search_result_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
@@ -69,6 +70,7 @@ import SendDirectMessageReducer from "./send_direct_message_reducer";
 import SendFriendRequestReducer from "./send_friend_request_reducer";
 import SendOrgMemberRequestReducer from "./send_org_member_request_reducer";
 import SendOrgMessageReducer from "./send_org_message_reducer";
+import SetProfileDisabledReducer from "./set_profile_disabled_reducer";
 import TransferLeadershipReducer from "./transfer_leadership_reducer";
 import UnfollowReducer from "./unfollow_reducer";
 import UnfriendReducer from "./unfriend_reducer";
@@ -285,6 +287,7 @@ const reducersSchema = __reducers(
   __reducerSchema("create_story_post", CreateStoryPostReducer),
   __reducerSchema("decline_friend_request", DeclineFriendRequestReducer),
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
+  __reducerSchema("delete_organization", DeleteOrganizationReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("deliver_search_result", DeliverSearchResultReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
@@ -305,6 +308,7 @@ const reducersSchema = __reducers(
   __reducerSchema("send_friend_request", SendFriendRequestReducer),
   __reducerSchema("send_org_member_request", SendOrgMemberRequestReducer),
   __reducerSchema("send_org_message", SendOrgMessageReducer),
+  __reducerSchema("set_profile_disabled", SetProfileDisabledReducer),
   __reducerSchema("transfer_leadership", TransferLeadershipReducer),
   __reducerSchema("unfollow", UnfollowReducer),
   __reducerSchema("unfriend", UnfriendReducer),

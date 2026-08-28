@@ -405,6 +405,7 @@ export const UserProfile = __t.object("UserProfile", {
   birthday: __t.option(__t.string()),
   gender: __t.option(__t.string()),
   age: __t.option(__t.u8()),
+  disabled: __t.bool(),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 
