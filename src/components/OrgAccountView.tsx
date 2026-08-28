@@ -367,7 +367,7 @@ function OrgAccountView() {
       )}
 
       <style>{`
-        .main-content { max-width: 600px; margin: 0 auto; padding: 24px; }
+        .main-content { max-width: var(--content-max-width); margin: 0 auto; padding: 24px; }
         .profile-section { background: white; border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
         .join-date { margin: 8px 0 0; font-size: 13px; color: #999; }
         .members-tab-card { background: white; border-radius: 12px; padding: 8px 20px; margin-top: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }

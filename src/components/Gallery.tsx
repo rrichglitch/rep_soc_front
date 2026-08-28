@@ -76,14 +76,28 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
     <div className="gallery-section">
       <div className="gallery-head">
         <h3 className="gallery-title">Photos</h3>
+        {isOwn && (
+          <span className="gallery-sub">Add up to {GALLERY_MAX_PHOTOS} photos.</span>
+        )}
+        {isOwn && photos.length === 0 && (
+          <button
+            type="button"
+            className="gallery-first-btn"
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+          >
+            {busy ? 'Uploading…' : 'Add your first photo.'}
+          </button>
+        )}
         {isOwn && photos.length > 0 && (
           <span className="gallery-count">{photos.length}/{GALLERY_MAX_PHOTOS}</span>
         )}
       </div>
 
-      {(uploadError) && <p className="gallery-error">{uploadError}</p>}
+      {uploadError && <p className="gallery-error">{uploadError}</p>}
 
-      <div className="gallery-grid">
+      {photos.length > 0 && (
+        <div className="gallery-grid">
         {photos.map((photo) => (
           <div key={photo.id.toString()} className={`gallery-cell ${deleting === photo.id.toString() ? 'deleting' : ''}`}>
             <img
@@ -116,7 +130,8 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
             {busy ? 'Uploading…' : '+'}
           </button>
         )}
-      </div>
+        </div>
+      )}
 
       {isOwn && remaining > 0 && (
         <input
@@ -127,14 +142,6 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
           onChange={(e) => handleFiles(e.target.files)}
           style={{ display: 'none' }}
         />
-      )}
-
-      {isOwn && photos.length === 0 && (
-        <p className="gallery-hint">Add up to {GALLERY_MAX_PHOTOS} photos.{' '}
-          <button type="button" className="gallery-hint-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
-            {busy ? 'Uploading…' : 'Add your first photo'}
-          </button>
-        </p>
       )}
 
       {lightbox && (
@@ -168,11 +175,18 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
         .gallery-head {
           display: flex;
           align-items: baseline;
-          justify-content: space-between;
+          gap: 10px;
+          flex-wrap: wrap;
           margin-bottom: 12px;
         }
         .gallery-title { margin: 0; font-size: 16px; color: #333; }
-        .gallery-count { font-size: 13px; color: #999; font-weight: 600; }
+        .gallery-sub { font-size: 13px; color: #999; }
+        .gallery-count { margin-left: auto; font-size: 13px; color: #999; font-weight: 600; }
+        .gallery-first-btn {
+          background: none; border: none; padding: 0; color: #667eea;
+          font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;
+        }
+        .gallery-first-btn:disabled { opacity: 0.6; cursor: default; }
         .gallery-error { margin: 0 0 10px; color: #dc2626; font-size: 13px; }
         .gallery-grid {
           display: grid;
@@ -201,12 +215,6 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
         }
         .gallery-add:hover:not(:disabled) { background: #eef2ff; }
         .gallery-add:disabled { opacity: 0.6; cursor: default; }
-        .gallery-hint { margin: 12px 0 0; color: #999; font-size: 13px; }
-        .gallery-hint-btn {
-          background: none; border: none; padding: 0; color: #667eea;
-          font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;
-        }
-        .gallery-hint-btn:disabled { opacity: 0.6; cursor: default; }
         .gallery-lightbox {
           position: fixed; inset: 0; background: rgba(0,0,0,0.85);
           display: flex; align-items: center; justify-content: center; z-index: 500;

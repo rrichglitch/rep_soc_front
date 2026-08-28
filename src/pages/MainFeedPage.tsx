@@ -198,7 +198,6 @@ function MainFeedPage() {
         left={<Link to="/about" className="topbar-logo"><img src="/veri.png" alt="Veri Social" /></Link>}
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
-        centerWidth={600}
         right={<AuthActions />}
       />
 
@@ -330,7 +329,7 @@ function MainFeedPage() {
         }
 
         .main-content {
-          max-width: 600px;
+          max-width: var(--content-max-width);
           margin: 0 auto;
           padding: 24px;
         }

@@ -490,7 +490,6 @@ function SearchPage() {
         </div>}
         right={<AuthActions />}
         absoluteCenter
-        centerWidth={600}
       />
 
       <main className="search-content">
@@ -665,7 +664,7 @@ function SearchPage() {
         }
 
         .search-content {
-          max-width: 600px;
+          max-width: var(--content-max-width);
           margin: 0 auto;
           padding: 6px 24px 24px;
         }

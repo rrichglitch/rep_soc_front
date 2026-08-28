@@ -56,16 +56,16 @@ function TopBar({ left, center, right, className = '', absoluteCenter = false, c
           min-width: 0;
         }
         .topbar-search-wrap { width: 100%; }
-        /* Desktop: absolutely center the search bar on the screen; its width
-           defaults to 420px but pages can match it to their content column
-           via the centerWidth prop (CSS var --topbar-center-width). */
+        /* Desktop: absolutely center the search bar on the screen; it matches
+           the page content column via the global --content-column-width token
+           (or a per-page --topbar-center-width override). */
         .topbar-center-absolute { position: static; }
         @media (min-width: 768px) {
           .topbar-center-absolute {
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            width: min(var(--topbar-center-width, 420px), 55vw);
+            width: min(var(--topbar-center-width, var(--content-column-width)), 55vw);
             flex: none;
           }
         }

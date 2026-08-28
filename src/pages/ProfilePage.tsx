@@ -427,7 +427,7 @@ function ProfilePage() {
         }
 
         .main-content {
-          max-width: 600px;
+          max-width: var(--content-max-width);
           margin: 0 auto;
           padding: 24px;
         }

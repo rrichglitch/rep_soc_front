@@ -27,7 +27,6 @@ function AboutPage() {
         }
         center={<div className="topbar-search-wrap"><SearchBar onSearch={handleSearch} value={searchQ} onChange={setSearchQ} onOptionsClick={() => navigate(`/search?q=${encodeURIComponent(searchQ.trim() || "")}&opts=1`)} /></div>}
         absoluteCenter
-        centerWidth={700}
         right={<AuthActions />}
       />
 
@@ -109,7 +108,7 @@ function AboutPage() {
         }
 
         .about-content {
-          max-width: 700px;
+          max-width: var(--content-max-width);
           margin: 0 auto;
           padding: 40px 24px;
         }
@@ -200,7 +199,7 @@ function AboutPage() {
         }
 
         .footer-content {
-          max-width: 700px;
+          max-width: var(--content-max-width);
           margin: 0 auto;
           display: flex;
           justify-content: space-between;
