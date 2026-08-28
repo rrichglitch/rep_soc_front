@@ -4,7 +4,7 @@ import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
-import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileByEmail } from '../utils/spacetime';
+import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileRowByEmail } from '../utils/spacetime';
 
 function DMChatPage() {
   const { activeOrg } = useOrg();
@@ -21,7 +21,7 @@ function DMChatPage() {
     const init = async () => {
       const email = currentUserEmail();
       if (email) {
-        const p = await getProfileByEmail(email);
+        const p = await getProfileRowByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());
       }
       setOtherProfile(await getProfileByIdentity(otherId));

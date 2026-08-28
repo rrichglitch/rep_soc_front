@@ -208,6 +208,43 @@ function rowFromProcedure(r: any): ProfileLookupRow | null {
   };
 }
 
+// Sync read of the caller's own profile row from the local subscription
+// cache — NO procedure RPC. Own pages (/me, /home) use this on mount so
+// navigation renders instantly; the procedure path stays for other users'
+// profiles and for post-payment polling.
+export function getProfileRowByEmail(email: string): ProfileLookupRow | null {
+  if (!dbConnection) {
+    return null;
+  }
+  try {
+    const se = sanitizeEmail(email);
+    for (const p of dbConnection.db.user_profile.iter()) {
+      if (p.email === se) {
+        return {
+          identity: { toHexString: () => p.identity.toHexString() },
+          email: p.email,
+          fullName: p.fullName,
+          city: p.city,
+          description: p.description,
+          profilePicture: p.profilePicture || '',
+          locationLat: p.locationLat ?? undefined,
+          locationLng: p.locationLng ?? undefined,
+          locationPrecision: p.locationPrecision,
+          gender: p.gender ?? undefined,
+          age: p.age ?? undefined,
+          hideFriends: !!p.hideFriends,
+          disabled: !!p.disabled,
+          createdAtMicros: p.createdAt ? BigInt(p.createdAt.microsSinceUnixEpoch) : undefined,
+          isPro: !!p.isPro,
+        };
+      }
+    }
+  } catch {
+    // cache not ready — treat as not found
+  }
+  return null;
+}
+
 export async function getProfileByEmail(email: string): Promise<ProfileLookupRow | null> {
   if (!dbConnection) {
     return null;

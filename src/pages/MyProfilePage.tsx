@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useApp } from '../App';
 import {
   getProfileByEmail,
+  getProfileRowByEmail,
   getMyStoryPosts,
   getMyPosts,
   updateProfile,
@@ -56,6 +57,26 @@ function MyProfilePage() {
   const { email } = useApp();
   const { activeOrg } = useOrg();
 
+  // Own-profile object built from the local subscription cache (sync, no RPC)
+  // so /me renders instantly on navigation.
+  const buildProfileFromCache = (em: string): UserProfile | null => {
+    const p = getProfileRowByEmail(em);
+    if (!p) return null;
+    const date = p.createdAtMicros ? new Date(Number(p.createdAtMicros) / 1000) : new Date();
+    return {
+      identity: p.identity.toHexString(),
+      full_name: p.fullName,
+      profile_picture: p.profilePicture,
+      city: p.city,
+      description: p.description,
+      created_at: date,
+      age: p.age,
+      gender: p.gender,
+      is_pro: p.isPro,
+      disabled: p.disabled,
+    };
+  };
+
   const handleLogout = () => {
     const oauthSession = getOAuthSession();
     clearOAuthSession();
@@ -69,8 +90,8 @@ function MyProfilePage() {
     }
   };
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(() => buildProfileFromCache(email || ''));
+  const [isLoading, setIsLoading] = useState(() => !getProfileRowByEmail(email || ''));
   const [showQR, setShowQR] = useState(false);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
@@ -94,9 +115,13 @@ function MyProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (email) {
-      loadProfile();
-    }
+    if (!email) return;
+    loadProfile();
+    // Light poll keeps the own row + stories/posts fresh (all local cache
+    // reads — the loading flash is gone because nothing waits on the network).
+    const t = setInterval(loadProfile, 2000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]);
 
   // Returning from Stripe Checkout after a Pro payment: land on the profile,
@@ -154,25 +179,12 @@ function MyProfilePage() {
     if (!email) return;
     
     try {
-      const profileData = await getProfileByEmail(email);
+      // Local subscription cache — no procedure RPC on the own page.
+      const profileData = getProfileRowByEmail(email);
       if (profileData) {
-        const date = profileData.createdAtMicros
-          ? new Date(Number(profileData.createdAtMicros) / 1000)
-          : new Date();
         const identityHex = profileData.identity.toHexString();
         
-        setProfile({
-          identity: identityHex,
-          full_name: profileData.fullName,
-          profile_picture: profileData.profilePicture,
-          city: profileData.city,
-          description: profileData.description,
-          created_at: date,
-          age: profileData.age,
-          gender: profileData.gender,
-          is_pro: profileData.isPro,
-          disabled: !!profileData.disabled,
-        });
+        setProfile(buildProfileFromCache(email));
 
         const profileStories = await getMyStoryPosts(identityHex);
         setStories(profileStories);

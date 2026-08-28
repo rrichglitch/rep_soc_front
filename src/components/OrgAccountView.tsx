@@ -4,7 +4,7 @@ import { useOrg, type ActiveOrg } from '../contexts/OrgContext';
 import { currentUserEmail } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import { QRCodeSVG } from 'qrcode.react';
-import { getProfileByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox, deleteOrganization } from '../utils/spacetime';
+import { getProfileRowByEmail, getMyStoryPosts, getMyPosts, getOrganizationMembers, getOrganizationById, promoteToCoLeader, demoteCoLeader, transferLeadership, connectToSpacetimeDB, updateOrganization, updateOrgLocation, jitterOrgToApprox, deleteOrganization } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
 import PreciseLocationToggle from './PreciseLocationToggle';
 import ProfileSettingsTab from './ProfileSettingsTab';
@@ -49,7 +49,7 @@ function OrgAccountView() {
     try {
       const userEmail = currentUserEmail();
       if (userEmail) {
-        const profile = await getProfileByEmail(userEmail);
+        const profile = getProfileRowByEmail(userEmail);
         if (profile) {
           const myHex = profile.identity.toHexString();
           const mine = getOrganizationMembers(org.id).find((m: any) => m.identity === myHex);

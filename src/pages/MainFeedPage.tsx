@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, getPaginatedOrgFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import { getProfileRowByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, getPaginatedOrgFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -14,7 +14,16 @@ function MainFeedPage() {
   const { email } = useApp();
   const { activeOrg } = useOrg();
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Loading only while the local profile cache is cold — warm caches render
+  // instantly (no RPC on the own feed).
+  const [isLoading, setIsLoading] = useState(() => {
+    if (activeOrg) return false;
+    try {
+      return !getProfileRowByEmail(email || '');
+    } catch {
+      return true;
+    }
+  });
   const [myStories, setMyStories] = useState<any[]>([]);
   const [followedStories, setFollowedStories] = useState<FeedStory[]>([]);
   const [orderOldToNew, setOrderOldToNew] = useState(true);
@@ -46,7 +55,7 @@ function MainFeedPage() {
         setIsLoading(false);
         return;
       }
-      const profile = await getProfileByEmail(email);
+      const profile = getProfileRowByEmail(email);
       if (profile) {
         const identityHex = profile.identity.toHexString();
         currentIdentityHexRef.current = identityHex;

@@ -4,7 +4,7 @@ import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
-import { getOrgMessages, sendOrgMessage, getOrganizationById, getProfileByEmail } from '../utils/spacetime';
+import { getOrgMessages, sendOrgMessage, getOrganizationById, getProfileRowByEmail } from '../utils/spacetime';
 
 function OrgChatPage() {
   const { activeOrg } = useOrg();
@@ -23,7 +23,7 @@ function OrgChatPage() {
     const init = async () => {
       const email = currentUserEmail();
       if (email) {
-        const p = await getProfileByEmail(email);
+        const p = await getProfileRowByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());
       }
       const org = getOrganizationById(orgId);

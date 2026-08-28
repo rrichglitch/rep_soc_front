@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
-import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileByEmail } from '../utils/spacetime';
+import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileRowByEmail } from '../utils/spacetime';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
 
@@ -23,7 +23,7 @@ function NotificationsPage() {
     const email = currentUserEmail();
     if (!email) return;
     try {
-      getProfileByEmail(email).then(p => {
+      Promise.resolve(getProfileRowByEmail(email)).then(p => {
         if (p) {
           const id = p.identity.toHexString();
           setCurrentIdentity(id);
