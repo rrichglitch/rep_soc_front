@@ -13,6 +13,8 @@ import {
 export default {
   orgId: __t.u64(),
   picture: __t.option(__t.string()),
+  pictureSmall: __t.option(__t.string()),
+  pictureUrl: __t.option(__t.string()),
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   locationLat: __t.option(__t.f64()),

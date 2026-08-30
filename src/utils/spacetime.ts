@@ -178,6 +178,8 @@ export interface ProfileLookupRow {
   city: string;
   description: string;
   profilePicture: string;
+  profilePictureSmall: string;
+  profilePictureUrl: string;
   locationLat?: number;
   locationLng?: number;
   locationPrecision: string;
@@ -198,6 +200,8 @@ function rowFromProcedure(r: any): ProfileLookupRow | null {
     city: r.city ?? '',
     description: r.description ?? '',
     profilePicture: r.profilePicture ?? '',
+    profilePictureSmall: r.profilePictureSmall ?? '',
+    profilePictureUrl: r.profilePictureUrl ?? '',
     locationLat: r.locationLat ?? undefined,
     locationLng: r.locationLng ?? undefined,
     locationPrecision: r.locationPrecision ?? 'off',
@@ -229,6 +233,8 @@ export function getProfileRowByEmail(email: string): ProfileLookupRow | null {
           city: p.city,
           description: p.description,
           profilePicture: p.profilePicture || '',
+          profilePictureSmall: (p as any).profilePictureSmall || '',
+          profilePictureUrl: (p as any).profilePictureUrl || '',
           locationLat: p.locationLat ?? undefined,
           locationLng: p.locationLng ?? undefined,
           locationPrecision: p.locationPrecision,
@@ -267,6 +273,8 @@ export async function claimProfile(email: string): Promise<void> {
 
 export async function updateProfile(
   profilePicture?: string,
+  profilePictureSmall?: string,
+  profilePictureUrl?: string,
   city?: string,
   description?: string,
   hideFriends?: boolean,
@@ -276,11 +284,13 @@ export async function updateProfile(
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  console.log('Updating profile:', { profilePicture, city, description, hideFriends, gender });
+  console.log('Updating profile:', { profilePicture, profilePictureSmall, profilePictureUrl, city, description, hideFriends, gender });
   // NOTE: birthday is intentionally NOT updateable — set once at registration.
-  
+
   await dbConnection.reducers.updateProfile({
     profilePicture: profilePicture ?? undefined,
+    profilePictureSmall: profilePictureSmall ?? undefined,
+    profilePictureUrl: profilePictureUrl ?? undefined,
     city: city ?? undefined,
     description: description ?? undefined,
     hideFriends: hideFriends ?? undefined,
@@ -308,7 +318,8 @@ export async function deleteOrganization(orgId: bigint): Promise<void> {
 
 export async function initiateDiditVerification(
   email: string,
-  profilePicture: string,
+  profilePictureSmall: string,
+  profilePictureUrl: string,
   city: string,
   description: string,
   turnstileToken: string
@@ -316,8 +327,10 @@ export async function initiateDiditVerification(
   // Initiation now routes through the didit relay (https://auth.veri.social/didit)
   // — the module cannot see client IPs, so the REAL per-IP throttle (+
   // Turnstile verification) lives there. The relay calls back into
-  // SpacetimeDB as this user for the pending row. Returns the Didit
-  // verification URL, or throws with the relay/module message.
+  // SpacetimeDB as this user for the pending row. Only the 10KB thumbnail +
+  // the S3 URL travel this path — the full-size image was already uploaded
+  // to the images relay. Returns the Didit verification URL, or throws with
+  // the relay/module message.
   const token = getOAuthSession()?.stToken;
   if (!token) {
     throw new Error('Not signed in');
@@ -328,7 +341,8 @@ export async function initiateDiditVerification(
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({
       email,
-      profile_picture: profilePicture,
+      profile_picture_small: profilePictureSmall,
+      profile_picture_url: profilePictureUrl,
       city,
       description,
       turnstile_token: turnstileToken,
@@ -360,6 +374,8 @@ export async function getPendingRegistration(): Promise<{
   city: string | null;
   description: string | null;
   profilePicture: string | null;
+  profilePictureSmall: string | null;
+  profilePictureUrl: string | null;
 } | null> {
   if (!dbConnection) {
     throw new Error('Not connected to SpacetimeDB');
@@ -378,6 +394,8 @@ export async function getPendingRegistration(): Promise<{
     city: result.city ?? null,
     description: result.description ?? null,
     profilePicture: result.profilePicture ?? null,
+    profilePictureSmall: result.profilePictureSmall ?? null,
+    profilePictureUrl: result.profilePictureUrl ?? null,
   };
 }
 
@@ -407,7 +425,8 @@ export async function checkDiditVerification(sessionId: string): Promise<{ fullN
 
 export async function createVerifiedProfile(
   sessionId: string,
-  profilePicture: string,
+  profilePictureSmall: string,
+  profilePictureUrl: string,
   city: string,
   description: string,
   fullName: string,
@@ -422,7 +441,9 @@ export async function createVerifiedProfile(
 
   const result = await dbConnection.procedures.createVerifiedProfile({
     sessionId,
-    profilePicture,
+    profilePicture: '',
+    profilePictureSmall,
+    profilePictureUrl,
     city,
     description,
     fullName,
@@ -475,15 +496,26 @@ export function orgAccountIdentityHex(orgId: bigint): string {
   return '4f' + orgId.toString(16).padStart(62, '0');
 }
 
-// identity hex -> { name, picture } for BOTH individual profiles and org accounts
-export function buildAccountCache(): Map<string, { name: string; picture: string }> {
-  const cache = new Map<string, { name: string; picture: string }>();
+// identity hex -> { name, picture } for BOTH individual profiles and org
+// accounts. Bandwidth design: picture = the 10KB THUMBNAIL (everything that
+// renders at avatar size); fullPicture = the S3 URL (or legacy base64) used
+// ONLY by swipe backgrounds and the profile-pic zoom.
+export function buildAccountCache(): Map<string, { name: string; picture: string; fullPicture?: string }> {
+  const cache = new Map<string, { name: string; picture: string; fullPicture?: string }>();
   if (!dbConnection) return cache;
   for (const profile of dbConnection.db.user_profile.iter()) {
-    cache.set(profile.identity.toHexString(), { name: profile.fullName, picture: profile.profilePicture || '' });
+    cache.set(profile.identity.toHexString(), {
+      name: profile.fullName,
+      picture: (profile as any).profilePictureSmall || profile.profilePicture || '',
+      fullPicture: (profile as any).profilePictureUrl || profile.profilePicture || '',
+    });
   }
   for (const org of dbConnection.db.organization.iter()) {
-    cache.set(orgAccountIdentityHex(org.id), { name: org.name, picture: org.picture || '' });
+    cache.set(orgAccountIdentityHex(org.id), {
+      name: org.name,
+      picture: (org as any).pictureSmall || org.picture || '',
+      fullPicture: (org as any).pictureUrl || org.picture || '',
+    });
   }
   return cache;
 }
@@ -766,7 +798,7 @@ export function getOrgFeedStories(orgIdentity: string, orderOldToNew: boolean = 
     const accounts = buildAccountCache();
     const orgCache = new Map<bigint, { name: string; picture: string }>();
     for (const o of dbConnection.db.organization.iter()) {
-      orgCache.set(o.id, { name: o.name, picture: o.picture || '' });
+      orgCache.set(o.id, { name: o.name, picture: (o as any).pictureSmall || o.picture || '' });
     }
     const stories: FeedStory[] = [];
     for (const post of dbConnection.db.story_post.iter()) {
@@ -943,6 +975,7 @@ export async function getFollowedStories(currentIdentityHex: string) {
 export async function createOrganization(
   name: string, picture: string, city: string, description: string,
   locationLat: number, locationLng: number, locationPrecision: 'exact' | 'approx' = 'exact',
+  pictureSmall?: string, pictureUrl?: string,
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.createOrganization({
@@ -950,15 +983,20 @@ export async function createOrganization(
     locationLat,
     locationLng,
     locationPrecision,
+    pictureSmall: pictureSmall ?? undefined,
+    pictureUrl: pictureUrl ?? undefined,
   });
 }
 
 export async function updateOrganization(
-  orgId: bigint, picture?: string, city?: string, description?: string, locationLat?: number, locationLng?: number, hideMembers?: boolean, gender?: string
+  orgId: bigint, picture?: string, pictureSmall?: string, pictureUrl?: string,
+  city?: string, description?: string, locationLat?: number, locationLng?: number,
+  hideMembers?: boolean, gender?: string
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.updateOrganization({
-    orgId, picture, city, description,
+    orgId, picture: picture ?? undefined, pictureSmall: pictureSmall ?? undefined,
+    pictureUrl: pictureUrl ?? undefined, city: city ?? undefined, description: description ?? undefined,
     locationLat: locationLat ?? undefined,
     locationLng: locationLng ?? undefined,
     hideMembers: hideMembers ?? undefined,
@@ -987,7 +1025,7 @@ export function getMyOrganizations(identity: string) {
     const org = orgCache.get(orgId);
     if (!org || seen.has(other)) continue;
     seen.add(other);
-    orgs.push({ ...org, role: getOrgRole(orgId, identity) });
+    orgs.push({ ...org, picture: (org as any).pictureSmall || org.picture || '', role: getOrgRole(orgId, identity) });
   }
   // Role rows: orgs where I'm leader/co-leader but not (yet) a friend (should
   // not normally happen — role rows are created through membership).
@@ -997,7 +1035,7 @@ export function getMyOrganizations(identity: string) {
       const orgHex = orgAccountIdentityHex(m.orgId);
       if (org && !seen.has(orgHex)) {
         seen.add(orgHex);
-        orgs.push({ ...org, role: m.role });
+        orgs.push({ ...org, picture: (org as any).pictureSmall || org.picture || '', role: m.role });
       }
     }
   }
@@ -1490,6 +1528,42 @@ export async function uploadGalleryPhoto(
     throw new Error(data?.error || `Upload failed (${resp.status})`);
   }
   return { key: data.key, url: data.url, bytes: data.bytes };
+}
+
+// Upload the full-size (≤0.5MB) profile picture to S3 via the images relay.
+// Returns the immutable URL; the DB only ever stores this URL + the 10KB
+// thumbnail (bandwidth design — the full image is fetched on demand for
+// swipe backgrounds and profile-pic zoom only).
+export async function uploadProfilePicture(
+  blob: Blob,
+  actingAsOrgId?: bigint,
+  actingAsOrgIdentityHex?: string,
+): Promise<{ url: string }> {
+  const token = getOAuthSession()?.stToken;
+  if (!token) throw new Error('Not signed in');
+  const headers: Record<string, string> = {
+    'Content-Type': blob.type || 'image/webp',
+    Authorization: `Bearer ${token}`,
+  };
+  if (actingAsOrgId !== undefined && actingAsOrgIdentityHex) {
+    headers['X-Acting-Org-Id'] = actingAsOrgId.toString();
+    headers['X-Acting-Org-Identity'] = actingAsOrgIdentityHex;
+  }
+  const resp = await fetch(`${IMAGES_RELAY_URL}/profile-upload`, {
+    method: 'POST',
+    headers,
+    body: blob,
+  });
+  const text = await resp.text();
+  let data: any = null;
+  try { data = JSON.parse(text); } catch { /* non-JSON */ }
+  if (!resp.ok) {
+    throw new Error(data?.error || `Picture upload failed (${resp.status})`);
+  }
+  if (!data?.url) {
+    throw new Error('Picture upload failed — no URL returned');
+  }
+  return { url: data.url };
 }
 
 // Delete a gallery photo: row (owner-checked reducer) + S3 object (relay).

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import FollowButton from './FollowButton';
+import PictureZoom from './PictureZoom';
 import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
 
@@ -17,6 +18,8 @@ interface UserProfile {
 
 interface ProfileHeaderProps {
   profile: UserProfile;
+  /** Full-size (S3 URL) — clicking the pic zooms into this. */
+  fullPicture?: string;
   isOwnProfile: boolean;
   isFollowing: boolean;
   onFollowChange: (following: boolean) => void;
@@ -35,6 +38,7 @@ interface ProfileHeaderProps {
 
 function ProfileHeader({
   profile,
+  fullPicture,
   isOwnProfile,
   isFollowing,
   onFollowChange,
@@ -50,6 +54,7 @@ function ProfileHeader({
 }: ProfileHeaderProps) {
   const { activeOrg } = useOrg();
   const [tick, setTick] = useState(0);
+  const [zoom, setZoom] = useState<string | null>(null);
   const [optimisticSent, setOptimisticSent] = useState(false);
   const refresh = () => setTick(t => t + 1);
   void tick;
@@ -103,7 +108,7 @@ function ProfileHeader({
     <div className="profile-header">
       <div className="profile-picture-container">
         {profile.profile_picture ? (
-          <img src={profile.profile_picture} alt={profile.full_name} className={`profile-picture ${onPictureClick ? 'clickable' : ''}`} onClick={onPictureClick} />
+          <img src={profile.profile_picture} alt={profile.full_name} className={`profile-picture ${onPictureClick || fullPicture ? 'clickable' : ''}`} onClick={onPictureClick ?? (fullPicture ? () => setZoom(fullPicture) : undefined)} />
         ) : (
           <div className={`profile-picture-placeholder ${onPictureClick ? 'clickable' : ''}`} onClick={onPictureClick} />
         )}
@@ -165,6 +170,8 @@ function ProfileHeader({
           </>
         )}
       </div>
+
+      {zoom && <PictureZoom src={zoom} name={profile.full_name} onClose={() => setZoom(null)} />}
 
       <style>{`
         .profile-header {

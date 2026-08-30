@@ -209,6 +209,8 @@ export const Organization = __t.object("Organization", {
   hideMembers: __t.bool(),
   birthday: __t.option(__t.string()),
   gender: __t.option(__t.string()),
+  pictureSmall: __t.option(__t.string()),
+  pictureUrl: __t.option(__t.string()),
 });
 export type Organization = __Infer<typeof Organization>;
 
@@ -232,6 +234,8 @@ export const PendingRegistration = __t.object("PendingRegistration", {
   createdAt: __t.timestamp(),
   profilePicture: __t.string(),
   diditSelfieImage: __t.string(),
+  profilePictureSmall: __t.option(__t.string()),
+  profilePictureUrl: __t.option(__t.string()),
 });
 export type PendingRegistration = __Infer<typeof PendingRegistration>;
 
@@ -243,6 +247,8 @@ export const PendingRegistrationState = __t.object("PendingRegistrationState", {
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   profilePicture: __t.option(__t.string()),
+  profilePictureSmall: __t.option(__t.string()),
+  profilePictureUrl: __t.option(__t.string()),
 });
 export type PendingRegistrationState = __Infer<typeof PendingRegistrationState>;
 
@@ -279,6 +285,8 @@ export const ProfileByEmailResult = __t.object("ProfileByEmailResult", {
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   profilePicture: __t.option(__t.string()),
+  profilePictureSmall: __t.option(__t.string()),
+  profilePictureUrl: __t.option(__t.string()),
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
   locationPrecision: __t.option(__t.string()),
@@ -299,6 +307,8 @@ export const ProfileByIdentityResult = __t.object("ProfileByIdentityResult", {
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   profilePicture: __t.option(__t.string()),
+  profilePictureSmall: __t.option(__t.string()),
+  profilePictureUrl: __t.option(__t.string()),
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
   locationPrecision: __t.option(__t.string()),
@@ -390,6 +400,8 @@ export const SearchResultItem = __t.object("SearchResultItem", {
   email: __t.string(),
   fullName: __t.string(),
   profilePicture: __t.string(),
+  profilePictureSmall: __t.string(),
+  profilePictureUrl: __t.string(),
   city: __t.string(),
   description: __t.string(),
   locationLat: __t.option(__t.f64()),
@@ -436,6 +448,8 @@ export const UserProfile = __t.object("UserProfile", {
   gender: __t.option(__t.string()),
   age: __t.option(__t.u8()),
   disabled: __t.bool(),
+  profilePictureSmall: __t.option(__t.string()),
+  profilePictureUrl: __t.option(__t.string()),
 });
 export type UserProfile = __Infer<typeof UserProfile>;
 

@@ -25,7 +25,7 @@ export function useAuthProfile() {
     if (!b.email || !b.hasProfile) return '';
     try {
       const row = getProfileRowByEmail(b.email);
-      return row?.profilePicture ?? '';
+      return (row?.profilePictureSmall || row?.profilePicture) ?? '';
     } catch {
       return '';
     }
@@ -43,7 +43,7 @@ export function useAuthProfile() {
       if (b.email && b.hasProfile) {
         try {
           const row = getProfileRowByEmail(b.email);
-          if (row) setProfilePicture(row.profilePicture ?? '');
+          if (row) setProfilePicture((row.profilePictureSmall || row.profilePicture) ?? '');
         } catch {
           // cache not synced yet — keep placeholder avatar
         }

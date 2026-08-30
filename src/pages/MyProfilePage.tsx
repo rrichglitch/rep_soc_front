@@ -11,7 +11,10 @@ import {
   deleteStoryPost,
   updateLocation,
   disconnectFromSpacetimeDB,
+  uploadProfilePicture,
 } from '../utils/spacetime';
+import { compressProfileImage, compressProfileThumb } from '../utils/imageCompress';
+import { fileToBase64 } from '../utils/sanitize';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocode } from '../utils/geo';
@@ -32,6 +35,8 @@ interface UserProfile {
   identity: string;
   full_name: string;
   profile_picture: string;
+  profile_picture_small?: string;
+  profile_picture_url?: string;
   city: string;
   description: string;
   created_at: Date;
@@ -56,6 +61,8 @@ function MyProfilePage() {
       identity: p.identity.toHexString(),
       full_name: p.fullName,
       profile_picture: p.profilePicture,
+      profile_picture_small: p.profilePictureSmall,
+      profile_picture_url: p.profilePictureUrl,
       city: p.city,
       description: p.description,
       created_at: date,
@@ -194,7 +201,7 @@ function MyProfilePage() {
       const pos = await getBrowserLocation();
       const city = await reverseGeocode(pos.lat, pos.lng);
       if (city) {
-        await updateProfile(undefined, city, undefined);
+        await updateProfile(undefined, undefined, undefined, city);
       }
       const isExact = locPrecision === 'exact';
       const toSend = isExact ? pos : jitterLocation(pos.lat, pos.lng, 5);
@@ -213,7 +220,7 @@ function MyProfilePage() {
   const handleHideFriendsToggle = async (checked: boolean) => {
     setIsUpdatingHide(true);
     try {
-      await updateProfile(undefined, undefined, undefined, checked);
+      await updateProfile(undefined, undefined, undefined, undefined, undefined, checked);
       setHideFriends(checked);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
@@ -264,19 +271,24 @@ function MyProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64 = reader.result as string;
-      try {
-        await updateProfile(base64, undefined, undefined);
-        await loadProfile();
-      } catch (e) {
-        console.error('Error updating profile picture:', e);
-      } finally {
-        setShowPictureSelect(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    setIsUpdatingHide(true);
+    try {
+      // Full-size WebP < 0.5MB → S3 (URL stored); 10KB thumbnail → DB.
+      const [fullBlob, thumbBlob] = await Promise.all([
+        compressProfileImage(file),
+        compressProfileThumb(file),
+      ]);
+      const { url } = await uploadProfilePicture(fullBlob);
+      const small = await fileToBase64(thumbBlob);
+      await updateProfile(undefined, small, url);
+      await loadProfile();
+    } catch (e) {
+      console.error('Error updating profile picture:', e);
+      alert(e instanceof Error ? e.message : 'Failed to update picture');
+    } finally {
+      setIsUpdatingHide(false);
+      setShowPictureSelect(false);
+    }
   };
 
   const handleBack = () => {
@@ -312,20 +324,21 @@ function MyProfilePage() {
         {proConfirmed && <div className="pro-confirm-banner">✓ Payment confirmed — welcome to Pro!</div>}
         <div className="profile-section">
           <ProfileDetails
-            picture={profile?.profile_picture || ''}
+            picture={(profile as any)?.profile_picture_small || profile?.profile_picture || ''}
+            fullPicture={(profile as any)?.profile_picture_url || profile?.profile_picture || ''}
             name={profile?.full_name || ''}
             city={profile?.city || ''}
             description={profile?.description || ''}
             onUpdateLocation={handleLocationUpdate}
             isLocationUpdating={isLocUpdating}
             onSaveDescription={async (v) => {
-              await updateProfile(undefined, undefined, v);
+              await updateProfile(undefined, undefined, undefined, undefined, v);
               await loadProfile();
             }}
             age={profile?.age}
             gender={profile?.gender}
             onSaveAgeGender={async (_b, g) => {
-              await updateProfile(undefined, undefined, undefined, undefined, g);
+              await updateProfile(undefined, undefined, undefined, undefined, undefined, undefined, g);
               await loadProfile();
             }}
             onPictureClick={() => setShowPictureModal(true)}
@@ -466,8 +479,8 @@ function MyProfilePage() {
       {showPictureModal && (
         <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
           <div className="picture-content" onClick={(e) => e.stopPropagation()}>
-            {profile?.profile_picture ? (
-              <img src={profile.profile_picture} alt={profile.full_name} className="large-picture" />
+            {(profile as any)?.profile_picture_url || profile?.profile_picture ? (
+              <img src={(profile as any)?.profile_picture_url || profile?.profile_picture} alt={profile?.full_name || ''} className="large-picture" />
             ) : (
               <div className="large-picture-placeholder" />
             )}

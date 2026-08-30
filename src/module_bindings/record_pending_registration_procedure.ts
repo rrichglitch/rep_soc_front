@@ -16,7 +16,8 @@ import {
 
 export const params = {
   email: __t.string(),
-  profilePicture: __t.string(),
+  profilePictureSmall: __t.string(),
+  profilePictureUrl: __t.string(),
   city: __t.string(),
   description: __t.string(),
   diditSessionId: __t.string(),

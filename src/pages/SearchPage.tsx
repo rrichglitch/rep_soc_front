@@ -89,6 +89,8 @@ function SearchPage() {
       orgId: r.orgId,
       email: r.email,
       fullName: r.fullName,
+      // Swipe background = the FULL picture (S3 URL), thumbnails everywhere else
+      fullPicture: r.fullPicture || r.profilePicture,
       profilePicture: r.profilePicture,
       city: r.city,
       description: r.description,

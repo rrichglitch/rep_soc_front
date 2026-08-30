@@ -90,7 +90,6 @@ function ProfilePage() {
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'story' | 'friends'>('story');
-  const [showPictureModal, setShowPictureModal] = useState(false);
 
   const currentIdentityHex = currentUserIdentity;
   const isOwnProfile = currentIdentityHex === profileIdentity;
@@ -163,16 +162,6 @@ function ProfilePage() {
     const t = setInterval(loadProfile, 2000);
     return () => clearInterval(t);
   }, [profileIdentity, orgIdParam, isOrgView, currentIdentityHex]);
-
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowPictureModal(false);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
 
   const handleFollowChange = (following: boolean) => {
     setIsFollowing(following);
@@ -300,17 +289,17 @@ function ProfilePage() {
           profile={{
             identity: isOrgView ? orgIdentityHex : profileIdentity!,
             full_name: profile.fullName,
-            profile_picture: profile.profilePicture,
+            profile_picture: profile.profilePictureSmall || profile.profilePicture,
             city: profile.city,
             description: profile.description,
             created_at: profile.createdAt,
             age: profile.age,
             gender: profile.gender,
           }}
+          fullPicture={profile.profilePictureUrl || profile.profilePicture}
           isOwnProfile={isOwnProfile && !isOrgView}
           isFollowing={isFollowing}
           onFollowChange={handleFollowChange}
-          onPictureClick={() => setShowPictureModal(true)}
           currentIdentityHex={currentIdentityHex || undefined}
           isOrgProfile={isOrgView}
           onJoinRequest={handleJoin}
@@ -409,21 +398,6 @@ function ProfilePage() {
         </>
         )}
       </main>
-
-      {showPictureModal && profile && (
-        <div className="picture-modal" onClick={() => setShowPictureModal(false)}>
-          <div className="picture-content" onClick={(e) => e.stopPropagation()}>
-            {profile.profilePicture ? (
-              <img src={profile.profilePicture} alt={profile.fullName} className="large-picture" />
-            ) : (
-              <div className="large-picture-placeholder" />
-            )}
-            <button onClick={() => setShowPictureModal(false)} className="close-button">
-              Close
-            </button>
-          </div>
-        </div>
-      )}
 
       <style>{`
         .profile-page {

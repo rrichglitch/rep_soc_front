@@ -3,12 +3,16 @@
 // back to JPEG if the browser cannot encode WebP.
 // Shared core for BOTH pipelines (gallery < 0.5MB, profile pictures < 1MB) —
 // one compressor, two wrappers; never duplicate the ladder logic.
-import { GALLERY_MAX_BYTES, PROFILE_PICTURE_MAX_BYTES } from '../config';
+import { GALLERY_MAX_BYTES, PROFILE_PICTURE_MAX_BYTES, PROFILE_PICTURE_SMALL_MAX_BYTES } from '../config';
 
 // Safety margin: compress a bit under the hard cap so small metadata
 // differences never push the upload past the relay/module reject.
 const QUALITY_LADDER = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2];
 const DIM_LADDER = [1600, 1280, 1024, 800, 640];
+// Thumbnail budget: tiny dimensions + a lower quality floor — a 10KB avatar
+// needs aggressive compression, not resolution.
+const THUMB_QUALITY_LADDER = [0.8, 0.6, 0.45, 0.3, 0.2, 0.12, 0.08];
+const THUMB_DIM_LADDER = [128, 96, 64];
 
 function loadImage(file: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -29,7 +33,13 @@ function encodeBlob(canvas: HTMLCanvasElement, type: 'image/webp' | 'image/jpeg'
  * ladder. Returns a Blob (image/webp, or image/jpeg if WebP encoding is
  * unavailable). `capLabel` names the limit in error messages.
  */
-async function compressImageToTarget(file: File, targetBytes: number, capLabel: string): Promise<Blob> {
+async function compressImageToTarget(
+  file: File,
+  targetBytes: number,
+  capLabel: string,
+  dimLadder: number[] = DIM_LADDER,
+  qualityLadder: number[] = QUALITY_LADDER
+): Promise<Blob> {
   if (!file.type.startsWith('image/')) {
     throw new Error('Only image files can be uploaded');
   }
@@ -42,7 +52,7 @@ async function compressImageToTarget(file: File, targetBytes: number, capLabel: 
 
   let lastBlob: Blob | null = null;
 
-  for (const dim of DIM_LADDER) {
+  for (const dim of dimLadder) {
     const scale = Math.min(1, dim / Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.max(1, Math.round(img.naturalWidth * scale));
     const h = Math.max(1, Math.round(img.naturalHeight * scale));
@@ -53,7 +63,7 @@ async function compressImageToTarget(file: File, targetBytes: number, capLabel: 
     if (!ctx) throw new Error('Could not process image');
     ctx.drawImage(img, 0, 0, w, h);
 
-    for (const quality of QUALITY_LADDER) {
+    for (const quality of qualityLadder) {
       const blob = await encodeBlob(canvas, mime, quality);
       if (blob && blob.size <= targetBytes) {
         return blob;
@@ -74,8 +84,20 @@ export async function compressGalleryImage(file: File): Promise<Blob> {
   return compressImageToTarget(file, target, '0.5MB');
 }
 
-/** Profile picture pipeline: WebP under the 1MB cap. */
+/**
+ * Profile picture full-size: WebP under 0.5MB (exact gallery parity). This
+ * blob is uploaded to S3 via the images relay — it never enters the DB.
+ */
 export async function compressProfileImage(file: File): Promise<Blob> {
-  const target = Math.floor(PROFILE_PICTURE_MAX_BYTES * 0.92); // ~940KB target
-  return compressImageToTarget(file, target, '1MB');
+  const target = Math.floor(PROFILE_PICTURE_MAX_BYTES * 0.92); // ~460KB target
+  return compressImageToTarget(file, target, '0.5MB');
+}
+
+/**
+ * Profile picture thumbnail: WebP under 10KB — the copy that ships to every
+ * client and renders every small avatar on the site.
+ */
+export async function compressProfileThumb(file: File): Promise<Blob> {
+  const target = Math.floor(PROFILE_PICTURE_SMALL_MAX_BYTES * 0.85); // ~8.5KB
+  return compressImageToTarget(file, target, '10KB', THUMB_DIM_LADDER, THUMB_QUALITY_LADDER);
 }

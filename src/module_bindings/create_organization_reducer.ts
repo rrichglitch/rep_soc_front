@@ -13,6 +13,8 @@ import {
 export default {
   name: __t.string(),
   picture: __t.string(),
+  pictureSmall: __t.option(__t.string()),
+  pictureUrl: __t.option(__t.string()),
   city: __t.string(),
   description: __t.string(),
   locationLat: __t.option(__t.f64()),

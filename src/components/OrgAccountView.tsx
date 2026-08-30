@@ -107,7 +107,7 @@ function OrgAccountView() {
   const handleHideMembersToggle = async (checked: boolean) => {
     setIsUpdatingHide(true);
     try {
-      await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, checked);
+      await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, undefined, checked);
       setHideMembers(checked);
     } catch (e: any) {
       alert(e?.message || 'Failed to update');
@@ -144,7 +144,7 @@ function OrgAccountView() {
       const pos = await getBrowserLocation();
       const city = await reverseGeocode(pos.lat, pos.lng);
       if (city) {
-        await updateOrganization(org.id, undefined, city, undefined);
+        await updateOrganization(org.id, undefined, undefined, undefined, city);
       }
       const isExact = orgPrecision === 'exact';
       const toSend = isExact ? pos : jitterLocation(pos.lat, pos.lng, 5);
@@ -169,7 +169,8 @@ function OrgAccountView() {
       <main className="main-content">
         <div className="profile-section">
           <ProfileDetails
-            picture={orgData?.picture || org.picture || ''}
+            picture={orgData?.pictureSmall || orgData?.picture || org.picture || ''}
+            fullPicture={orgData?.pictureUrl || orgData?.picture || org.picture || ''}
             name={orgData?.name || org.name}
             city={orgData?.city || org.city || ''}
             description={orgData?.description || ''}
@@ -177,12 +178,12 @@ function OrgAccountView() {
             isLocationUpdating={false}
             showLocationUpdate={canManage}
             onSaveDescription={async (v) => {
-              await updateOrganization(org.id, undefined, undefined, v);
+              await updateOrganization(org.id, undefined, undefined, undefined, undefined, v);
               await refreshOrg();
             }}
             gender={orgData?.gender}
             onSaveAgeGender={async (_b, g) => {
-              await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, g);
+              await updateOrganization(org.id, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, g);
               await refreshOrg();
             }}
             pictureExtra={<button onClick={() => setShowQR(true)} className="share-btn-under-pic">Share</button>}

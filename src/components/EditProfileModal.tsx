@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
-import { compressProfileImage } from '../utils/imageCompress';
-import { updateProfile } from '../utils/spacetime';
+import { compressProfileImage, compressProfileThumb } from '../utils/imageCompress';
+import { updateProfile, uploadProfilePicture } from '../utils/spacetime';
 
 interface UserProfile {
   identity: string;
   full_name: string;
   profile_picture: string;
+  profile_picture_small?: string;
+  profile_picture_url?: string;
   city: string;
   description: string;
   created_at: Date;
@@ -65,19 +67,29 @@ function EditProfileModal({ profile, onClose, onSave }: EditProfileModalProps) {
     setIsLoading(true);
 
     try {
-      let pictureData: string | undefined;
+      // Full-size WebP < 0.5MB → S3 (bandwidth design: only the URL is
+      // stored); 10KB thumbnail → DB, used for every small avatar.
+      let smallData: string | undefined;
+      let urlData: string | undefined;
 
       if (profilePicture) {
-        // Client-side WebP compression < 1MB (same pipeline as gallery); the
-        // backend re-verifies the bytes.
-        pictureData = await fileToBase64(await compressProfileImage(profilePicture));
+        const [fullBlob, thumbBlob] = await Promise.all([
+          compressProfileImage(profilePicture),
+          compressProfileThumb(profilePicture),
+        ]);
+        const { url } = await uploadProfilePicture(fullBlob);
+        smallData = await fileToBase64(thumbBlob);
+        urlData = url;
       }
 
-      // Call update_profile reducer
-      console.log('Updating profile:', { city, description, profilePicture: pictureData });
-      
+      // Call update_profile reducer (legacy profilePicture param omitted —
+      // the backend clears the legacy column when the new pipeline writes).
+      console.log('Updating profile:', { smallData, urlData, city, description });
+
       await updateProfile(
-        pictureData,
+        undefined,
+        smallData,
+        urlData,
         city || undefined,
         description || undefined
       );
@@ -89,7 +101,9 @@ function EditProfileModal({ profile, onClose, onSave }: EditProfileModalProps) {
         ...profile,
         city,
         description,
-        profile_picture: pictureData || profile.profile_picture,
+        profile_picture: smallData || profile.profile_picture,
+        profile_picture_small: smallData || profile.profile_picture,
+        profile_picture_url: urlData || undefined,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
