@@ -1,6 +1,6 @@
 import { DbConnection, tables } from '../module_bindings';
 import { Identity, Timestamp } from 'spacetimedb';
-import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL } from '../config';
+import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL, DIDIT_RELAY_URL } from '../config';
 import { getOAuthSession } from './oauthSession';
 
 let dbConnection: DbConnection | null = null;
