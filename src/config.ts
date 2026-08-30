@@ -23,6 +23,9 @@ export const PAYMENTS_RELAY_URL = import.meta.env.VITE_PAYMENTS_RELAY_URL || 'ht
 
 // Images relay — S3-backed gallery uploads/proxy (same host, /images/ path)
 export const IMAGES_RELAY_URL = import.meta.env.VITE_IMAGES_RELAY_URL || 'https://auth.veri.social/images';
+// Didit verification relay — real per-IP throttle + turnstile verification
+// live there (the STDB module can't see client IPs).
+export const DIDIT_RELAY_URL = import.meta.env.VITE_DIDIT_RELAY_URL || 'https://auth.veri.social/didit';
 
 // Gallery: client-side WebP compression target + hard cap (must match the
 // module's GALLERY_MAX_BYTES and the relay's MAX_IMAGE_BYTES).

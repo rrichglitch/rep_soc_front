@@ -31,6 +31,13 @@ export const CreateVerifiedProfileResult = __t.object("CreateVerifiedProfileResu
 });
 export type CreateVerifiedProfileResult = __Infer<typeof CreateVerifiedProfileResult>;
 
+export const DiditAttempt = __t.object("DiditAttempt", {
+  identity: __t.identity(),
+  windowStart: __t.timestamp(),
+  attempts: __t.u8(),
+});
+export type DiditAttempt = __Infer<typeof DiditAttempt>;
+
 export const FeedPosition = __t.object("FeedPosition", {
   identity: __t.identity(),
   lastReadAt: __t.timestamp(),
@@ -92,12 +99,10 @@ export const GalleryPhoto = __t.object("GalleryPhoto", {
 });
 export type GalleryPhoto = __Infer<typeof GalleryPhoto>;
 
-export const InitiateDiditResult = __t.object("InitiateDiditResult", {
-  success: __t.bool(),
-  url: __t.option(__t.string()),
-  error: __t.option(__t.string()),
+export const GalleryUploadCountResult = __t.object("GalleryUploadCountResult", {
+  count: __t.u32(),
 });
-export type InitiateDiditResult = __Infer<typeof InitiateDiditResult>;
+export type GalleryUploadCountResult = __Infer<typeof GalleryUploadCountResult>;
 
 export const LastPost = __t.object("LastPost", {
   posterIdentity: __t.identity(),
@@ -241,6 +246,13 @@ export const PendingRegistrationState = __t.object("PendingRegistrationState", {
 });
 export type PendingRegistrationState = __Infer<typeof PendingRegistrationState>;
 
+export const PostDailyCount = __t.object("PostDailyCount", {
+  identity: __t.identity(),
+  day: __t.u32(),
+  count: __t.u16(),
+});
+export type PostDailyCount = __Infer<typeof PostDailyCount>;
+
 export const ProSubscription = __t.object("ProSubscription", {
   identity: __t.identity(),
   amountCents: __t.u32(),
@@ -307,6 +319,12 @@ export const PushSubscription = __t.object("PushSubscription", {
   createdAt: __t.timestamp(),
 });
 export type PushSubscription = __Infer<typeof PushSubscription>;
+
+export const RecordPendingRegistrationResult = __t.object("RecordPendingRegistrationResult", {
+  success: __t.bool(),
+  error: __t.option(__t.string()),
+});
+export type RecordPendingRegistrationResult = __Infer<typeof RecordPendingRegistrationResult>;
 
 export const SearchAllowance = __t.object("SearchAllowance", {
   identity: __t.identity(),
@@ -436,4 +454,10 @@ export const VerifiedIdentity = __t.object("VerifiedIdentity", {
   diditSelfieImage: __t.string(),
 });
 export type VerifiedIdentity = __Infer<typeof VerifiedIdentity>;
+
+export const WhoAmIResult = __t.object("WhoAmIResult", {
+  identityHex: __t.string(),
+  authenticated: __t.bool(),
+});
+export type WhoAmIResult = __Infer<typeof WhoAmIResult>;
 

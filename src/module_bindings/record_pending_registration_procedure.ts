@@ -11,7 +11,7 @@ import {
 } from "spacetimedb";
 
 import {
-  InitiateDiditResult,
+  RecordPendingRegistrationResult,
 } from "./types";
 
 export const params = {
@@ -19,6 +19,6 @@ export const params = {
   profilePicture: __t.string(),
   city: __t.string(),
   description: __t.string(),
-  turnstileToken: __t.string(),
+  diditSessionId: __t.string(),
 };
-export const returnType = InitiateDiditResult
+export const returnType = RecordPendingRegistrationResult

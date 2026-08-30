@@ -313,27 +313,40 @@ export async function initiateDiditVerification(
   description: string,
   turnstileToken: string
 ): Promise<string> {
-  if (!dbConnection) {
-    throw new Error('Not connected to SpacetimeDB');
+  // Initiation now routes through the didit relay (https://auth.veri.social/didit)
+  // — the module cannot see client IPs, so the REAL per-IP throttle (+
+  // Turnstile verification) lives there. The relay calls back into
+  // SpacetimeDB as this user for the pending row. Returns the Didit
+  // verification URL, or throws with the relay/module message.
+  const token = getOAuthSession()?.stToken;
+  if (!token) {
+    throw new Error('Not signed in');
   }
 
-  console.log('Calling initiateDiditVerification procedure');
-
-    const result = await dbConnection.procedures.initiateDiditVerification({
-    email,
-    profilePicture,
-    city,
-    description,
-    turnstileToken,
+  const resp = await fetch(`${DIDIT_RELAY_URL}/initiate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      email,
+      profile_picture: profilePicture,
+      city,
+      description,
+      turnstile_token: turnstileToken,
+    }),
   });
 
-  console.log('initiateDiditVerification result:', result);
+  let data: any = null;
+  try {
+    data = await resp.json();
+  } catch { /* non-JSON error body */ }
 
-  if (!result.success || !result.url) {
-    throw new Error(result.error ?? 'Failed to start identity verification');
+  if (!resp.ok) {
+    throw new Error(data?.error ?? `Verification failed (${resp.status}) — please try again`);
   }
-
-  return result.url;
+  if (!data?.success || !data.url) {
+    throw new Error(data?.error ?? 'Failed to start identity verification');
+  }
+  return data.url;
 }
 
 // Fetch the caller's pending-registration state. If they already have an
