@@ -4,6 +4,7 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, TURNSTILE_SITE_KEY } from '../config';
 import { useApp } from '../App';
 import { fileToBase64, isFileSizeValid, isFileTypeValid, validateAndSanitizeCity, validateAndSanitizeDescription } from '../utils/sanitize';
+import { compressProfileImage } from '../utils/imageCompress';
 import { isDisplayNameAcceptable } from '../utils/nameMatcher';
 import { initiateDiditVerification, checkDiditVerification, createVerifiedProfile, updateLocation, getPendingRegistration } from '../utils/spacetime';
 import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
@@ -138,14 +139,20 @@ function RegisterPage() {
         setError('File is too large. Maximum size is 5MB.');
         return;
       }
+      // Compress to WebP < 1MB client-side (same pipeline as gallery photos);
+      // the backend re-verifies the bytes at every ingest point.
+      const compressed = await compressProfileImage(file);
+      const base64 = await fileToBase64(compressed);
+      setStoredPictureBase64(base64);
+
+      // Preview from the compressed blob too, so the preview matches what
+      // actually gets stored.
       const reader = new FileReader();
       reader.onloadend = () => {
         setPicturePreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(compressed);
 
-      const base64 = await fileToBase64(file);
-      setStoredPictureBase64(base64);
       setError(null);
     }
   };

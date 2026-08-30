@@ -1,11 +1,12 @@
-// Client-side image compression for gallery uploads: converts to WebP and
-// shrinks it below the 0.5MB cap using the browser's canvas encoder (no
-// server compute). Falls back to JPEG if the browser cannot encode WebP.
-import { GALLERY_MAX_BYTES } from '../config';
+// Client-side image compression: converts to WebP and shrinks it under the
+// target cap using the browser's canvas encoder (no server compute). Falls
+// back to JPEG if the browser cannot encode WebP.
+// Shared core for BOTH pipelines (gallery < 0.5MB, profile pictures < 1MB) —
+// one compressor, two wrappers; never duplicate the ladder logic.
+import { GALLERY_MAX_BYTES, PROFILE_PICTURE_MAX_BYTES } from '../config';
 
 // Safety margin: compress a bit under the hard cap so small metadata
 // differences never push the upload past the relay/module reject.
-const TARGET_BYTES = Math.floor(GALLERY_MAX_BYTES * 0.92); // ~460KB target
 const QUALITY_LADDER = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2];
 const DIM_LADDER = [1600, 1280, 1024, 800, 640];
 
@@ -24,14 +25,13 @@ function encodeBlob(canvas: HTMLCanvasElement, type: 'image/webp' | 'image/jpeg'
 }
 
 /**
- * Compress an image file to WebP under the gallery limit.
- * Returns a Blob ready to upload (image/webp, or image/jpeg fallback).
- * Throws if the image cannot be processed at all.
+ * Compress an image file under targetBytes via the dimension × quality
+ * ladder. Returns a Blob (image/webp, or image/jpeg if WebP encoding is
+ * unavailable). `capLabel` names the limit in error messages.
  */
-export async function compressGalleryImage(file: File): Promise<Blob> {
-  // Only images are accepted upstream (the input already filters, gate here too).
+async function compressImageToTarget(file: File, targetBytes: number, capLabel: string): Promise<Blob> {
   if (!file.type.startsWith('image/')) {
-    throw new Error('Only image files can be added to the gallery');
+    throw new Error('Only image files can be uploaded');
   }
 
   const img = await loadImage(file);
@@ -55,9 +55,7 @@ export async function compressGalleryImage(file: File): Promise<Blob> {
 
     for (const quality of QUALITY_LADDER) {
       const blob = await encodeBlob(canvas, mime, quality);
-      if (blob && blob.size <= TARGET_BYTES) {
-        // Prefer a WebP result; JPEG fallback only when the browser can't
-        // encode WebP at all.
+      if (blob && blob.size <= targetBytes) {
         return blob;
       }
       if (blob) lastBlob = blob;
@@ -67,5 +65,17 @@ export async function compressGalleryImage(file: File): Promise<Blob> {
   // Should be rare (tiny dims at min quality still over budget). Use the
   // smallest attempt rather than failing outright; the backend may bounce it.
   if (lastBlob) return lastBlob;
-  throw new Error('Could not compress image to the 0.5MB limit — try a smaller photo');
+  throw new Error(`Could not compress image to the ${capLabel} limit — try a smaller photo`);
+}
+
+/** Gallery pipeline: WebP under the 0.5MB cap. */
+export async function compressGalleryImage(file: File): Promise<Blob> {
+  const target = Math.floor(GALLERY_MAX_BYTES * 0.92); // ~460KB target
+  return compressImageToTarget(file, target, '0.5MB');
+}
+
+/** Profile picture pipeline: WebP under the 1MB cap. */
+export async function compressProfileImage(file: File): Promise<Blob> {
+  const target = Math.floor(PROFILE_PICTURE_MAX_BYTES * 0.92); // ~940KB target
+  return compressImageToTarget(file, target, '1MB');
 }

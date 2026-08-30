@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
+import { compressProfileImage } from '../utils/imageCompress';
 import { updateProfile } from '../utils/spacetime';
 
 interface UserProfile {
@@ -67,7 +68,9 @@ function EditProfileModal({ profile, onClose, onSave }: EditProfileModalProps) {
       let pictureData: string | undefined;
 
       if (profilePicture) {
-        pictureData = await fileToBase64(profilePicture);
+        // Client-side WebP compression < 1MB (same pipeline as gallery); the
+        // backend re-verifies the bytes.
+        pictureData = await fileToBase64(await compressProfileImage(profilePicture));
       }
 
       // Call update_profile reducer
