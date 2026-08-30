@@ -28,6 +28,8 @@ export const IMAGES_RELAY_URL = import.meta.env.VITE_IMAGES_RELAY_URL || 'https:
 // module's GALLERY_MAX_BYTES and the relay's MAX_IMAGE_BYTES).
 export const GALLERY_MAX_BYTES = 500 * 1024; // relay+module hard reject at 500KB; compress under this
 export const GALLERY_MAX_PHOTOS = 8;
+// Must match backend DAILY_POST_LIMIT (config.ts).
+export const DAILY_POST_LIMIT = 100;
 
 export const CHAR_LIMITS = {
   fullName: 100,

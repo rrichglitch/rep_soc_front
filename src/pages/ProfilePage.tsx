@@ -9,8 +9,8 @@ import Gallery from '../components/Gallery';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg } from '../utils/spacetime';
-import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES } from '../config';
+import { getProfileByIdentity, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg } from '../utils/spacetime';
+import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
 import { fileToBase64, isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
 
 interface StoryPost {
@@ -234,6 +234,11 @@ function ProfilePage() {
       }
 
       const ownerIdentity = isOrgView ? orgIdentityHex : profileIdentity!;
+      // Friendly pre-check for the daily post budget (backend enforces too).
+      if (getTodayStoryPostCount(currentIdentityHex || '') >= DAILY_POST_LIMIT) {
+        setPostError(`Daily post limit reached (${DAILY_POST_LIMIT} per day)`);
+        return;
+      }
       await createStoryPost(ownerIdentity, storyContent.trim(), mediaData, mediaTypes, activeOrg?.id);
 
       setStoryContent('');

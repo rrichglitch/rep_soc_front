@@ -522,6 +522,20 @@ export async function createStoryPost(
   });
 }
 
+// Local pre-check for the daily post budget (mirrors the backend gate so the
+// user gets a friendly message instead of a 530). Counts the caller's story
+// posts created since the start of the UTC day.
+export function getTodayStoryPostCount(posterHex: string): number {
+  const DAY_MICROS = 86_400_000_000;
+  const todayStart = Math.floor((Date.now() * 1000) / DAY_MICROS) * DAY_MICROS;
+  let n = 0;
+  if (!dbConnection) return n;
+  for (const s of dbConnection.db.story_post.iter()) {
+    if (s.posterIdentity.toHexString() === posterHex && Number(s.createdAt) >= todayStart) n++;
+  }
+  return n;
+}
+
 export async function getStoriesForProfile(profileOwnerIdentity: string) {
   if (!dbConnection) {
     return [];
