@@ -10,7 +10,7 @@ import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
-import { preloadProfile, getPreloadedProfile, getPreloadedOrg } from '../utils/profilePreload';
+import { preloadVisitedProfile, preloadOrg, getPreloadedProfile, getPreloadedOrg } from '../utils/profilePreload';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
 import { isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
@@ -210,6 +210,16 @@ function ProfilePage() {
             hideMembers: !!org.hideMembers,
             leaderIdentityHex: org.leaderIdentity.toHexString(),
           });
+          // VISITED tier (orgs): top data for the last orgs opened.
+          preloadOrg(orgId, {
+            name: org.name,
+            picture: (org as any).pictureSmall || org.picture,
+            fullPicture: (org as any).pictureUrl || org.picture,
+            city: org.city,
+            description: org.description,
+            gender: org.gender,
+            hideMembers: !!org.hideMembers,
+          });
           if (currentIdentityHex) {
             // Following the org is a SEPARATE quantity from membership.
             setIsFollowing(await checkIsFollowing(orgIdentityHex, currentIdentityHex));
@@ -223,10 +233,10 @@ function ProfilePage() {
         } else {
           const profileData = await getProfileByIdentity(profileIdentity!);
           setProfile(profileData);
-          // Enrich the preload store with the full row so any subsequent
-          // visit (chat avatar, story header, friends list) paints instantly.
+          // VISITED tier: top data (header fields only — never stories,
+          // posts, or friends) for the last 10 other profiles opened.
           if (profileData) {
-            preloadProfile(profileIdentity!, {
+            preloadVisitedProfile(profileIdentity!, {
               fullName: profileData.fullName,
               picture: profileData.profilePictureSmall || profileData.profilePicture,
               fullPicture: profileData.profilePictureUrl || profileData.profilePicture,

@@ -2,7 +2,7 @@ import { DbConnection, tables } from '../module_bindings';
 import { Identity, Timestamp } from 'spacetimedb';
 import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL, DIDIT_RELAY_URL } from '../config';
 import { getOAuthSession } from './oauthSession';
-import { preloadProfile, preloadOrg } from './profilePreload';
+import { preloadProfile, preloadOrg, preloadOwnProfile } from './profilePreload';
 
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
@@ -228,7 +228,7 @@ export function getProfileRowByEmail(email: string): ProfileLookupRow | null {
     const se = sanitizeEmail(email);
     for (const p of dbConnection.db.user_profile.iter()) {
       if (p.email === se) {
-        return {
+        const row = {
           identity: { toHexString: () => p.identity.toHexString() },
           email: p.email,
           fullName: p.fullName,
@@ -247,6 +247,22 @@ export function getProfileRowByEmail(email: string): ProfileLookupRow | null {
           createdAtMicros: p.createdAt ? BigInt(p.createdAt.microsSinceUnixEpoch) : undefined,
           isPro: !!p.isPro,
         };
+        // OWN tier: the signed-in user's top info INCLUDING pictures is
+        // always cached (pinned, never evicted) — the guarantee the future
+        // per-subscriber view round builds on.
+        preloadOwnProfile(row.identity.toHexString(), {
+          fullName: row.fullName,
+          picture: row.profilePictureSmall || row.profilePicture,
+          fullPicture: row.profilePictureUrl || row.profilePicture,
+          city: row.city,
+          description: row.description,
+          gender: row.gender,
+          age: row.age,
+          hideFriends: row.hideFriends,
+          createdAtMicros: row.createdAtMicros,
+          isPro: row.isPro,
+        });
+        return row;
       }
     }
   } catch {

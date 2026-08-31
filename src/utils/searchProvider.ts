@@ -43,6 +43,10 @@ export interface SearchFilters {
 
 export type SearchMode = 'stdb' | 'gpu';
 
+// Preload snapshot cap per search call — one backend page (50), matching the
+// search UI's ~60 result request. "Reasonable number at a time", not all pages.
+const PRELOAD_RESULT_CAP = 50;
+
 export function getSearchProvider(): SearchMode {
   const stored = localStorage.getItem('veri_searchProvider') as SearchMode | null;
   if (stored === 'gpu' || stored === 'stdb') return stored;
@@ -166,11 +170,10 @@ function decorate(
   results: SearchResult[],
   activePos: { lat: number; lng: number } | null
 ): SearchResult[] {
-  // Click-context preload: every result rendered on the search page is
-  // exactly who the user is likely to click next. Snapshot their top info so
-  // ProfilePage paints instantly. Both providers (keyword + semantic) flow
-  // through here, so one hook covers full search pagination.
-  for (const r of results) {
+  // Click-context preload: snapshot top info for a REASONABLE batch of the
+  // results on screen — one backend page per call, never the full pagination
+  // history (search is repeated; the screen tier is LRU-capped anyway).
+  for (const r of results.slice(0, PRELOAD_RESULT_CAP)) {
     if (r.type === 'org' && r.orgId !== undefined && r.fullName) {
       preloadOrg(r.orgId, {
         name: r.fullName,
