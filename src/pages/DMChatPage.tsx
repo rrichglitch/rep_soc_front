@@ -5,6 +5,7 @@ import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
 import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileRowByEmail } from '../utils/spacetime';
+import { preloadProfile } from '../utils/profilePreload';
 
 function DMChatPage() {
   const { activeOrg } = useOrg();
@@ -24,7 +25,25 @@ function DMChatPage() {
         const p = await getProfileRowByEmail(email);
         if (p) setCurrentIdentity(p.identity.toHexString());
       }
-      setOtherProfile(await getProfileByIdentity(otherId));
+      setOtherProfile(await getProfileByIdentity(otherId).then((p) => {
+        // Click-context preload: the chat top-bar avatar links to this
+        // profile — snapshot the full row so that click paints instantly.
+        if (p) {
+          preloadProfile(otherId, {
+            fullName: p.fullName,
+            picture: p.profilePictureSmall || p.profilePicture,
+            fullPicture: p.profilePictureUrl || p.profilePicture,
+            city: p.city,
+            description: p.description,
+            gender: p.gender,
+            age: p.age,
+            hideFriends: p.hideFriends,
+            createdAtMicros: p.createdAtMicros,
+            isPro: p.isPro,
+          });
+        }
+        return p;
+      }));
     };
     init();
   }, [otherId]);

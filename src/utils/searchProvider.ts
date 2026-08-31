@@ -15,6 +15,7 @@
 
 import { getDbConnection } from './spacetime';
 import { haversineMiles } from './geo';
+import { preloadProfile, preloadOrg } from './profilePreload';
 
 export interface SearchResult {
   type: 'person' | 'org';
@@ -165,6 +166,29 @@ function decorate(
   results: SearchResult[],
   activePos: { lat: number; lng: number } | null
 ): SearchResult[] {
+  // Click-context preload: every result rendered on the search page is
+  // exactly who the user is likely to click next. Snapshot their top info so
+  // ProfilePage paints instantly. Both providers (keyword + semantic) flow
+  // through here, so one hook covers full search pagination.
+  for (const r of results) {
+    if (r.type === 'org' && r.orgId !== undefined && r.fullName) {
+      preloadOrg(r.orgId, {
+        name: r.fullName,
+        picture: r.profilePicture,
+        fullPicture: r.fullPicture,
+        city: r.city,
+        description: r.description,
+      });
+    } else if (r.type === 'person' && r.identity) {
+      preloadProfile(r.identity, {
+        fullName: r.fullName,
+        picture: r.profilePicture,
+        fullPicture: r.fullPicture,
+        city: r.city,
+        description: r.description,
+      });
+    }
+  }
   return results.map((r) => ({
     ...r,
     distance:

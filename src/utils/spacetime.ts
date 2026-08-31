@@ -2,6 +2,7 @@ import { DbConnection, tables } from '../module_bindings';
 import { Identity, Timestamp } from 'spacetimedb';
 import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL, DIDIT_RELAY_URL } from '../config';
 import { getOAuthSession } from './oauthSession';
+import { preloadProfile, preloadOrg } from './profilePreload';
 
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
@@ -646,6 +647,12 @@ export async function getStoriesForProfile(profileOwnerIdentity: string) {
         const posterHex = post.posterIdentity.toHexString();
         const poster = profileCache.get(posterHex);
         const sm = mediaByPost.get(storyMediaKey(post.posterIdentity, post.createdAt));
+        preloadProfile(posterHex, {
+          fullName: poster?.name || 'Unknown',
+          picture: poster?.picture || '',
+          city: '',
+          description: '',
+        });
         stories.push({
           id: post.id,
           content: post.content,
@@ -728,6 +735,12 @@ export async function getMyStoryPosts(currentIdentityHex: string) {
         const posterHex = post.posterIdentity.toHexString();
         const poster = profileCache.get(posterHex);
         const sm = mediaByPost.get(storyMediaKey(post.posterIdentity, post.createdAt));
+        preloadProfile(posterHex, {
+          fullName: poster?.name || 'Unknown',
+          picture: poster?.picture || '',
+          city: '',
+          description: '',
+        });
         stories.push({
           id: post.id,
           content: post.content,
@@ -767,6 +780,12 @@ export async function getMyPosts(currentIdentityHex: string) {
       if (post.posterIdentity.toHexString() === currentIdentityHex) {
         const ownerHex = post.profileOwnerIdentity.toHexString();
         const owner = profileCache.get(ownerHex);
+        preloadProfile(ownerHex, {
+          fullName: owner?.name || 'Unknown',
+          picture: owner?.picture || '',
+          city: '',
+          description: '',
+        });
         posts.push({
           id: post.id,
           content: post.content,
@@ -845,6 +864,20 @@ export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
   try {
     const stories: FeedStory[] = [];
     for (const row of dbConnection.db.my_feed.iter()) {
+      const posterHex = row.posterIdentity.toHexString();
+      const ownerHex = row.profileOwnerIdentity.toHexString();
+      preloadProfile(posterHex, {
+        fullName: row.posterName,
+        picture: row.posterPicture,
+        city: '',
+        description: '',
+      });
+      preloadProfile(ownerHex, {
+        fullName: row.profileOwnerName,
+        picture: row.profileOwnerPicture,
+        city: '',
+        description: '',
+      });
       stories.push({
         id: row.id,
         profileOwnerIdentity: row.profileOwnerIdentity,
@@ -855,7 +888,7 @@ export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
         createdAt: row.createdAt.toDate(),
         posterName: row.posterName,
         posterPicture: row.posterPicture,
-        profileOwnerIdentityHex: row.profileOwnerIdentity.toHexString(),
+        profileOwnerIdentityHex: ownerHex,
         profileOwnerName: row.profileOwnerName,
         profileOwnerPicture: row.profileOwnerPicture,
       });
@@ -902,11 +935,24 @@ export function getOrgFeedStories(orgIdentity: string, orderOldToNew: boolean = 
       if (post.actingAsOrgId !== undefined) {
         const o = orgCache.get(post.actingAsOrgId);
         if (o) { posterName = o.name; posterPicture = o.picture; }
+        preloadOrg(post.actingAsOrgId, { name: o?.name || 'Unknown', picture: o?.picture || '', city: '', description: '' });
       } else {
         const poster = accounts.get(post.posterIdentity.toHexString());
         if (poster) { posterName = poster.name; posterPicture = poster.picture; }
+        preloadProfile(post.posterIdentity.toHexString(), {
+          fullName: posterName,
+          picture: posterPicture,
+          city: '',
+          description: '',
+        });
       }
       const owner = accounts.get(ownerHex);
+      preloadProfile(ownerHex, {
+        fullName: owner?.name || 'Unknown',
+        picture: owner?.picture || '',
+        city: '',
+        description: '',
+      });
       stories.push({
         id: post.id,
         profileOwnerIdentity: post.profileOwnerIdentity,
@@ -1173,6 +1219,12 @@ export function getOrganizationMembers(orgId: bigint) {
     if (seen.has(other)) continue;
     seen.add(other);
     const profile = profileCache.get(other);
+    preloadProfile(other, {
+      fullName: profile?.name || 'Unknown',
+      picture: profile?.picture || '',
+      city: cities.get(other) || '',
+      description: '',
+    });
     members.push({
       identity: other,
       role: getOrgRole(orgId, other),
@@ -1191,6 +1243,12 @@ export function getOrganizationMembers(orgId: bigint) {
       if (seen.has(hex)) continue;
       seen.add(hex);
       const profile = profileCache.get(hex);
+      preloadProfile(hex, {
+        fullName: profile?.name || 'Unknown',
+        picture: profile?.picture || '',
+        city: cities.get(hex) || '',
+        description: '',
+      });
       members.push({
         identity: hex,
         role: m.role,
@@ -1418,7 +1476,12 @@ export function getFriends(identity: string): { identity: string; name: string; 
   const out: { identity: string; name: string; picture: string; city: string }[] = [];
   for (const id of friendIds) {
     const acc = cache.get(id);
-    out.push({ identity: id, name: acc?.name || 'Unknown', picture: acc?.picture || '', city: cities.get(id) || '' });
+    const name = acc?.name || 'Unknown';
+    const picture = acc?.picture || '';
+    const city = cities.get(id) || '';
+    // Click-context preload: friend rows on screen → instant profile paint.
+    preloadProfile(id, { fullName: name, picture, city, description: '' });
+    out.push({ identity: id, name, picture, city });
   }
   out.sort((a, b) => a.name.localeCompare(b.name));
   return out;
@@ -1452,6 +1515,12 @@ export function getFriendChats(identity: string) {
   return Array.from(friends)
     .map(fid => {
       const profile = profileCache.get(fid);
+      preloadProfile(fid, {
+        fullName: profile?.name || 'Unknown',
+        picture: profile?.picture || '',
+        city: '',
+        description: '',
+      });
       return {
         identity: fid,
         fullName: profile?.name || 'Unknown',
@@ -1472,6 +1541,14 @@ export function getNotifications(identity: string) {
     if (n.recipientIdentity.toHexString() === identity) {
       const fromHex = n.fromIdentity?.toHexString();
       const fromProfile = fromHex ? profileCache.get(fromHex) : null;
+      if (fromHex && fromProfile) {
+        preloadProfile(fromHex, {
+          fullName: fromProfile.name,
+          picture: fromProfile.picture,
+          city: '',
+          description: '',
+        });
+      }
       notifs.push({
         id: n.id,
         type: n.type,

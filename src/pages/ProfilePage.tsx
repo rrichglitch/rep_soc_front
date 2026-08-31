@@ -10,6 +10,7 @@ import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
+import { preloadProfile, getPreloadedProfile, getPreloadedOrg } from '../utils/profilePreload';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
 import { isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
@@ -39,22 +40,64 @@ function buildProfileFromCache(
 ): any {
   if (isOrgView) {
     const org = getOrganizationById(orgId);
-    if (!org) return null;
-    return {
-      identity: orgIdentityHex,
-      fullName: org.name,
-      profilePicture: org.picture,
-      city: org.city,
-      description: org.description,
-      createdAt: org.createdAt,
-      gender: org.gender,
-      hideMembers: !!org.hideMembers,
-      leaderIdentityHex: org.leaderIdentity.toHexString(),
-    };
+    if (org) {
+      return {
+        identity: orgIdentityHex,
+        fullName: org.name,
+        profilePicture: org.picture,
+        city: org.city,
+        description: org.description,
+        createdAt: org.createdAt,
+        gender: org.gender,
+        hideMembers: !!org.hideMembers,
+        leaderIdentityHex: org.leaderIdentity.toHexString(),
+      };
+    }
+    // Org row not synced yet — fall back to the click-context preload
+    // (search results snapshot org top-info before navigation).
+    const pre = getPreloadedOrg(orgId);
+    if (pre) {
+      return {
+        identity: orgIdentityHex,
+        fullName: pre.name,
+        profilePicture: pre.picture,
+        city: pre.city,
+        description: pre.description,
+        createdAt: undefined,
+        gender: pre.gender,
+        hideMembers: !!pre.hideMembers,
+        leaderIdentityHex: '',
+      };
+    }
+    return null;
   }
   if (!profileIdentity) return null;
   // Viewing your OWN profile redirects to /me — never render it as "another".
   if (getOAuthSession()?.identityHex === profileIdentity) return null;
+  // Click-context preload FIRST: search results, friends/chats/notifications/
+  // story rows and prior lookups snapshot the top info here — the header
+  // paints instantly with no full-table cache and no network round trip.
+  // The 2s procedure refresh fills whatever the preload lacks.
+  const pre = getPreloadedProfile(profileIdentity);
+  if (pre) {
+    return {
+      identity: { toHexString: () => profileIdentity },
+      email: '',
+      fullName: pre.fullName,
+      city: pre.city,
+      description: pre.description,
+      profilePicture: pre.picture,
+      profilePictureSmall: pre.picture,
+      profilePictureUrl: pre.fullPicture || '',
+      locationPrecision: 'off',
+      gender: pre.gender,
+      age: pre.age,
+      hideFriends: !!pre.hideFriends,
+      disabled: false,
+      createdAtMicros: pre.createdAtMicros,
+      isPro: !!pre.isPro,
+    };
+  }
   return getProfileByIdentitySync(profileIdentity);
 }
 
@@ -180,6 +223,22 @@ function ProfilePage() {
         } else {
           const profileData = await getProfileByIdentity(profileIdentity!);
           setProfile(profileData);
+          // Enrich the preload store with the full row so any subsequent
+          // visit (chat avatar, story header, friends list) paints instantly.
+          if (profileData) {
+            preloadProfile(profileIdentity!, {
+              fullName: profileData.fullName,
+              picture: profileData.profilePictureSmall || profileData.profilePicture,
+              fullPicture: profileData.profilePictureUrl || profileData.profilePicture,
+              city: profileData.city,
+              description: profileData.description,
+              gender: profileData.gender,
+              age: profileData.age,
+              hideFriends: profileData.hideFriends,
+              createdAtMicros: profileData.createdAtMicros,
+              isPro: profileData.isPro,
+            });
+          }
 
           if (profileData && currentIdentityHex) {
             const following = await checkIsFollowing(profileIdentity!, currentIdentityHex);
