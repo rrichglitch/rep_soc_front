@@ -1566,29 +1566,32 @@ export async function uploadProfilePicture(
   return { url: data.url };
 }
 
-// Delete a gallery photo: row (owner-checked reducer) + S3 object (relay).
+// Delete a gallery photo: S3 object first (the relay gates ownership
+// row-based via the module — can_delete_gallery_photo), then the row.
+// The row reducer is idempotent, so a retried flow stays safe.
 export async function deleteGalleryPhoto(
   photo: GalleryPhoto,
   actingAsOrgId?: bigint,
   actingAsOrgIdentityHex?: string,
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
+  const token = getOAuthSession()?.stToken;
+  if (!token) throw new Error('Not authenticated');
+  const res = await fetch(`${IMAGES_RELAY_URL}/img/${photo.s3Key}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      ...(actingAsOrgIdentityHex ? { 'X-Acting-Org-Identity': actingAsOrgIdentityHex } : {}),
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text?.includes('Not your photo') ? 'You can only delete your own gallery photos' : `Could not delete photo (${res.status})`);
+  }
   await dbConnection.reducers.deleteGalleryPhoto({
     photoId: photo.id,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgIdentityHex ? Identity.fromString(actingAsOrgIdentityHex) : undefined,
   });
-  // Best-effort object removal from S3 (row deletion is the source of truth).
-  const token = getOAuthSession()?.stToken;
-  if (!token) return;
-  try {
-    await fetch(`${IMAGES_RELAY_URL}/img/${photo.s3Key}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(actingAsOrgIdentityHex ? { 'X-Acting-Org-Identity': actingAsOrgIdentityHex } : {}),
-      },
-    });
-  } catch { /* orphan object is harmless; row is gone */ }
 }
 
