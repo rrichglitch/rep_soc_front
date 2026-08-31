@@ -9,7 +9,7 @@ import Gallery from '../components/Gallery';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
-import { getProfileByIdentity, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
+import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
 import { isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
@@ -24,6 +24,38 @@ interface StoryPost {
   posterIdentity: string;
   posterName: string;
   posterPicture: string;
+}
+
+// Sync first-paint source for the profile header: read the target row from
+// the local subscription cache (user_profile / organization are fully
+// subscribed) instead of gating the first render on the get_profile_by_identity
+// RPC — the procedure still runs right after as the 2s freshness poll.
+// Returns the EXACT same shape the RPC/loadProfile branches produce.
+function buildProfileFromCache(
+  isOrgView: boolean,
+  orgId: bigint,
+  orgIdentityHex: string,
+  profileIdentity: string | undefined
+): any {
+  if (isOrgView) {
+    const org = getOrganizationById(orgId);
+    if (!org) return null;
+    return {
+      identity: orgIdentityHex,
+      fullName: org.name,
+      profilePicture: org.picture,
+      city: org.city,
+      description: org.description,
+      createdAt: org.createdAt,
+      gender: org.gender,
+      hideMembers: !!org.hideMembers,
+      leaderIdentityHex: org.leaderIdentity.toHexString(),
+    };
+  }
+  if (!profileIdentity) return null;
+  // Viewing your OWN profile redirects to /me — never render it as "another".
+  if (getOAuthSession()?.identityHex === profileIdentity) return null;
+  return getProfileByIdentitySync(profileIdentity);
 }
 
 // ONE page for BOTH other-individual profiles (/profile/:identity) and
@@ -78,12 +110,12 @@ function ProfilePage() {
     }
   }, []);
 
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(() => buildProfileFromCache(isOrgView, orgId, orgIdentityHex, profileIdentity));
   const [isFollowing, setIsFollowing] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [requestPending, setRequestPending] = useState(false);
   const [isLeader, setIsLeader] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => profile === null);
   const [stories, setStories] = useState<StoryPost[]>([]);
 
   const [storyContent, setStoryContent] = useState('');
@@ -105,6 +137,9 @@ function ProfilePage() {
 
   useEffect(() => {
     const loadProfile = async () => {
+      // Instant swap to the new target from the sync cache (no RPC); the
+      // procedure below only refreshes. On mount this mirrors the lazy init.
+      setProfile(buildProfileFromCache(isOrgView, orgId, orgIdentityHex, profileIdentity));
       if (!isOrgView && currentIdentityHex === profileIdentity) {
         setIsLoading(false);
         return;

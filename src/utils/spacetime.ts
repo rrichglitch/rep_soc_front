@@ -468,6 +468,44 @@ export async function getProfileByIdentity(identity: string): Promise<ProfileLoo
   }
 }
 
+// Sync read of ANOTHER user's profile row from the local subscription cache —
+// NO procedure RPC. ProfilePage (viewing others) lazy-inits from this so
+// navigation renders instantly; the procedure refresh keeps it fresh after.
+// Same row shape as getProfileByIdentity/rowFromProcedure.
+export function getProfileByIdentitySync(identityHex: string): ProfileLookupRow | null {
+  if (!dbConnection) {
+    return null;
+  }
+  try {
+    for (const p of dbConnection.db.user_profile.iter()) {
+      if (p.identity.toHexString() === identityHex) {
+        return {
+          identity: { toHexString: () => p.identity.toHexString() },
+          email: p.email,
+          fullName: p.fullName,
+          city: p.city,
+          description: p.description,
+          profilePicture: p.profilePicture || '',
+          profilePictureSmall: (p as any).profilePictureSmall || '',
+          profilePictureUrl: (p as any).profilePictureUrl || '',
+          locationLat: p.locationLat ?? undefined,
+          locationLng: p.locationLng ?? undefined,
+          locationPrecision: p.locationPrecision,
+          gender: p.gender ?? undefined,
+          age: p.age ?? undefined,
+          hideFriends: !!p.hideFriends,
+          disabled: !!p.disabled,
+          createdAtMicros: p.createdAt ? BigInt(p.createdAt.microsSinceUnixEpoch) : undefined,
+          isPro: !!p.isPro,
+        };
+      }
+    }
+  } catch {
+    // cache not ready — treat as not found
+  }
+  return null;
+}
+
 export async function checkIsFollowing(targetIdentity: string, currentIdentityHex: string): Promise<boolean> {
   if (!dbConnection || !currentIdentityHex) {
     return false;
