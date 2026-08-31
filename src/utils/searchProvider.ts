@@ -44,8 +44,13 @@ export interface SearchFilters {
 export type SearchMode = 'stdb' | 'gpu';
 
 // Preload snapshot cap per search call — one backend page (50), matching the
-// search UI's ~60 result request. "Reasonable number at a time", not all pages.
+// search UI's request. "Reasonable number at a time", not all pages.
 const PRELOAD_RESULT_CAP = 50;
+
+// User-mandated hard ceiling (2026-08-31): a search NEVER returns more than
+// this many results. If the first 150 don't have what you need, the query
+// needs to be better — not the result count.
+const SEARCH_RESULT_CAP = 150;
 
 export function getSearchProvider(): SearchMode {
   const stored = localStorage.getItem('veri_searchProvider') as SearchMode | null;
@@ -117,9 +122,9 @@ export async function keywordSearch(
       all.push(...results);
       if (!nextCursor) break;
       cursor = nextCursor;
-      if (all.length >= (filters.limit ?? 60)) break;
+      if (all.length >= Math.min(filters.limit ?? SEARCH_RESULT_CAP, SEARCH_RESULT_CAP)) break;
     }
-    return { results: all, degraded: false };
+    return { results: all.slice(0, SEARCH_RESULT_CAP), degraded: false };
   } catch (e) {
     console.error('keywordSearch failed:', e);
     return { results: [], degraded: true };
@@ -149,7 +154,7 @@ export async function runSearch(
       // Semantic path: SpacetimeDB event-table bridge to the GPU box.
       const { semanticSearch } = await import('./semanticSearch');
       const gpuResults = await semanticSearch(query, filters);
-      if (gpuResults.length > 0) return decorate(gpuResults, opts.activePos);
+      if (gpuResults.length > 0) return decorate(gpuResults, opts.activePos).slice(0, SEARCH_RESULT_CAP);
       // Empty semantic results legitimately happen; still fall through to
       // keyword so exact matches are never missed.
     } catch (e: any) {
@@ -163,7 +168,7 @@ export async function runSearch(
   }
 
   const { results } = await keywordSearch(query, filters);
-  return decorate(results, opts.activePos);
+  return decorate(results, opts.activePos).slice(0, SEARCH_RESULT_CAP);
 }
 
 function decorate(

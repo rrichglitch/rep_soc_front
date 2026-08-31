@@ -773,6 +773,7 @@ export interface FeedStory {
   content: string;
   mediaData: string;
   mediaTypes: string;
+  mediaUrl?: string;
   createdAt: Date;
   posterName: string;
   posterPicture: string;
@@ -828,6 +829,7 @@ export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
         content: row.content,
         mediaData: row.mediaData,
         mediaTypes: row.mediaTypes,
+        mediaUrl: row.mediaUrl || '',
         createdAt: row.createdAt.toDate(),
         posterName: row.posterName,
         posterPicture: row.posterPicture,

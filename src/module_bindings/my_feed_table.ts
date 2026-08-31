@@ -17,6 +17,7 @@ export default __t.row({
   content: __t.string(),
   mediaData: __t.string().name("media_data"),
   mediaTypes: __t.string().name("media_types"),
+  mediaUrl: __t.option(__t.string()).name("media_url"),
   createdAt: __t.timestamp().name("created_at"),
   posterName: __t.string().name("poster_name"),
   posterPicture: __t.string().name("poster_picture"),

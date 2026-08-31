@@ -262,8 +262,8 @@ function MainFeedPage() {
                       </Link>
                     </div>
                     <p className="story-content">{story.content}</p>
-                    {story.mediaData && story.mediaData.length > 0 && (
-                      <img src={story.mediaData} alt="Story media" className="story-media" />
+                    {(story.mediaUrl || (story.mediaData && story.mediaData.length > 0)) && (
+                      <img src={story.mediaUrl || story.mediaData} alt="Story media" className="story-media" />
                     )}
                   </div>
                 ))}
@@ -299,8 +299,8 @@ function MainFeedPage() {
                       </div>
                     </Link>
                     <p className="story-content">{story.content}</p>
-                    {story.mediaData && story.mediaData.length > 0 && (
-                      <img src={story.mediaData} alt="Story media" className="story-media" />
+                    {(story.mediaUrl || (story.mediaData && story.mediaData.length > 0)) && (
+                      <img src={story.mediaUrl || story.mediaData} alt="Story media" className="story-media" />
                     )}
                   </div>
                 ))}

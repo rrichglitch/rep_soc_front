@@ -124,9 +124,20 @@ function NotificationsPage() {
             {pendingNotifs.map(n => (
               <div key={n.id.toString()} className="notif-card pending">
                 <div className="notif-body">
-                  <span className="notif-type">{n.type.replace(/_/g, ' ')}</span>
-                  <p className="notif-msg">{n.message}</p>
-                  {n.fromName !== 'Someone' && <span className="notif-from">From: {n.fromName}</span>}
+                  {n.fromIdentity ? (
+                    <Link to={`/profile/${n.fromIdentity}`} className="notif-avatar-link">
+                      {n.fromPicture ? (
+                        <img src={n.fromPicture} alt={n.fromName} className="notif-avatar" />
+                      ) : (
+                        <div className="notif-avatar notif-avatar-placeholder" />
+                      )}
+                    </Link>
+                  ) : null}
+                  <div className="notif-text">
+                    <span className="notif-type">{n.type.replace(/_/g, ' ')}</span>
+                    <p className="notif-msg">{n.message}</p>
+                    {n.fromName !== 'Someone' && <span className="notif-from">From: {n.fromName}</span>}
+                  </div>
                 </div>
                 {n.type === 'friend_request' ? (
                   <div style={{display:'flex',gap:4,flexShrink:0}}>
@@ -161,6 +172,11 @@ function NotificationsPage() {
         .main-content { max-width: var(--content-max-width); margin: 0 auto; padding: 24px; }
         .notif-section { margin-bottom: 24px; }
         .notif-section h3 { margin: 0 0 12px; color: #333; font-size: 16px; }
+        .notif-body { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+        .notif-avatar-link { flex-shrink: 0; display: block; }
+        .notif-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; }
+        .notif-avatar-placeholder { background: #e5e7eb; }
+        .notif-text { min-width: 0; }
         .notif-card { background: white; border-radius: 8px; padding: 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .notif-card.pending { border-left: 3px solid #667eea; }
         .notif-card.resolved { opacity: 0.6; }

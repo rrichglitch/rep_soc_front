@@ -302,7 +302,7 @@ function SearchPage() {
             ageMax: ageMax ? parseInt(ageMax, 10) : undefined,
             showIndividuals: effIndividuals,
             showOrganizations: effOrganizations,
-            limit: 60,
+            limit: 150,
           },
           activePos,
         });

@@ -59,6 +59,7 @@ export const FeedStory = __t.object("FeedStory", {
   content: __t.string(),
   mediaData: __t.string(),
   mediaTypes: __t.string(),
+  mediaUrl: __t.option(__t.string()),
   createdAt: __t.timestamp(),
   posterName: __t.string(),
   posterPicture: __t.string(),
