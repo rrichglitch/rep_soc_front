@@ -87,6 +87,7 @@ function AboutPage() {
       <footer className="about-footer">
         <div className="footer-content">
           <span className="footer-copyright">&copy; 2026 Veri Social</span>
+          <span className="footer-attribution">&copy; OpenStreetMap contributors</span>
           <div className="footer-links">
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
@@ -211,6 +212,11 @@ function AboutPage() {
         .footer-copyright {
           color: #666;
           font-size: 14px;
+        }
+
+        .footer-attribution {
+          color: #999;
+          font-size: 12px;
         }
 
         .footer-links {

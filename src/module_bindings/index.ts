@@ -38,6 +38,9 @@ import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
 import AddGalleryPhotoReducer from "./add_gallery_photo_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
+import AdminSeedOrgBeginReducer from "./admin_seed_org_begin_reducer";
+import AdminSeedOrgFinalizeReducer from "./admin_seed_org_finalize_reducer";
+import AdminSeedOrgRemoveReducer from "./admin_seed_org_remove_reducer";
 import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetGenderReducer from "./admin_set_gender_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
@@ -99,6 +102,7 @@ import * as GetProfileStoriesProcedure from "./get_profile_stories_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "./record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "./search_profiles_procedure";
+import * as SeedOrgStatusProcedure from "./seed_org_status_procedure";
 import * as WhoamiProcedure from "./whoami_procedure";
 
 // Import all table schema definitions
@@ -377,6 +381,9 @@ const reducersSchema = __reducers(
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
   __reducerSchema("add_gallery_photo", AddGalleryPhotoReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
+  __reducerSchema("admin_seed_org_begin", AdminSeedOrgBeginReducer),
+  __reducerSchema("admin_seed_org_finalize", AdminSeedOrgFinalizeReducer),
+  __reducerSchema("admin_seed_org_remove", AdminSeedOrgRemoveReducer),
   __reducerSchema("admin_set_birthday", AdminSetBirthdayReducer),
   __reducerSchema("admin_set_gender", AdminSetGenderReducer),
   __reducerSchema("admin_set_pro", AdminSetProReducer),
@@ -440,6 +447,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
   __procedureSchema("record_pending_registration", RecordPendingRegistrationProcedure.params, RecordPendingRegistrationProcedure.returnType),
   __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),
+  __procedureSchema("seed_org_status", SeedOrgStatusProcedure.params, SeedOrgStatusProcedure.returnType),
   __procedureSchema("whoami", WhoamiProcedure.params, WhoamiProcedure.returnType),
 );
 

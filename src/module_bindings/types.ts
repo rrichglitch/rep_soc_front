@@ -670,6 +670,19 @@ export const SearchResultItem = __t.object("SearchResultItem", {
 });
 export type SearchResultItem = __Infer<typeof SearchResultItem>;
 
+export const SeedGalleryPhoto = __t.object("SeedGalleryPhoto", {
+  s3Key: __t.string(),
+  url: __t.string(),
+  bytes: __t.u64(),
+});
+export type SeedGalleryPhoto = __Infer<typeof SeedGalleryPhoto>;
+
+export const SeedOrgStatus = __t.object("SeedOrgStatus", {
+  orgId: __t.option(__t.u64()),
+  identityHex: __t.string(),
+});
+export type SeedOrgStatus = __Infer<typeof SeedOrgStatus>;
+
 export const StoryMedia = __t.object("StoryMedia", {
   posterIdentity: __t.identity(),
   createdAt: __t.timestamp(),
