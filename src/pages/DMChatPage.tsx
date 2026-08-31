@@ -5,7 +5,7 @@ import TopBar from '../components/TopBar';
 import { useOrg } from '../contexts/OrgContext';
 import AuthActions from '../components/AuthActions';
 import { getDirectMessages, sendDirectMessage, getProfileByIdentity, getProfileRowByEmail } from '../utils/spacetime';
-import { preloadProfile } from '../utils/profilePreload';
+import { preloadProfile } from '../utils/clientData';
 
 function DMChatPage() {
   const { activeOrg } = useOrg();

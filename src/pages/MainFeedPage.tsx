@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../App';
-import { getProfileRowByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, getPaginatedOrgFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
+import { getProfileRowByEmail, getMyStoryPosts, refreshFeed, getPaginatedFeedStories, updateFeedScrollPosition, type FeedStory } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -56,7 +56,7 @@ function MainFeedPage() {
         // Org account: feed = org's story + org's follows
         const myFeed = await getMyStoryPosts(activeOrg.identity);
         setMyStories(myFeed);
-        const { stories, hasMore: more } = getPaginatedOrgFeedStories(activeOrg.identity, FOLLOWING_ORDER_OLD_TO_NEW, 0);
+        const { stories, hasMore: more } = getPaginatedFeedStories(FOLLOWING_ORDER_OLD_TO_NEW, 0);
         allStoriesRef.current = stories;
         setFollowedStories(stories);
         setHasMore(more);
@@ -99,9 +99,7 @@ function MainFeedPage() {
 
     setIsLoadingMore(true);
     const nextPage = currentPage + 1;
-    const { stories, hasMore: more } = activeOrg
-      ? getPaginatedOrgFeedStories(activeOrg.identity, FOLLOWING_ORDER_OLD_TO_NEW, nextPage)
-      : getPaginatedFeedStories(FOLLOWING_ORDER_OLD_TO_NEW, nextPage);
+    const { stories, hasMore: more } = getPaginatedFeedStories(FOLLOWING_ORDER_OLD_TO_NEW, nextPage);
 
     allStoriesRef.current = [...allStoriesRef.current, ...stories];
     setFollowedStories(allStoriesRef.current);

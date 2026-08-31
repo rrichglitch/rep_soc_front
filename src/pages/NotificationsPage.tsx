@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { currentUserEmail } from '../utils/authState';
 import TopBar from '../components/TopBar';
 import { getNotifications, resolveNotification, acceptFriendRequest, declineFriendRequest, getProfileRowByEmail } from '../utils/spacetime';
+import { ensureProfile } from '../utils/clientData';
 import AuthActions from '../components/AuthActions';
 import { useOrg } from '../contexts/OrgContext';
 
@@ -35,7 +36,19 @@ function NotificationsPage() {
 
   useEffect(() => {
     if (!currentIdentity) return;
-    const update = () => setNotifs(getNotifications(currentIdentity));
+    const update = () => {
+      const list = getNotifications(currentIdentity);
+      setNotifs(list);
+      // Scoped data layer: unknown senders get resolved via RPC once (the
+      // snapshot lands in clientData and later polls render the name).
+      for (const n of list) {
+        if (n.fromIdentity && (n.fromName === 'Someone' || !n.fromPicture)) {
+          ensureProfile(n.fromIdentity).then(() => {
+            setNotifs(getNotifications(currentIdentity));
+          });
+        }
+      }
+    };
     update();
     const interval = setInterval(update, 1500);
     return () => clearInterval(interval);

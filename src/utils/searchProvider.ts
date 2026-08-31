@@ -15,7 +15,7 @@
 
 import { getDbConnection } from './spacetime';
 import { haversineMiles } from './geo';
-import { preloadProfile, preloadOrg } from './profilePreload';
+import { preloadProfile, preloadOrg } from './clientData';
 
 export interface SearchResult {
   type: 'person' | 'org';

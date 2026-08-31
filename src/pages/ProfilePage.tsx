@@ -10,7 +10,7 @@ import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
-import { preloadVisitedProfile, preloadOrg, getPreloadedProfile, getPreloadedOrg } from '../utils/profilePreload';
+import { preloadVisitedProfile, preloadOrg, getProfileSnapshot, getOrgSnapshot, fetchOrgProfile, refreshFetchedStories } from '../utils/clientData';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
 import { isFileSizeValid, isFileTypeValid } from '../utils/sanitize';
@@ -55,7 +55,7 @@ function buildProfileFromCache(
     }
     // Org row not synced yet — fall back to the click-context preload
     // (search results snapshot org top-info before navigation).
-    const pre = getPreloadedOrg(orgId);
+    const pre = getOrgSnapshot(orgId);
     if (pre) {
       return {
         identity: orgIdentityHex,
@@ -74,11 +74,12 @@ function buildProfileFromCache(
   if (!profileIdentity) return null;
   // Viewing your OWN profile redirects to /me — never render it as "another".
   if (getOAuthSession()?.identityHex === profileIdentity) return null;
-  // Click-context preload FIRST: search results, friends/chats/notifications/
-  // story rows and prior lookups snapshot the top info here — the header
-  // paints instantly with no full-table cache and no network round trip.
-  // The 2s procedure refresh fills whatever the preload lacks.
-  const pre = getPreloadedProfile(profileIdentity);
+  // Click-context preload FIRST (merged memory/view/fetch tiers in
+  // clientData): search results, friends/chats/notifications/story rows and
+  // prior lookups snapshot the top info here — the header paints instantly
+  // with no full-table cache and no network round trip. The 2s procedure
+  // refresh fills whatever the preload lacks.
+  const pre = getProfileSnapshot(profileIdentity);
   if (pre) {
     return {
       identity: { toHexString: () => profileIdentity },
@@ -194,7 +195,8 @@ function ProfilePage() {
 
       try {
         if (isOrgView) {
-          const org = getOrganizationById(orgId);
+          // my_orgs view for orgs I belong to; fetchOrgProfile for the rest.
+          const org = getOrganizationById(orgId) || (await fetchOrgProfile(orgId));
           if (!org) {
             setIsLoading(false);
             return;
@@ -356,7 +358,8 @@ function ProfilePage() {
       setStoryMedia(null);
       setMediaPreview(null);
 
-      // Refresh stories
+      // Refresh stories (invalidate the on-demand fetch cache first)
+      refreshFetchedStories(ownerIdentity);
       const updatedStories = await getStoriesForProfile(ownerIdentity);
       setStories(updatedStories);
     } catch (error) {
@@ -449,7 +452,12 @@ function ProfilePage() {
         />
 
         {activeTab === 'friends' ? (
-          <FriendsList identity={isOrgView ? orgIdentityHex : profileIdentity!} emptyText={isOrgView ? 'No members yet.' : 'No friends yet.'} />
+          <FriendsList
+            identity={isOrgView ? orgIdentityHex : profileIdentity!}
+            mode={isOrgView ? 'members' : 'friends'}
+            orgId={isOrgView ? orgId : undefined}
+            emptyText={isOrgView ? 'No members yet.' : 'No friends yet.'}
+          />
         ) : (
         <>
         {canPost && (
