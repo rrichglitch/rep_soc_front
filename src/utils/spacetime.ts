@@ -89,6 +89,9 @@ async function subscribeAnonymous(): Promise<void> {
   console.log('Subscribing anonymously (no tables — everything via RPC)...');
   return new Promise((resolve, reject) => {
     try {
+      // The SDK rejects an EMPTY subscription array, so subscribe the
+      // per-sender my_own_profile view: anon has no profile row, so this
+      // transfers zero rows while keeping the WS handshake valid.
       dbConnection!.subscriptionBuilder()
         .onApplied(() => {
           console.log('Anonymous subscription applied');
@@ -98,7 +101,7 @@ async function subscribeAnonymous(): Promise<void> {
           console.error('Anonymous subscription error:', ctx.event);
           reject(new Error('Subscription failed'));
         })
-        .subscribe([]);
+        .subscribe(['SELECT * FROM my_own_profile']);
     } catch (e) {
       console.error('Anonymous subscription error:', e);
       reject(e);
