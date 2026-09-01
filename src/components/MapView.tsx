@@ -145,7 +145,12 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
                   group
                     .map(
                       r =>
-                        `<div class="mcp-row" data-identity="${esc(r.identity)}">` +
+                        // Org results carry identity_hex '' from the backend, so a
+                        // lookup by identity alone would resolve every org row to
+                        // the FIRST org in the group. Key org rows by orgId instead.
+                        `<div class="mcp-row" data-identity="${esc(r.identity)}" data-org="${
+                          r.type === 'org' ? esc(`${r.orgId ?? ''}`) : ''
+                        }">` +
                         (r.profilePicture
                           ? `<img class="mcp-row-pic" src="${esc(r.profilePicture)}" alt="" />`
                           : `<div class="mcp-row-pic mcp-row-pic-empty"></div>`) +
@@ -166,7 +171,11 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
                 row.addEventListener('click', e => {
                   e.stopPropagation();
                   map.closePopup(popup);
-                  const hit = group.find(r => r.identity === row.dataset.identity);
+                  const hit = group.find(r =>
+                    r.type === 'org'
+                      ? row.dataset.org === `${r.orgId ?? ''}`
+                      : r.identity === row.dataset.identity
+                  );
                   // Same navigation path as the profile card: straight to the profile page.
                   if (hit) onResultClickRef.current(hit);
                 });
