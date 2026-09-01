@@ -44,7 +44,10 @@ function buildProfileFromCache(
       return {
         identity: orgIdentityHex,
         fullName: org.name,
-        profilePicture: org.picture,
+        // Bandwidth: avatar = 10KB thumb; the 200KB S3 URL only when zoomed.
+        profilePicture: org.pictureSmall || org.picture,
+        profilePictureSmall: org.pictureSmall || '',
+        profilePictureUrl: org.pictureUrl || '',
         city: org.city,
         description: org.description,
         createdAt: org.createdAt,
@@ -61,6 +64,8 @@ function buildProfileFromCache(
         identity: orgIdentityHex,
         fullName: pre.name,
         profilePicture: pre.picture,
+        profilePictureSmall: pre.picture || '',
+        profilePictureUrl: pre.fullPicture || '',
         city: pre.city,
         description: pre.description,
         createdAt: undefined,
@@ -204,7 +209,9 @@ function ProfilePage() {
           setProfile({
             identity: orgIdentityHex,
             fullName: org.name,
-            profilePicture: org.picture,
+            profilePicture: org.pictureSmall || org.picture,
+            profilePictureSmall: org.pictureSmall || '',
+            profilePictureUrl: org.pictureUrl || '',
             city: org.city,
             description: org.description,
             createdAt: org.createdAt,

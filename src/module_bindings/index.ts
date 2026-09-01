@@ -38,9 +38,11 @@ import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
 import AddGalleryPhotoReducer from "./add_gallery_photo_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
+import AdminSeedBindSourceReducer from "./admin_seed_bind_source_reducer";
 import AdminSeedOrgBeginReducer from "./admin_seed_org_begin_reducer";
 import AdminSeedOrgFinalizeReducer from "./admin_seed_org_finalize_reducer";
 import AdminSeedOrgRemoveReducer from "./admin_seed_org_remove_reducer";
+import AdminSeedRemoveMarkerReducer from "./admin_seed_remove_marker_reducer";
 import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetGenderReducer from "./admin_set_gender_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
@@ -381,9 +383,11 @@ const reducersSchema = __reducers(
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
   __reducerSchema("add_gallery_photo", AddGalleryPhotoReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
+  __reducerSchema("admin_seed_bind_source", AdminSeedBindSourceReducer),
   __reducerSchema("admin_seed_org_begin", AdminSeedOrgBeginReducer),
   __reducerSchema("admin_seed_org_finalize", AdminSeedOrgFinalizeReducer),
   __reducerSchema("admin_seed_org_remove", AdminSeedOrgRemoveReducer),
+  __reducerSchema("admin_seed_remove_marker", AdminSeedRemoveMarkerReducer),
   __reducerSchema("admin_set_birthday", AdminSetBirthdayReducer),
   __reducerSchema("admin_set_gender", AdminSetGenderReducer),
   __reducerSchema("admin_set_pro", AdminSetProReducer),

@@ -451,6 +451,7 @@ export const Organization = __t.object("Organization", {
   gender: __t.option(__t.string()),
   pictureSmall: __t.option(__t.string()),
   pictureUrl: __t.option(__t.string()),
+  seedSourceId: __t.option(__t.string()),
 });
 export type Organization = __Infer<typeof Organization>;
 
