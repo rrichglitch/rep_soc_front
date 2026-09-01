@@ -475,6 +475,13 @@ export async function fetchProfileGallery(ownerIdentityHex: string): Promise<any
   return photos;
 }
 
+// Sync peek at the fetched-gallery memo — for a component's FIRST frame only
+// (instant display on revisits). Never a correctness source: the caller still
+// invalidates + refetches on mount, so this is just the pre-RPC seed.
+export function getFetchedGallery(ownerIdentityHex: string): any[] {
+  return fetchedGallery.get(ownerIdentityHex) ?? [];
+}
+
 export async function fetchOrgProfile(orgId: bigint): Promise<any> {
   const cached = fetchedOrgs.get(orgId.toString());
   if (cached) return cached;

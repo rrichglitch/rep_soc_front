@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getGallery, deleteGalleryPhoto, uploadGalleryPhoto, type GalleryPhoto } from '../utils/spacetime';
-import { fetchProfileGallery, refreshFetchedGallery } from '../utils/clientData';
+import { fetchProfileGallery, getFetchedGallery, refreshFetchedGallery } from '../utils/clientData';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { GALLERY_MAX_PHOTOS } from '../config';
 
@@ -17,7 +17,14 @@ interface GalleryProps {
 // Instagram-style photo grid shown directly under the profile top info
 // section. Shared by individuals, orgs, own view and others' view.
 function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHex }: GalleryProps) {
-  const [photos, setPhotos] = useState<GalleryPhoto[]>(() => getGallery(ownerIdentityHex));
+  // Seed ONLY from data that belongs to this owner. getGallery reads the
+  // my_gallery view (the OWN gallery — the owner arg is ignored there), so
+  // seeding every mount with it flashed the viewer's personal photos on
+  // other people's profile pages for a frame. Others' galleries seed from
+  // the fetched memo (empty on first visit; the effect refetches anyway).
+  const [photos, setPhotos] = useState<GalleryPhoto[]>(() =>
+    isOwn ? getGallery(ownerIdentityHex) : getFetchedGallery(ownerIdentityHex)
+  );
   const [busy, setBusy] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<GalleryPhoto | null>(null);
