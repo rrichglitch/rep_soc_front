@@ -167,7 +167,8 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
                   e.stopPropagation();
                   map.closePopup(popup);
                   const hit = group.find(r => r.identity === row.dataset.identity);
-                  if (hit) openCard(hit, map, lat, lng);
+                  // Same navigation path as the profile card: straight to the profile page.
+                  if (hit) onResultClickRef.current(hit);
                 });
               });
             });
