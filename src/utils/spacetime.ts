@@ -88,23 +88,41 @@ async function subscribeAnonymous(): Promise<void> {
 
   console.log('Subscribing anonymously (no tables — everything via RPC)...');
   return new Promise((resolve, reject) => {
+    // The anon subscription carries zero rows — its only job is keeping a
+    // valid subscription on the wire. If the server is slow (e.g. maincloud
+    // under seeding load) the applied/error callbacks can take very long,
+    // which used to wedge every anon search at zero results forever.
+    // Resolve on timeout: procedure calls work over the open WS regardless.
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        console.warn('Anonymous subscription slow — proceeding without it (RPCs unaffected)');
+        resolve();
+      }
+    }, 12000);
+    const done = (fn: (...a: any[]) => void) => (...a: any[]) => {
+      if (!settled) { settled = true; clearTimeout(timer); fn(...a); }
+    };
     try {
       // The SDK rejects an EMPTY subscription array, so subscribe the
       // per-sender my_own_profile view: anon has no profile row, so this
       // transfers zero rows while keeping the WS handshake valid.
       dbConnection!.subscriptionBuilder()
-        .onApplied(() => {
+        .onApplied(done(() => {
           console.log('Anonymous subscription applied');
           resolve();
-        })
-        .onError((ctx) => {
+        }))
+        .onError(done(((ctx: any) => {
           console.error('Anonymous subscription error:', ctx.event);
           reject(new Error('Subscription failed'));
-        })
+        }) as any))
         .subscribe(['SELECT * FROM my_own_profile']);
     } catch (e) {
-      console.error('Anonymous subscription error:', e);
-      reject(e);
+      done(() => {
+        console.error('Anonymous subscription error:', e);
+        reject(e as Error);
+      })();
     }
   });
 }
