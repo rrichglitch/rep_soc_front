@@ -48,6 +48,7 @@ function buildProfileFromCache(
         profilePicture: org.pictureSmall || org.picture,
         profilePictureSmall: org.pictureSmall || '',
         profilePictureUrl: org.pictureUrl || '',
+        pictureSource: org.pictureSource || '',
         city: org.city,
         description: org.description,
         createdAt: org.createdAt,
@@ -66,6 +67,7 @@ function buildProfileFromCache(
         profilePicture: pre.picture,
         profilePictureSmall: pre.picture || '',
         profilePictureUrl: pre.fullPicture || '',
+        pictureSource: pre.pictureSource || '',
         city: pre.city,
         description: pre.description,
         createdAt: undefined,
@@ -212,6 +214,7 @@ function ProfilePage() {
             profilePicture: org.pictureSmall || org.picture,
             profilePictureSmall: org.pictureSmall || '',
             profilePictureUrl: org.pictureUrl || '',
+            pictureSource: org.pictureSource || '',
             city: org.city,
             description: org.description,
             createdAt: org.createdAt,
@@ -429,6 +432,7 @@ function ProfilePage() {
             gender: profile.gender,
           }}
           fullPicture={profile.profilePictureUrl || profile.profilePicture}
+          pictureSourceHref={profile.pictureSource}
           isOwnProfile={isOwnProfile && !isOrgView}
           isFollowing={isFollowing}
           onFollowChange={handleFollowChange}

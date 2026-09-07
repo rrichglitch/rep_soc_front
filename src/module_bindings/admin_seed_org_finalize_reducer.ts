@@ -22,5 +22,6 @@ export default {
   get gallery() {
     return __t.array(SeedGalleryPhoto);
   },
+  pictureSource: __t.option(__t.string()),
   adminSecret: __t.string(),
 };

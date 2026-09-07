@@ -16,4 +16,6 @@ export default __t.row({
   url: __t.string(),
   bytes: __t.u64(),
   createdAt: __t.timestamp().name("created_at"),
+  sourceUrl: __t.option(__t.string()).name("source_url"),
+  sourceTitle: __t.option(__t.string()).name("source_title"),
 });

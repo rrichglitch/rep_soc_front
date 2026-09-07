@@ -27,5 +27,6 @@ export default __t.row({
   gender: __t.option(__t.string()),
   pictureSmall: __t.option(__t.string()).name("picture_small"),
   pictureUrl: __t.option(__t.string()).name("picture_url"),
+  pictureSource: __t.option(__t.string()).name("picture_source"),
   seedSourceId: __t.option(__t.string()).name("seed_source_id"),
 });

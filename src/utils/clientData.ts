@@ -45,6 +45,7 @@ export interface OrgSnapshot {
   name: string;
   picture: string;
   fullPicture?: string;
+  pictureSource?: string;
   city: string;
   description: string;
   gender?: string;
@@ -175,10 +176,10 @@ export function getOrgSnapshot(orgId: bigint): OrgSnapshot | undefined {
   const mem = orgSnapshots.get(key);
   if (mem) return mem;
   const fetched = fetchedOrgs.get(key);
-  if (fetched) return { name: fetched.name, picture: fetched.pictureSmall || fetched.picture, fullPicture: fetched.pictureUrl || fetched.picture, city: fetched.city, description: fetched.description, gender: fetched.gender, hideMembers: fetched.hideMembers };
+  if (fetched) return { name: fetched.name, picture: fetched.pictureSmall || fetched.picture, fullPicture: fetched.pictureUrl || fetched.picture, pictureSource: fetched.pictureSource || '', city: fetched.city, description: fetched.description, gender: fetched.gender, hideMembers: fetched.hideMembers };
   for (const o of db.db.my_orgs.iter()) {
     if (o.orgId === orgId) {
-      return { name: o.name, picture: o.pictureSmall || o.picture, fullPicture: o.pictureUrl || o.picture, city: o.city, description: o.description, gender: o.gender, hideMembers: !!o.hideMembers };
+      return { name: o.name, picture: o.pictureSmall || o.picture, fullPicture: o.pictureUrl || o.picture, pictureSource: o.pictureSource || '', city: o.city, description: o.description, gender: o.gender, hideMembers: !!o.hideMembers };
     }
   }
   return undefined;

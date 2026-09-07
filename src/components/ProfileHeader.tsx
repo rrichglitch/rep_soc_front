@@ -20,6 +20,8 @@ interface ProfileHeaderProps {
   profile: UserProfile;
   /** Full-size (S3 URL) — clicking the pic zooms into this. */
   fullPicture?: string;
+  /** Attribution page for web-sourced (seeded org) pictures. */
+  pictureSourceHref?: string;
   isOwnProfile: boolean;
   isFollowing: boolean;
   onFollowChange: (following: boolean) => void;
@@ -39,6 +41,7 @@ interface ProfileHeaderProps {
 function ProfileHeader({
   profile,
   fullPicture,
+  pictureSourceHref,
   isOwnProfile,
   isFollowing,
   onFollowChange,
@@ -171,7 +174,7 @@ function ProfileHeader({
         )}
       </div>
 
-      {zoom && <PictureZoom src={zoom} name={profile.full_name} onClose={() => setZoom(null)} />}
+      {zoom && <PictureZoom src={zoom} name={profile.full_name} sourceHref={pictureSourceHref} onClose={() => setZoom(null)} />}
 
       <style>{`
         .profile-header {

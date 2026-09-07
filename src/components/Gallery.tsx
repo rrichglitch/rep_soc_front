@@ -171,7 +171,17 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
       {lightbox && (
         <div className="gallery-lightbox" onClick={() => setLightbox(null)}>
           <div className="gallery-lightbox-content" onClick={(e) => e.stopPropagation()}>
-            <img src={lightbox.url} alt="Gallery photo" className="gallery-lightbox-img" />
+            <img
+              src={lightbox.url}
+              alt="Gallery photo"
+              className={`gallery-lightbox-img ${lightbox.sourceUrl ? 'src-linked' : ''}`}
+              onClick={lightbox.sourceUrl ? () => window.open(lightbox.sourceUrl!, '_blank', 'noopener') : undefined}
+            />
+            {lightbox.sourceUrl && (
+              <a className="gallery-lightbox-source" href={lightbox.sourceUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                View original source ↗
+              </a>
+            )}
             <div className="gallery-lightbox-bar">
               <button onClick={() => setLightbox(null)} className="gallery-lb-close">Close</button>
               {isOwn && (
@@ -253,6 +263,12 @@ function Gallery({ ownerIdentityHex, isOwn, actingAsOrgId, actingAsOrgIdentityHe
         }
         .gallery-lightbox-img {
           max-width: 100%; max-height: 84vh; border-radius: 8px; object-fit: contain;
+          cursor: default;
+        }
+        .gallery-lightbox-img.src-linked { cursor: pointer; }
+        .gallery-lightbox-source {
+          color: #9ec5ff; font-size: 13px; text-decoration: none;
+          background: rgba(255,255,255,0.08); padding: 5px 12px; border-radius: 14px;
         }
         .gallery-lightbox-bar { display: flex; gap: 10px; }
         .gallery-lb-close, .gallery-lb-del {

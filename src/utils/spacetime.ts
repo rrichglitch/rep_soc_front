@@ -586,6 +586,8 @@ export async function callProfileGallery(ownerIdentityHex: string): Promise<any[
       url: g.url,
       bytes: g.bytes,
       createdAt: new Date(Number(g.createdAtMicros) / 1000),
+      sourceUrl: g.sourceUrl ?? undefined,
+      sourceTitle: g.sourceTitle ?? undefined,
     }));
   } catch (e) {
     console.error('Error fetching profile gallery:', e);
@@ -604,6 +606,7 @@ export async function callOrgProfile(orgId: bigint): Promise<any | null> {
       picture: r.pictureSmall || r.picture,
       pictureSmall: r.pictureSmall,
       pictureUrl: r.pictureUrl,
+      pictureSource: r.pictureSource,
       city: r.city,
       description: r.description,
       createdAt: new Date(Number(r.createdAtMicros) / 1000),
@@ -939,6 +942,7 @@ export function getOrganizationById(orgId: bigint) {
         picture: o.picture,
         pictureSmall: o.pictureSmall,
         pictureUrl: o.pictureUrl,
+        pictureSource: o.pictureSource,
         city: o.city,
         description: o.description,
         createdAt: o.createdAt.toDate(),
@@ -1286,6 +1290,8 @@ export interface GalleryPhoto {
   url: string;
   bytes: number;
   createdAt: Date;
+  sourceUrl?: string;   // attribution: page the image was found on (web-sourced seeds)
+  sourceTitle?: string;
 }
 
 // MY gallery photos from the my_gallery view (sync). Other users' galleries
@@ -1300,6 +1306,8 @@ export function getGallery(_ownerIdentity: string): GalleryPhoto[] {
       url: g.url,
       bytes: Number(g.bytes),
       createdAt: g.createdAt.toDate(),
+      sourceUrl: g.sourceUrl ?? undefined,
+      sourceTitle: g.sourceTitle ?? undefined,
     });
   }
   return photos.sort((a, b) => (a.createdAt.getTime() - b.createdAt.getTime()));

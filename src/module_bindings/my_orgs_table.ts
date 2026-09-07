@@ -16,6 +16,7 @@ export default __t.row({
   picture: __t.string(),
   pictureSmall: __t.option(__t.string()).name("picture_small"),
   pictureUrl: __t.option(__t.string()).name("picture_url"),
+  pictureSource: __t.option(__t.string()).name("picture_source"),
   city: __t.string(),
   description: __t.string(),
   gender: __t.option(__t.string()),

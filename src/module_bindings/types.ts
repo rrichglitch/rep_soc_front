@@ -110,6 +110,8 @@ export const GalleryPhoto = __t.object("GalleryPhoto", {
   url: __t.string(),
   bytes: __t.u64(),
   createdAt: __t.timestamp(),
+  sourceUrl: __t.option(__t.string()),
+  sourceTitle: __t.option(__t.string()),
 });
 export type GalleryPhoto = __Infer<typeof GalleryPhoto>;
 
@@ -119,6 +121,8 @@ export const GalleryResultItem = __t.object("GalleryResultItem", {
   url: __t.string(),
   bytes: __t.u64(),
   createdAtMicros: __t.u64(),
+  sourceUrl: __t.option(__t.string()),
+  sourceTitle: __t.option(__t.string()),
 });
 export type GalleryResultItem = __Infer<typeof GalleryResultItem>;
 
@@ -141,6 +145,7 @@ export const GetOrgProfileResult = __t.object("GetOrgProfileResult", {
   picture: __t.option(__t.string()),
   pictureSmall: __t.option(__t.string()),
   pictureUrl: __t.option(__t.string()),
+  pictureSource: __t.option(__t.string()),
   city: __t.option(__t.string()),
   description: __t.option(__t.string()),
   createdAtMicros: __t.option(__t.u64()),
@@ -246,6 +251,8 @@ export const MyGalleryPhoto = __t.object("MyGalleryPhoto", {
   url: __t.string(),
   bytes: __t.u64(),
   createdAt: __t.timestamp(),
+  sourceUrl: __t.option(__t.string()),
+  sourceTitle: __t.option(__t.string()),
 });
 export type MyGalleryPhoto = __Infer<typeof MyGalleryPhoto>;
 
@@ -284,6 +291,7 @@ export const MyOrg = __t.object("MyOrg", {
   picture: __t.string(),
   pictureSmall: __t.option(__t.string()),
   pictureUrl: __t.option(__t.string()),
+  pictureSource: __t.option(__t.string()),
   city: __t.string(),
   description: __t.string(),
   gender: __t.option(__t.string()),
@@ -451,6 +459,7 @@ export const Organization = __t.object("Organization", {
   gender: __t.option(__t.string()),
   pictureSmall: __t.option(__t.string()),
   pictureUrl: __t.option(__t.string()),
+  pictureSource: __t.option(__t.string()),
   seedSourceId: __t.option(__t.string()),
 });
 export type Organization = __Infer<typeof Organization>;
@@ -675,6 +684,8 @@ export const SeedGalleryPhoto = __t.object("SeedGalleryPhoto", {
   s3Key: __t.string(),
   url: __t.string(),
   bytes: __t.u64(),
+  sourceUrl: __t.option(__t.string()),
+  sourceTitle: __t.option(__t.string()),
 });
 export type SeedGalleryPhoto = __Infer<typeof SeedGalleryPhoto>;
 

@@ -4,6 +4,7 @@ import PictureZoom from './PictureZoom';
 interface ProfileDetailsProps {
   picture: string;
   fullPicture?: string;     // full-size (S3 URL) — clicking the pic zooms into this
+  pictureSourceHref?: string; // attribution page for web-sourced (seeded org) pictures
   name: string;
   city: string;
   description: string;
@@ -24,7 +25,7 @@ interface ProfileDetailsProps {
 // truth for the top info section: picture | name, Location + Update, extra
 // children, editable description, footer. Both profile pages render exactly this.
 function ProfileDetails({
-  picture, fullPicture, name, city, description, age, gender,
+  picture, fullPicture, pictureSourceHref, name, city, description, age, gender,
   onUpdateLocation, isLocationUpdating, onSaveDescription, onSaveAgeGender,
   onPictureClick, pictureExtra, showLocationUpdate = true, children, footer,
 }: ProfileDetailsProps) {
@@ -198,7 +199,7 @@ function ProfileDetails({
         </div>
               {footer}
               </div>
-              {zoom && <PictureZoom src={zoom} name={name} onClose={() => setZoom(null)} />}
+              {zoom && <PictureZoom src={zoom} name={name} sourceHref={pictureSourceHref} onClose={() => setZoom(null)} />}
               <style>{`
                 /* ── Top info section — shared by individual AND org profiles ── */
         .profile-header { display: flex; gap: 20px; align-items: flex-start; }
