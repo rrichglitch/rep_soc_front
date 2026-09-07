@@ -283,6 +283,15 @@ function SearchPage() {
         return;
       }
 
+      // Never burn a search on a dead connection: the isConnected dep
+      // re-runs this effect the moment connect lands, so waiting is free.
+      // (Firing early used to wedge the page at "No results found" because
+      // the failed run rendered before the slow anon subscription applied.)
+      if (!isConnected) {
+        setIsLoading(true);
+        return;
+      }
+
       setIsLoading(true);
       try {
         // Server-side search via the searchProvider abstraction:
@@ -357,6 +366,20 @@ function SearchPage() {
           );
         } else if (e?.message === 'allowance_disabled') {
           setAllowanceNotice('Your ability to earn descriptive searches has been disabled.');
+        } else if (String(e?.message ?? e).includes('Not connected')) {
+          // Connection dropped mid-session (maincloud reaps idle conns):
+          // re-establish once and re-run via the tick. Bounded — a failed
+          // reconnect just leaves the empty result, no loop.
+          try {
+            const session = getOAuthSession();
+            if (session) await connectToSpacetimeDB(session.email, session.stToken);
+            else await connectToSpacetimeDB('', undefined);
+            setIsConnected(true);
+            if (!cancelled) setSearchTick((t) => t + 1);
+          } catch {
+            if (!cancelled) setIsLoading(false);
+          }
+          return;
         } else {
           console.error('Search error:', e);
         }
