@@ -6,6 +6,7 @@ import { useApp } from '../App';
 import { connectToSpacetimeDB, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
 import { fetchOrgProfile } from '../utils/clientData';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
+import { linkify } from '../utils/linkify';
 import { formatMiles } from '../utils/geo';
 
 // Local helper so the identity-resolution path keeps working without leaking
@@ -591,7 +592,7 @@ function SearchPage() {
                         {isOwn && ' (You)'}
                       </h3>
                       {result.city && <p className="result-city">{result.city}</p>}
-                      {result.description && <p className="result-desc">{result.description}</p>}
+                      {result.description && <p className="result-desc">{linkify(result.description)}</p>}
                       {result.distance !== undefined && (
                         <p className="result-distance">{formatMiles(result.distance)} away</p>
                       )}

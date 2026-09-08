@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import FollowButton from './FollowButton';
 import PictureZoom from './PictureZoom';
+import { linkify } from '../utils/linkify';
 import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
 
@@ -127,7 +128,7 @@ function ProfileHeader({
           const line = [profile.age !== undefined ? `${profile.age}` : '', profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : ''].filter(Boolean).join(' · ');
           return line ? <p className="profile-city age-line">{line}</p> : null;
         })()}
-        {profile.description && <p className="profile-description">{profile.description}</p>}
+        {profile.description && <p className="profile-description">{linkify(profile.description)}</p>}
       </div>
 
       <div className="profile-actions">

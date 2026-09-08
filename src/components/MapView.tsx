@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { linkify } from '../utils/linkify';
 
 export interface MapResult {
   type: 'person' | 'org';
@@ -286,7 +287,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
               {activeCard.result.fullName}
               {activeCard.result.type === 'org' && <span className="mpc-org-badge">Organization</span>}
             </h4>
-            {activeCard.result.description && <p className="mpc-desc">{activeCard.result.description}</p>}
+            {activeCard.result.description && <p className="mpc-desc">{linkify(activeCard.result.description)}</p>}
           </div>
         </div>
       )}
