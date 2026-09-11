@@ -57,11 +57,13 @@ import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteGalleryPhotoReducer from "./delete_gallery_photo_reducer";
 import DeleteOrganizationReducer from "./delete_organization_reducer";
+import DeleteRatingReducer from "./delete_rating_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DeliverSearchResultReducer from "./deliver_search_result_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
 import EnsureCleanupSweepReducer from "./ensure_cleanup_sweep_reducer";
 import FollowReducer from "./follow_reducer";
+import GiveRatingReducer from "./give_rating_reducer";
 import JitterOrgToApproxReducer from "./jitter_org_to_approx_reducer";
 import JitterToApproxReducer from "./jitter_to_approx_reducer";
 import ManualCreateProfileReducer from "./manual_create_profile_reducer";
@@ -101,6 +103,7 @@ import * as GetProfileByIdentityProcedure from "./get_profile_by_identity_proced
 import * as GetProfileFriendsProcedure from "./get_profile_friends_procedure";
 import * as GetProfileGalleryProcedure from "./get_profile_gallery_procedure";
 import * as GetProfileStoriesProcedure from "./get_profile_stories_procedure";
+import * as GetRatingsProcedure from "./get_ratings_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "./record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "./search_profiles_procedure";
@@ -132,6 +135,7 @@ import MyStoryRow from "./my_story_table";
 import OrgMemberRequestRow from "./org_member_request_table";
 import OrganizationRow from "./organization_table";
 import OrganizationMemberRow from "./organization_member_table";
+import RatingRow from "./rating_table";
 import SearchRequestsForBoxRow from "./search_requests_for_box_table";
 import StoryMediaRow from "./story_media_table";
 import StoryPostRow from "./story_post_table";
@@ -213,6 +217,17 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, OrganizationMemberRow),
+  rating: __table({
+    name: 'rating',
+    indexes: [
+      { accessor: 'id', name: 'rating_id_idx_btree', algorithm: 'btree', columns: [
+        'id',
+      ] },
+    ],
+    constraints: [
+      { name: 'rating_id_key', constraint: 'unique', columns: ['id'] },
+    ],
+  }, RatingRow),
   storyMedia: __table({
     name: 'story_media',
     indexes: [
@@ -402,11 +417,13 @@ const reducersSchema = __reducers(
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
   __reducerSchema("delete_gallery_photo", DeleteGalleryPhotoReducer),
   __reducerSchema("delete_organization", DeleteOrganizationReducer),
+  __reducerSchema("delete_rating", DeleteRatingReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("deliver_search_result", DeliverSearchResultReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),
   __reducerSchema("ensure_cleanup_sweep", EnsureCleanupSweepReducer),
   __reducerSchema("follow", FollowReducer),
+  __reducerSchema("give_rating", GiveRatingReducer),
   __reducerSchema("jitter_org_to_approx", JitterOrgToApproxReducer),
   __reducerSchema("jitter_to_approx", JitterToApproxReducer),
   __reducerSchema("manual_create_profile", ManualCreateProfileReducer),
@@ -448,6 +465,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("get_profile_friends", GetProfileFriendsProcedure.params, GetProfileFriendsProcedure.returnType),
   __procedureSchema("get_profile_gallery", GetProfileGalleryProcedure.params, GetProfileGalleryProcedure.returnType),
   __procedureSchema("get_profile_stories", GetProfileStoriesProcedure.params, GetProfileStoriesProcedure.returnType),
+  __procedureSchema("get_ratings", GetRatingsProcedure.params, GetRatingsProcedure.returnType),
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
   __procedureSchema("record_pending_registration", RecordPendingRegistrationProcedure.params, RecordPendingRegistrationProcedure.returnType),
   __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),

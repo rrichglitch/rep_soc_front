@@ -18,6 +18,7 @@ import * as GetProfileByIdentityProcedure from "../get_profile_by_identity_proce
 import * as GetProfileFriendsProcedure from "../get_profile_friends_procedure";
 import * as GetProfileGalleryProcedure from "../get_profile_gallery_procedure";
 import * as GetProfileStoriesProcedure from "../get_profile_stories_procedure";
+import * as GetRatingsProcedure from "../get_ratings_procedure";
 import * as OauthClaimProfileProcedure from "../oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "../record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "../search_profiles_procedure";
@@ -48,6 +49,8 @@ export type GetProfileGalleryArgs = __Infer<typeof GetProfileGalleryProcedure.pa
 export type GetProfileGalleryResult = __Infer<typeof GetProfileGalleryProcedure.returnType>;
 export type GetProfileStoriesArgs = __Infer<typeof GetProfileStoriesProcedure.params>;
 export type GetProfileStoriesResult = __Infer<typeof GetProfileStoriesProcedure.returnType>;
+export type GetRatingsArgs = __Infer<typeof GetRatingsProcedure.params>;
+export type GetRatingsResult = __Infer<typeof GetRatingsProcedure.returnType>;
 export type OauthClaimProfileArgs = __Infer<typeof OauthClaimProfileProcedure.params>;
 export type OauthClaimProfileResult = __Infer<typeof OauthClaimProfileProcedure.returnType>;
 export type RecordPendingRegistrationArgs = __Infer<typeof RecordPendingRegistrationProcedure.params>;

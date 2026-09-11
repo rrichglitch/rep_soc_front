@@ -180,6 +180,15 @@ export const GetProfileStoriesResult = __t.object("GetProfileStoriesResult", {
 });
 export type GetProfileStoriesResult = __Infer<typeof GetProfileStoriesResult>;
 
+export const GetRatingsResult = __t.object("GetRatingsResult", {
+  count: __t.u64(),
+  average: __t.f64(),
+  get ratings() {
+    return __t.array(RatingItem);
+  },
+});
+export type GetRatingsResult = __Infer<typeof GetRatingsResult>;
+
 export const LastPost = __t.object("LastPost", {
   posterIdentity: __t.identity(),
   profileOwnerIdentity: __t.identity(),
@@ -600,6 +609,25 @@ export const PushSubscription = __t.object("PushSubscription", {
   createdAt: __t.timestamp(),
 });
 export type PushSubscription = __Infer<typeof PushSubscription>;
+
+export const Rating = __t.object("Rating", {
+  id: __t.u64(),
+  targetIdentity: __t.identity(),
+  raterIdentity: __t.identity(),
+  stars: __t.u8(),
+  text: __t.string(),
+  createdAt: __t.timestamp(),
+  updatedAt: __t.timestamp(),
+});
+export type Rating = __Infer<typeof Rating>;
+
+export const RatingItem = __t.object("RatingItem", {
+  raterIdentityHex: __t.string(),
+  stars: __t.u8(),
+  text: __t.string(),
+  createdAtMicros: __t.u64(),
+});
+export type RatingItem = __Infer<typeof RatingItem>;
 
 export const RecordPendingRegistrationResult = __t.object("RecordPendingRegistrationResult", {
   success: __t.bool(),

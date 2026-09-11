@@ -6,6 +6,7 @@ import ProfileHeader from '../components/ProfileHeader';
 import ProfileTabs from '../components/ProfileTabs';
 import FriendsList from '../components/FriendsList';
 import Gallery from '../components/Gallery';
+import Ratings from '../components/Ratings';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
@@ -450,6 +451,8 @@ function ProfilePage() {
           ownerIdentityHex={isOrgView ? orgIdentityHex : profileIdentity!}
           isOwn={!isOrgView && isOwnProfile}
         />
+
+        {isOrgView && <Ratings orgIdentityHex={orgIdentityHex} />}
 
         <ProfileTabs
           tabs={[
