@@ -78,7 +78,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
 
   return (
     <div>
-      <span className="org-badge">Organization</span> {average.toFixed(1)}{' '}
+      <span className="org-badge" style={{ marginRight: 12 }}>Organization</span> {average.toFixed(1)}{' '}
       {[1, 2, 3, 4, 5].map((n) => (
         <span
           key={n}
