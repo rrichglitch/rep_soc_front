@@ -16,6 +16,7 @@ import {
 } from '../utils/searchHistory';
 
 import MapView from '../components/MapView';
+import { OrgRatingNumber } from '../components/Ratings';
 import SwipeView from '../components/SwipeView';
 import ProfileTabs from '../components/ProfileTabs';
 import TopBar from '../components/TopBar';
@@ -588,7 +589,12 @@ function SearchPage() {
                     <div className="result-info">
                       <h3 className="result-name">
                         {result.fullName}
-                        {result.type === 'org' && <span className="result-type-badge">Organization</span>}
+                        {result.type === 'org' && (
+                          <>
+                            <span className="result-type-badge">Org</span>
+                            {result.orgId !== undefined && <OrgRatingNumber orgId={result.orgId} className="result-rating" />}
+                          </>
+                        )}
                         {isOwn && ' (You)'}
                       </h3>
                       {result.city && <p className="result-city">{result.city}</p>}
@@ -873,6 +879,7 @@ function SearchPage() {
         .nearby-toggle:hover { background: #667eea; color: white; }
         .nearby-toggle.active { background: #667eea; color: white; }
         .result-type-badge { margin-left: 8px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
+        .result-rating { color: #d97706; font-size: 13px; vertical-align: middle; }
         .result-distance { margin: 4px 0 0; color: #667eea; font-size: 13px; font-weight: 600; }
         .results-count {
           color: #666;

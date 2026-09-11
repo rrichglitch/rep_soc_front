@@ -78,7 +78,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
 
   return (
     <div>
-      <span className="org-badge" style={{ marginRight: 12 }}>Organization</span> {average.toFixed(1)}{' '}
+      <span className="org-badge" style={{ marginRight: 12 }}>Org</span> {average.toFixed(1)}{' '}
       {[1, 2, 3, 4, 5].map((n) => (
         <span
           key={n}
@@ -96,3 +96,25 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
 }
 
 export default Ratings;
+
+// Gold average for badges on cards (list, swipe, map). Renders nothing until
+// votes exist — unrated orgs show just the badge.
+export function OrgRatingNumber({ orgId, className }: { orgId: bigint | number; className?: string }) {
+  const [avg, setAvg] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const hex = '4f' + BigInt(orgId).toString(16).padStart(62, '0');
+    getRatings(hex).then((s) => {
+      if (alive && s.count > 0) setAvg(s.average.toFixed(1));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [orgId]);
+  if (avg === null) return null;
+  return (
+    <span className={className} style={{ marginLeft: 6, fontWeight: 700 }}>
+      {avg}
+    </span>
+  );
+}

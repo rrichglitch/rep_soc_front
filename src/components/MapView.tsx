@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { linkify } from '../utils/linkify';
-import { getRatings } from '../utils/spacetime';
+import { OrgRatingNumber } from './Ratings';
 
 export interface MapResult {
   type: 'person' | 'org';
@@ -28,23 +28,6 @@ const CELL_PX = 44;
 // HTML-escape user content interpolated into popup/divIcon strings
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-
-// Org average rating for the hover card (shown only once votes exist).
-function OrgCardRating({ orgId }: { orgId: bigint }) {
-  const [avg, setAvg] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const hex = '4f' + orgId.toString(16).padStart(62, '0');
-    getRatings(hex).then((s) => {
-      if (alive && s.count > 0) setAvg(s.average.toFixed(1));
-    });
-    return () => {
-      alive = false;
-    };
-  }, [orgId]);
-  if (avg === null) return null;
-  return <span className="mpc-rating">{avg}</span>;
-}
 
 function MapView({ results, center, onResultClick }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -306,7 +289,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
               {activeCard.result.type === 'org' && (
                 <>
                   <span className="mpc-org-badge">Org</span>{' '}
-                  {activeCard.result.orgId !== undefined && <OrgCardRating orgId={activeCard.result.orgId} />}
+                  {activeCard.result.orgId !== undefined && <OrgRatingNumber orgId={activeCard.result.orgId} className="mpc-rating" />}
                 </>
               )}
             </h4>

@@ -4,6 +4,7 @@ import {
   checkIsFollowing, followUser, sendFriendRequest, getFriendRequestStatus, checkIsFriend,
   orgAccountIdentityHex, getDbConnection,
 } from '../utils/spacetime';
+import { OrgRatingNumber } from './Ratings';
 
 export interface SwipeResult {
   type: 'person' | 'org';
@@ -337,7 +338,12 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
             <div className="swipe-info" ref={i === index ? infoRef : undefined} style={{ minHeight: '25%' }}>
               <h2 className="swipe-name">
                 {r.fullName}
-                {r.type === 'org' && <span className="swipe-org-badge">Organization</span>}
+                {r.type === 'org' && (
+                  <>
+                    <span className="swipe-org-badge">Org</span>
+                    {r.orgId !== undefined && <OrgRatingNumber orgId={r.orgId} className="swipe-rating" />}
+                  </>
+                )}
               </h2>
               {r.city && <p className="swipe-city">{r.city}</p>}
               <div
@@ -398,6 +404,7 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
           display: inline-block; margin-left: 8px; padding: 2px 10px; font-size: 11px; font-weight: 600;
           background: rgba(102,126,234,0.9); border-radius: 20px; vertical-align: middle;
         }
+        .swipe-rating { color: #fbbf24; font-size: 15px; vertical-align: middle; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
         .swipe-city { margin: 0 0 8px; font-size: 14px; color: rgba(255,255,255,0.85); }
         .swipe-desc {
           max-height: 30vh; overflow-y: auto; font-size: 14px; line-height: 1.5; color: rgba(255,255,255,0.92);
