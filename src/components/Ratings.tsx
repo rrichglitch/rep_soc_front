@@ -40,6 +40,7 @@ function Star({ userFill, avgFill, size }: { userFill: number; avgFill: number; 
 // (re-voting overwrites). No text, no deletion — a vote is a vote.
 function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
   const [average, setAverage] = useState(0);
+  const [count, setCount] = useState(0);
   const [mine, setMine] = useState(0);
   const [busy, setBusy] = useState(false);
   const ownHex = getOAuthSession()?.identityHex ?? '';
@@ -50,6 +51,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
       const s = await getRatings(orgIdentityHex);
       if (!alive) return;
       setAverage(s.average);
+      setCount(s.count);
       setMine(s.ratings.find((r) => r.raterIdentityHex === ownHex)?.stars ?? 0);
     };
     load();
@@ -67,6 +69,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
       await giveRating(orgIdentityHex, n);
       const s = await getRatings(orgIdentityHex);
       setAverage(s.average);
+      setCount(s.count);
       setMine(s.ratings.find((r) => r.raterIdentityHex === ownHex)?.stars ?? n);
     } finally {
       setBusy(false);
@@ -75,6 +78,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
 
   return (
     <div>
+      <span className="org-badge">Organization</span> {average.toFixed(1)}{' '}
       {[1, 2, 3, 4, 5].map((n) => (
         <span
           key={n}
@@ -86,7 +90,7 @@ function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
           <Star userFill={mine >= n ? 1 : 0} avgFill={average - (n - 1)} size={22} />
         </span>
       ))}{' '}
-      ({average.toFixed(1)})
+      ({count})
     </div>
   );
 }

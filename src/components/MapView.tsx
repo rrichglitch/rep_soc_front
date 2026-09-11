@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { linkify } from '../utils/linkify';
+import { getRatings } from '../utils/spacetime';
 
 export interface MapResult {
   type: 'person' | 'org';
@@ -27,6 +28,23 @@ const CELL_PX = 44;
 // HTML-escape user content interpolated into popup/divIcon strings
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+// Org average rating for the hover card (shown only once votes exist).
+function OrgCardRating({ orgId }: { orgId: bigint }) {
+  const [avg, setAvg] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const hex = '4f' + orgId.toString(16).padStart(62, '0');
+    getRatings(hex).then((s) => {
+      if (alive && s.count > 0) setAvg(s.average.toFixed(1));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [orgId]);
+  if (avg === null) return null;
+  return <span className="mpc-rating">{avg}</span>;
+}
 
 function MapView({ results, center, onResultClick }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -155,7 +173,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
                         (r.profilePicture
                           ? `<img class="mcp-row-pic" src="${esc(r.profilePicture)}" alt="" />`
                           : `<div class="mcp-row-pic mcp-row-pic-empty"></div>`) +
-                        `<div class="mcp-row-name">${esc(r.fullName)}${r.type === 'org' ? '<span class="mcp-row-org">Organization</span>' : ''}</div>` +
+                        `<div class="mcp-row-name">${esc(r.fullName)}${r.type === 'org' ? '<span class="mcp-row-org">Org</span>' : ''}</div>` +
                         `</div>`
                     )
                     .join('')
@@ -285,7 +303,12 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           <div className="mpc-info">
             <h4 className="mpc-name">
               {activeCard.result.fullName}
-              {activeCard.result.type === 'org' && <span className="mpc-org-badge">Organization</span>}
+              {activeCard.result.type === 'org' && (
+                <>
+                  <span className="mpc-org-badge">Org</span>{' '}
+                  {activeCard.result.orgId !== undefined && <OrgCardRating orgId={activeCard.result.orgId} />}
+                </>
+              )}
             </h4>
             {activeCard.result.description && <p className="mpc-desc">{linkify(activeCard.result.description)}</p>}
           </div>
@@ -357,6 +380,7 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
         .mpc-info { flex: 1; min-width: 0; }
         .mpc-name { margin: 0 0 6px; font-size: 20px; font-weight: 700; color: #333; }
         .mpc-org-badge { margin-left: 6px; padding: 2px 8px; background: #eef2ff; color: #3730a3; border-radius: 10px; font-size: 11px; font-weight: 600; vertical-align: middle; }
+        .mpc-rating { margin-left: 6px; font-size: 13px; font-weight: 700; color: #d97706; vertical-align: middle; }
         .mpc-desc {
           margin: 0; font-size: 14px; color: #666; line-height: 1.4;
           display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;

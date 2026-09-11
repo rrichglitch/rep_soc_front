@@ -122,7 +122,6 @@ function ProfileHeader({
       <div className="profile-info">
         <div className="profile-name-row">
           <h2 className="profile-name">{profile.full_name}</h2>
-          {isOrgProfile && <span className="org-badge">Organization</span>}
         </div>
         {isOrgProfile && <Ratings orgIdentityHex={profile.identity} />}
         {profile.city && <p className="profile-city">{profile.city}</p>}
