@@ -29,12 +29,12 @@ export default function SafeImg({
 
   if (!src || dead) return <>{placeholder}</>;
 
-  // Cache-bust remote retries so a poisoned cache entry isn't re-read;
-  // data-URL thumbnails are just re-set.
-  const effSrc =
-    attempt > 0 && !src.startsWith('data:')
-      ? `${src}${src.includes('?') ? '&' : '?'}r=${attempt}`
-      : src;
+  // Retry the SAME url so the browser revalidates its cache (cheap 304)
+  // instead of re-downloading. NOTE: no cache-busting query param — during
+  // a 429 storm every retry must stay conditional, or retries multiply the
+  // very traffic the server is shedding (that's what turned a few transient
+  // mobile failures into hundreds of rejections).
+  const effSrc = src;
 
   return (
     <img
