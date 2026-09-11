@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 
-// <img> with lazy loading + bounded retry. Search cards fire up to 150 image
-// loads at once; mobile browsers fail a random subset under that pressure,
-// and with no handler the failures stuck until refresh. Retry heals them.
+// <img> with bounded retry. Search cards fire up to 150 image loads at once
+// and mobile browsers fail a random subset under that pressure; retry heals
+// them. NOTE: no loading="lazy" — lazy below-fold cards render as empty
+// space, which reads as broken images. The relay serves 10KB thumbs in
+// ~80ms, so eager is cheap and correct.
 export default function SafeImg({
   src,
   alt,
@@ -39,7 +41,6 @@ export default function SafeImg({
       src={effSrc}
       alt={alt}
       className={className}
-      loading="lazy"
       decoding="async"
       draggable={false}
       onError={() => {
