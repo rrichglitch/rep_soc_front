@@ -72,8 +72,10 @@ import RecordProSubscriptionReducer from "./record_pro_subscription_reducer";
 import RefreshFeedReducer from "./refresh_feed_reducer";
 import RegisterPushSubscriptionReducer from "./register_push_subscription_reducer";
 import RemoveOrgMemberReducer from "./remove_org_member_reducer";
+import RequestOrgClaimReducer from "./request_org_claim_reducer";
 import RequestSemanticSearchReducer from "./request_semantic_search_reducer";
 import ResolveNotificationReducer from "./resolve_notification_reducer";
+import ResolveOrgClaimReducer from "./resolve_org_claim_reducer";
 import SendDirectMessageReducer from "./send_direct_message_reducer";
 import SendFriendRequestReducer from "./send_friend_request_reducer";
 import SendOrgMemberRequestReducer from "./send_org_member_request_reducer";
@@ -122,6 +124,7 @@ import MyGalleryRow from "./my_gallery_table";
 import MyMessagesRow from "./my_messages_table";
 import MyNotificationsRow from "./my_notifications_table";
 import MyOrgClaimFeeRow from "./my_org_claim_fee_table";
+import MyOrgClaimsRow from "./my_org_claims_table";
 import MyOrgMembersRow from "./my_org_members_table";
 import MyOrgRequestsRow from "./my_org_requests_table";
 import MyOrgsRow from "./my_orgs_table";
@@ -319,6 +322,13 @@ const tablesSchema = __schema({
     constraints: [
     ],
   }, MyOrgClaimFeeRow),
+  myOrgClaims: __table({
+    name: 'my_org_claims',
+    indexes: [
+    ],
+    constraints: [
+    ],
+  }, MyOrgClaimsRow),
   myOrgMembers: __table({
     name: 'my_org_members',
     indexes: [
@@ -431,8 +441,10 @@ const reducersSchema = __reducers(
   __reducerSchema("refresh_feed", RefreshFeedReducer),
   __reducerSchema("register_push_subscription", RegisterPushSubscriptionReducer),
   __reducerSchema("remove_org_member", RemoveOrgMemberReducer),
+  __reducerSchema("request_org_claim", RequestOrgClaimReducer),
   __reducerSchema("request_semantic_search", RequestSemanticSearchReducer),
   __reducerSchema("resolve_notification", ResolveNotificationReducer),
+  __reducerSchema("resolve_org_claim", ResolveOrgClaimReducer),
   __reducerSchema("send_direct_message", SendDirectMessageReducer),
   __reducerSchema("send_friend_request", SendFriendRequestReducer),
   __reducerSchema("send_org_member_request", SendOrgMemberRequestReducer),
@@ -503,6 +515,8 @@ type __SchemaWithTableAccessorAliases = Omit<typeof tablesSchema.schemaType, "ta
     readonly "my_notifications": Omit<typeof tablesSchema.schemaType.tables["myNotifications"], "accessorName"> & { readonly accessorName: "my_notifications" };
     /** @deprecated Use `myOrgClaimFee` instead. This alias will be removed in the next major version. */
     readonly "my_org_claim_fee": Omit<typeof tablesSchema.schemaType.tables["myOrgClaimFee"], "accessorName"> & { readonly accessorName: "my_org_claim_fee" };
+    /** @deprecated Use `myOrgClaims` instead. This alias will be removed in the next major version. */
+    readonly "my_org_claims": Omit<typeof tablesSchema.schemaType.tables["myOrgClaims"], "accessorName"> & { readonly accessorName: "my_org_claims" };
     /** @deprecated Use `myOrgMembers` instead. This alias will be removed in the next major version. */
     readonly "my_org_members": Omit<typeof tablesSchema.schemaType.tables["myOrgMembers"], "accessorName"> & { readonly accessorName: "my_org_members" };
     /** @deprecated Use `myOrgRequests` instead. This alias will be removed in the next major version. */
@@ -556,6 +570,7 @@ const tableAccessorAliases = {
   "my_messages": "myMessages",
   "my_notifications": "myNotifications",
   "my_org_claim_fee": "myOrgClaimFee",
+  "my_org_claims": "myOrgClaims",
   "my_org_members": "myOrgMembers",
   "my_org_requests": "myOrgRequests",
   "my_orgs": "myOrgs",
@@ -616,6 +631,8 @@ export type DbView = __DbViewBase & {
   readonly "my_notifications": __DbViewBase["myNotifications"];
   /** @deprecated Use `myOrgClaimFee` instead. This alias will be removed in the next major version. */
   readonly "my_org_claim_fee": __DbViewBase["myOrgClaimFee"];
+  /** @deprecated Use `myOrgClaims` instead. This alias will be removed in the next major version. */
+  readonly "my_org_claims": __DbViewBase["myOrgClaims"];
   /** @deprecated Use `myOrgMembers` instead. This alias will be removed in the next major version. */
   readonly "my_org_members": __DbViewBase["myOrgMembers"];
   /** @deprecated Use `myOrgRequests` instead. This alias will be removed in the next major version. */
@@ -670,6 +687,8 @@ export type Tables = __TablesBase & {
   readonly "my_notifications": __TablesBase["myNotifications"];
   /** @deprecated Use `myOrgClaimFee` instead. This alias will be removed in the next major version. */
   readonly "my_org_claim_fee": __TablesBase["myOrgClaimFee"];
+  /** @deprecated Use `myOrgClaims` instead. This alias will be removed in the next major version. */
+  readonly "my_org_claims": __TablesBase["myOrgClaims"];
   /** @deprecated Use `myOrgMembers` instead. This alias will be removed in the next major version. */
   readonly "my_org_members": __TablesBase["myOrgMembers"];
   /** @deprecated Use `myOrgRequests` instead. This alias will be removed in the next major version. */

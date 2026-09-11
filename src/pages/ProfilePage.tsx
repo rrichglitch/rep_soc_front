@@ -9,7 +9,9 @@ import Gallery from '../components/Gallery';
 import { useOrg } from '../contexts/OrgContext';
 import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
-import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia } from '../utils/spacetime';
+import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia, getMyOrgClaimFee, getMyPendingClaimForOrg } from '../utils/spacetime';
+import { requestCheckout } from '../utils/payments';
+import { setPendingClaimOrg, fileClaimAndNotify } from '../utils/orgClaim';
 import { preloadVisitedProfile, preloadOrg, getProfileSnapshot, getOrgSnapshot, fetchOrgProfile, refreshFetchedStories } from '../utils/clientData';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
@@ -168,6 +170,9 @@ function ProfilePage() {
   const [isLeader, setIsLeader] = useState(false);
   const [isLoading, setIsLoading] = useState(() => profile === null);
   const [stories, setStories] = useState<StoryPost[]>([]);
+  const [claiming, setClaiming] = useState(false);
+  const [claimPendingTick, setClaimPendingTick] = useState(0);
+  void claimPendingTick;
 
   const [storyContent, setStoryContent] = useState('');
   const [storyMedia, setStoryMedia] = useState<File | null>(null);
@@ -302,6 +307,49 @@ function ProfilePage() {
       alert(e.message || 'Failed to leave organization');
     }
   };
+
+  // Manual claim flow: Stripe $19.99 fee first (if not already held), then the
+  // on-chain claim + verification email, then back to /me with a verifying
+  // modal. Max 3 attempts/day is enforced server-side.
+  const ZERO_IDENTITY = '0000000000000000000000000000000000000000000000000000000000000000';
+  const isClaimableOrg = isOrgView && !!profile && (profile.leaderIdentityHex || '') === ZERO_IDENTITY
+    && !!currentIdentityHex && !isLeader;
+  const claimPending = isOrgView ? getMyPendingClaimForOrg(orgId) !== null : false;
+
+  const handleClaim = async () => {
+    if (!currentIdentityHex) {
+      navigate('/login');
+      return;
+    }
+    if (claimPending) {
+      navigate('/me?claim=verifying');
+      return;
+    }
+    setClaiming(true);
+    try {
+      const paid = getMyOrgClaimFee().length > 0;
+      if (!paid) {
+        // Park the claim, pay the one-time fee, finish filing on return.
+        setPendingClaimOrg(orgId.toString());
+        const { url } = await requestCheckout('org', currentIdentityHex, currentUserEmail() || undefined);
+        window.location.assign(url);
+        return;
+      }
+      await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
+      navigate('/me?claim=verifying');
+    } catch (e: any) {
+      alert(e?.message || 'Failed to file claim. Please try again.');
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  // Keep the pending-claim state fresh (subscription syncs every ~2s already).
+  useEffect(() => {
+    if (!isOrgView) return;
+    const t = setInterval(() => setClaimPendingTick(n => n + 1), 3000);
+    return () => clearInterval(t);
+  }, [isOrgView]);
 
   const handleMediaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -444,6 +492,26 @@ function ProfilePage() {
           isOrgLeader={isLeader}
           onLeaveOrg={handleLeave}
         />
+
+        {isClaimableOrg && (
+          <div className="claim-banner">
+            <div className="claim-banner-text">
+              <strong>This organization is unclaimed.</strong>
+              <span>
+                {claimPending
+                  ? 'Your claim is being verified — we\'ll notify you once it\'s reviewed.'
+                  : 'Claim it to become its leader. A one-time $19.99 fee applies; claims are manually verified (max 3 per day).'}
+              </span>
+            </div>
+            <button
+              onClick={handleClaim}
+              disabled={claiming}
+              className="claim-banner-btn"
+            >
+              {claiming ? 'Working…' : claimPending ? 'View status' : 'Claim this organization'}
+            </button>
+          </div>
+        )}
 
         {/* Gallery — right under the top info section, like Instagram/Facebook */}
         <Gallery
@@ -590,6 +658,43 @@ function ProfilePage() {
           text-decoration: none;
           border-radius: 8px;
         }
+
+        .claim-banner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          background: #fffbeb;
+          border: 1px solid #f59e0b;
+          border-radius: 12px;
+          padding: 14px 16px;
+          margin-bottom: 24px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .claim-banner-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          color: #333;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .claim-banner-btn {
+          flex-shrink: 0;
+          padding: 10px 22px;
+          background: #f59e0b;
+          color: white;
+          border: none;
+          border-radius: 24px;
+          font-weight: 600;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        .claim-banner-btn:hover { background: #d97706; }
+        .claim-banner-btn:disabled { opacity: 0.7; cursor: default; }
 
         .story-form {
           background: white;

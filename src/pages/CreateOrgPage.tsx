@@ -7,6 +7,8 @@ import { useApp } from '../App';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout } from '../utils/payments';
+import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify } from '../utils/orgClaim';
+import { fetchOrgProfile } from '../utils/clientData';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
 
@@ -123,8 +125,10 @@ function CreateOrgPage() {
     }
   };
 
-  // Returning from Stripe: poll for the fee row, then create the org from the
-  // pending form automatically. No pop-ups — the page state carries the flow.
+  // Returning from Stripe: poll for the fee row, then EITHER file a parked
+  // organization CLAIM (coming from an org profile's Claim button) or create
+  // the org from the pending form automatically. No pop-ups — page state
+  // carries the flow.
   useEffect(() => {
     if (!orgClaimSuccess) return;
     markCheckoutReturn();
@@ -135,6 +139,27 @@ function CreateOrgPage() {
       tries += 1;
       const paid = getMyOrgClaimFee().length > 0;
       setFeePaid(paid);
+      // Claim path first: a parked claim org id means this payment backs an
+      // ownership claim, not a new organization.
+      const pendingClaimOrgId = getPendingClaimOrg();
+      if (paid && pendingClaimOrgId) {
+        if (!alive) return;
+        try {
+          const orgId = BigInt(pendingClaimOrgId);
+          const org = await fetchOrgProfile(orgId).catch(() => null);
+          await fileClaimAndNotify(orgId, org?.name || 'this organization');
+          clearPendingClaimOrg();
+          navigate('/me?claim=verifying', { replace: true });
+        } catch (e: any) {
+          clearPendingClaimOrg();
+          if (alive) {
+            setConfirming(false);
+            alert(e?.message || 'Payment confirmed, but the claim could not be filed. Please try again from the organization profile — you will not be charged again.');
+            navigate(`/org/${pendingClaimOrgId}`, { replace: true });
+          }
+        }
+        return;
+      }
       const pending = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null') as PendingOrg | null;
       if (paid && pending && pending.name && pending.lat !== undefined) {
         if (!alive) return;

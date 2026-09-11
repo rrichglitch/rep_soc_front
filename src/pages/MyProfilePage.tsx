@@ -97,6 +97,7 @@ function MyProfilePage() {
   const [hideFriends, setHideFriends] = useState(false);
   const [isUpdatingHide, setIsUpdatingHide] = useState(false);
   const [proConfirmed, setProConfirmed] = useState(false);
+  const [showClaimVerifying, setShowClaimVerifying] = useState(false);
    
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
@@ -151,6 +152,15 @@ function MyProfilePage() {
     setTimeout(poll, 1500);
     return () => { alive = false; };
   }, [email]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('claim') !== 'verifying') return;
+    markCheckoutReturn();
+    setShowClaimVerifying(true);
+    window.history.replaceState({}, '', '/me');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (showPictureSelect) {
@@ -459,6 +469,21 @@ function MyProfilePage() {
 
       </main>
 
+      {showClaimVerifying && (
+        <div className="claim-verify-backdrop" onClick={() => setShowClaimVerifying(false)}>
+          <div className="claim-verify-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Claim being verified</h3>
+            <p>
+              Your organization claim is being verified. You'll get a notification
+              here as soon as it's been reviewed — usually within a day.
+            </p>
+            <button onClick={() => setShowClaimVerifying(false)} className="claim-verify-ok">
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {showQR && (
         <div className="qr-modal" onClick={() => setShowQR(false)}>
           <div className="qr-content" onClick={(e) => e.stopPropagation()}>
@@ -602,6 +627,12 @@ function MyProfilePage() {
         }
         .join-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
         .pro-confirm-banner { background: #ecfdf5; color: #059669; font-size: 14px; font-weight: 600; text-align: center; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .claim-verify-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 20px; }
+        .claim-verify-modal { background: white; border-radius: 12px; padding: 24px 22px; max-width: 340px; width: 100%; box-shadow: 0 8px 30px rgba(0,0,0,0.15); text-align: center; }
+        .claim-verify-modal h3 { margin: 0 0 10px; color: #222; font-size: 17px; }
+        .claim-verify-modal p { margin: 0 0 18px; color: #555; font-size: 14px; line-height: 1.5; }
+        .claim-verify-ok { padding: 9px 28px; background: #f59e0b; color: white; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .claim-verify-ok:hover { background: #d97706; }
         .upgrade-pro-btn { padding: 5px 14px; background: #f59e0b; color: white; border: none; border-radius: 16px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
         .upgrade-pro-btn:hover { background: #d97706; }
         .pro-badge { padding: 3px 10px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: filter 0.15s; }

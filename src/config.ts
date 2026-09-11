@@ -21,6 +21,12 @@ export const AUTH_RELAY_URL = import.meta.env.VITE_AUTH_RELAY_URL || 'https://au
 // Stripe payments relay — Checkout session creation + cancellation (same host)
 export const PAYMENTS_RELAY_URL = import.meta.env.VITE_PAYMENTS_RELAY_URL || 'https://auth.veri.social/payments';
 
+// Claim relay — manual organization-claim verification emails (SMTP to the
+// site owner + ACCEPT/DENY reply handling). Same host, /claims/ path.
+// SMTP credentials live in the relay's own .env (see claim-relay/.env.example)
+// and are configured on the relay box — the frontend only needs this URL.
+export const CLAIM_RELAY_URL = import.meta.env.VITE_CLAIM_RELAY_URL || 'https://auth.veri.social/claims';
+
 // Images relay — S3-backed gallery uploads/proxy (same host, /images/ path)
 export const IMAGES_RELAY_URL = import.meta.env.VITE_IMAGES_RELAY_URL || 'https://auth.veri.social/images';
 // Didit verification relay — real per-IP throttle + turnstile verification

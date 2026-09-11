@@ -268,6 +268,7 @@ async function subscribeToTables(): Promise<void> {
           'SELECT * FROM my_search_allowance',
           'SELECT * FROM my_pro_subscription',
           'SELECT * FROM my_org_claim_fee',
+          'SELECT * FROM my_org_claims',
         ]);
     } catch (e) {
       console.error('Subscription error:', e);
@@ -1446,6 +1447,52 @@ export function getMyOrgClaimFee(): any[] {
   } catch {
     return [];
   }
+}
+
+// ─── Manual organization claims (owner-verified by email) ─────────────
+
+export interface OrgClaim {
+  id: bigint;
+  orgId: bigint;
+  status: string;
+  createdAt: Date;
+  resolvedAt?: Date;
+}
+
+// The caller's own claim rows (my_org_claims view) — sync, newest last.
+export function getMyOrgClaims(): OrgClaim[] {
+  if (!dbConnection) return [];
+  try {
+    const rows: OrgClaim[] = [];
+    for (const r of (dbConnection as any).db.myOrgClaims.iter()) {
+      rows.push({
+        id: r.id,
+        orgId: r.orgId,
+        status: r.status,
+        createdAt: r.createdAt.toDate(),
+        resolvedAt: r.resolvedAt ? r.resolvedAt.toDate() : undefined,
+      });
+    }
+    return rows.sort((a, b) => (a.id < b.id ? -1 : 1));
+  } catch {
+    return [];
+  }
+}
+
+// Pending claim (if any) the caller has on a specific org.
+export function getMyPendingClaimForOrg(orgId: bigint): OrgClaim | null {
+  for (const c of getMyOrgClaims()) {
+    if (c.orgId === orgId && c.status === 'pending') return c;
+  }
+  return null;
+}
+
+// File a claim on a leaderless org. Requires the $19.99 fee paid (held, not
+// spent, until the claim is accepted). Max 3 attempts per day — enforced
+// server-side; the error message is user-facing.
+export async function requestOrgClaim(orgId: bigint): Promise<void> {
+  if (!dbConnection) throw new Error('Not connected');
+  await withSocketTimeout(dbConnection.reducers.requestOrgClaim({ orgId }), 'requestOrgClaim');
 }
 
 // ─── Gallery (S3-backed photos) ───────────────────────────────────

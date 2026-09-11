@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useOrg } from '../contexts/OrgContext';
-import { getMyOrganizations } from '../utils/spacetime';
+import { getMyOrganizations, getMyOrgClaims } from '../utils/spacetime';
 import AccountRow from './AccountRow';
 
 function OrgSection({ profileIdentity }: { profileIdentity: string }) {
@@ -10,13 +10,16 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
   const { loginAsOrg, activeOrg } = useOrg();
   // Read the local cache synchronously at mount so the list is there immediately
   const [orgs, setOrgs] = useState<any[]>(() => getMyOrganizations(profileIdentity));
+  const [claims, setClaims] = useState<any[]>(() => getMyOrgClaims());
   const [showClaimInfo, setShowClaimInfo] = useState(false);
 
   useEffect(() => {
     if (!profileIdentity) return;
     setOrgs(getMyOrganizations(profileIdentity));
+    setClaims(getMyOrgClaims());
     const interval = setInterval(() => {
       setOrgs(getMyOrganizations(profileIdentity));
+      setClaims(getMyOrgClaims());
     }, 3000);
     return () => clearInterval(interval);
   }, [profileIdentity]);
@@ -59,13 +62,45 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         <button onClick={() => setShowClaimInfo(true)} className="claim-org-btn secondary">Claim Existing Organization</button>
       </div>
 
+      {claims.filter(c => c.status === 'pending').length > 0 && (
+        <div className="pending-claims">
+          {claims.filter(c => c.status === 'pending').map(c => (
+            <button
+              key={c.id.toString()}
+              onClick={() => navigate(`/org/${c.orgId.toString()}`)}
+              className="pending-claim-row"
+            >
+              <span className="pending-dot" />
+              Claim on organization #{c.orgId.toString()} — being verified
+            </button>
+          ))}
+        </div>
+      )}
+      {claims.filter(c => c.status !== 'pending').length > 0 && (
+        <div className="pending-claims">
+          {claims.filter(c => c.status !== 'pending').slice(-3).reverse().map(c => (
+            <button
+              key={c.id.toString()}
+              onClick={() => navigate(c.status === 'accepted' ? `/org/${c.orgId.toString()}` : '/notifications')}
+              className={`pending-claim-row ${c.status}`}
+            >
+              {c.status === 'accepted'
+                ? `Claim on organization #${c.orgId.toString()} — approved ✓`
+                : `Claim on organization #${c.orgId.toString()} — not approved`}
+            </button>
+          ))}
+        </div>
+      )}
+
       {showClaimInfo && createPortal(
         <div className="claim-modal-backdrop" onClick={() => setShowClaimInfo(false)}>
           <div className="claim-modal" onClick={(e) => e.stopPropagation()}>
             <h3>Claim an Existing Organization</h3>
             <p>
               Search for organizations without a leader and tap <strong>Claim</strong> on their
-              profile to take over. Verification is coming soon.
+              profile to take over. A one-time $19.99 fee applies and each claim is
+              manually verified (max 3 claims per day) — you'll be notified here
+              once it's reviewed.
             </p>
             <div className="claim-modal-actions">
               <button onClick={() => setShowClaimInfo(false)} className="claim-modal-cancel">Cancel</button>
@@ -101,6 +136,12 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
         .claim-modal-cancel:hover { background: #e5e7eb; }
         .claim-modal-search { padding: 9px 22px; background: #667eea; color: white; border: none; border-radius: 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .claim-modal-search:hover { background: #5a6fd6; }
+        .pending-claims { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .pending-claim-row { display: flex; align-items: center; gap: 8px; background: #fffbeb; border: 1px solid #f59e0b; color: #92400e; border-radius: 10px; padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left; }
+        .pending-claim-row.accepted { background: #ecfdf5; border-color: #22c55e; color: #059669; }
+        .pending-claim-row.denied { background: #fef2f2; border-color: #e5e7eb; color: #6b7280; }
+        .pending-dot { width: 8px; height: 8px; border-radius: 50%; background: #f59e0b; flex-shrink: 0; animation: claimpulse 1.5s ease-in-out infinite; }
+        @keyframes claimpulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
       `}</style>
     </div>
   );

@@ -315,6 +315,9 @@ export type MyOrg = __Infer<typeof MyOrg>;
 export const MyOrgClaimFee = __t.object("MyOrgClaimFee", {});
 export type MyOrgClaimFee = __Infer<typeof MyOrgClaimFee>;
 
+export const MyOrgClaims = __t.object("MyOrgClaims", {});
+export type MyOrgClaims = __Infer<typeof MyOrgClaims>;
+
 export const MyOrgMember = __t.object("MyOrgMember", {
   orgId: __t.u64(),
   memberIdentity: __t.identity(),

@@ -137,6 +137,9 @@ function NotificationsPage() {
                     <span className="notif-type">{n.type.replace(/_/g, ' ')}</span>
                     <p className="notif-msg">{n.message}</p>
                     {n.fromName !== 'Someone' && <span className="notif-from">From: {n.fromName}</span>}
+                    {n.orgId !== undefined && n.orgId !== null && (
+                      <Link to={`/org/${n.orgId.toString()}`} className="notif-org-link">View organization</Link>
+                    )}
                   </div>
                 </div>
                 {n.type === 'friend_request' ? (
@@ -189,6 +192,7 @@ function NotificationsPage() {
         .notif-btn:active { filter: brightness(0.8); transform: scale(0.97); }
         .notif-btn:disabled { filter: brightness(0.75) saturate(0.7); cursor: default; transform: none; }
         .notif-from { font-size: 12px; color: #999; }
+        .notif-org-link { display: inline-block; margin-top: 4px; font-size: 12px; font-weight: 600; color: #667eea; }
         .empty { text-align: center; padding: 48px; color: #999; }
       `}</style>
     </div>
