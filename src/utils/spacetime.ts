@@ -78,6 +78,29 @@ export function sanitizeEmail(email: string): string {
   return cleanedLocal + domain;
 }
 
+// A stuck subscription must never wedge connect: resolve through after
+// SUBSCRIBE_TIMEOUT_MS (RPCs work over the open WS regardless) and let the
+// guarded procedure calls do corpse-detection downstream. NOTE: resolve, not
+// reject — killing the socket here would break slow-but-healthy subscribes
+// on poor cellular.
+const SUBSCRIBE_TIMEOUT_MS = 20000;
+async function awaitSubscription(p: Promise<void>): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      p,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => {
+          console.warn('Subscription slow — proceeding without it (RPCs unaffected)');
+          resolve(null);
+        }, SUBSCRIBE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
   // Any explicit connect cancels the "we meant to be offline" flag.
   expectDisconnect = false;
@@ -85,7 +108,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
   lastToken = token;
   // If we have a connection with the same token, reuse it
   if (dbConnection && currentToken === token && subscriptionPromise) {
-    await subscriptionPromise;
+    await awaitSubscription(subscriptionPromise);
     return dbConnection;
   }
 
@@ -135,7 +158,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
     } else {
       subscriptionPromise = subscribeToTables();
     }
-    await subscriptionPromise;
+    await awaitSubscription(subscriptionPromise);
 
     return dbConnection;
   } catch (e) {
@@ -243,6 +266,35 @@ export function getDbConnection(): DbConnection | null {
 // mobile backgrounding: onDisconnect never fired). Tear it down synchronously
 // so the next connect builds a fresh socket — connectToSpacetimeDB would
 // otherwise "reuse" the corpse. Does NOT set expectDisconnect: this death was
+// Every socket-backed call in the app funnels through here. A live server
+// answers in low seconds; an await past PROC_TIMEOUT_MS means a half-open
+// socket (mobile backgrounding kills TCP with no close frame, so the SDK's
+// onDisconnect never fires and the raw await would hang FOREVER — the
+// eternal-spinner class of bug). On timeout the corpse is buried so the next
+// connect builds fresh, and the 'Not connected' marker is thrown, which is
+// what each caller's reconnect handler keys off. No caller may await a raw
+// dbConnection.procedures/reducers call.
+const PROC_TIMEOUT_MS = 15000;
+export async function withSocketTimeout<T>(p: Promise<T>, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      p,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('socket_timeout:' + what)), PROC_TIMEOUT_MS);
+      }),
+    ]);
+  } catch (e) {
+    if (String((e as any)?.message ?? e).startsWith('socket_timeout:')) {
+      markConnectionDead();
+      throw new Error('Not connected to SpacetimeDB');
+    }
+    throw e;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 // unplanned, auto-heal stays armed. Idempotent with the onDisconnect handler.
 export function markConnectionDead() {
   try { dbConnection?.disconnect(); } catch { /* already gone */ }
@@ -270,7 +322,7 @@ export async function checkProfileExistsByEmail(email: string): Promise<boolean>
     return false;
   }
   try {
-    const r = await dbConnection.procedures.getProfileByEmail({ email });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileByEmail({ email }), 'getProfileByEmail');
     return !!r?.found;
   } catch (e) {
     console.error('Error checking profile:', e);
@@ -378,7 +430,7 @@ export async function getProfileByEmail(email: string): Promise<ProfileLookupRow
     return null;
   }
   try {
-    const r = await dbConnection.procedures.getProfileByEmail({ email });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileByEmail({ email }), 'getProfileByEmail');
     return rowFromProcedure(r);
   } catch (e) {
     console.error('Error getting profile:', e);
@@ -402,7 +454,7 @@ export async function updateProfile(
   console.log('Updating profile:', { profilePicture, profilePictureSmall, profilePictureUrl, city, description, hideFriends, gender });
   // NOTE: birthday is intentionally NOT updateable — set once at registration.
 
-  await dbConnection.reducers.updateProfile({
+  await withSocketTimeout(dbConnection.reducers.updateProfile({
     profilePicture: profilePicture ?? undefined,
     profilePictureSmall: profilePictureSmall ?? undefined,
     profilePictureUrl: profilePictureUrl ?? undefined,
@@ -410,7 +462,7 @@ export async function updateProfile(
     description: description ?? undefined,
     hideFriends: hideFriends ?? undefined,
     gender: gender ?? undefined,
-  });
+  }), 'updateProfile');
 }
 
 // Self-service disable/enable: a disabled profile is excluded from searches
@@ -419,7 +471,7 @@ export async function setProfileDisabled(disabled: boolean): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
-  await dbConnection.reducers.setProfileDisabled({ disabled });
+  await withSocketTimeout(dbConnection.reducers.setProfileDisabled({ disabled }), 'setProfileDisabled');
 }
 
 // Permanently deletes an organization (leader only) along with its members,
@@ -428,7 +480,7 @@ export async function deleteOrganization(orgId: bigint): Promise<void> {
   if (!dbConnection) {
     throw new Error('Not connected to SpaceTimeDB');
   }
-  await dbConnection.reducers.deleteOrganization({ orgId });
+  await withSocketTimeout(dbConnection.reducers.deleteOrganization({ orgId }), 'deleteOrganization');
 }
 
 export async function initiateDiditVerification(
@@ -496,7 +548,7 @@ export async function getPendingRegistration(): Promise<{
     throw new Error('Not connected to SpacetimeDB');
   }
 
-  const result = await dbConnection.procedures.getPendingRegistration({});
+  const result = await withSocketTimeout(dbConnection.procedures.getPendingRegistration({}), 'getPendingRegistration');
   console.log('getPendingRegistration result:', result);
 
   if (!result.hasPending) return null;
@@ -521,9 +573,9 @@ export async function checkDiditVerification(sessionId: string): Promise<{ fullN
 
   console.log('Calling checkDiditVerification for session:', sessionId);
 
-  const result = await dbConnection.procedures.checkDiditVerification({
+  const result = await withSocketTimeout(dbConnection.procedures.checkDiditVerification({
     sessionId,
-  });
+  }), 'checkDiditVerification');
 
   console.log('checkDiditVerification result:', result);
 
@@ -554,7 +606,7 @@ export async function createVerifiedProfile(
 
   console.log('Calling createVerifiedProfile for session:', sessionId);
 
-  const result = await dbConnection.procedures.createVerifiedProfile({
+  const result = await withSocketTimeout(dbConnection.procedures.createVerifiedProfile({
     sessionId,
     profilePicture: '',
     profilePictureSmall,
@@ -564,7 +616,7 @@ export async function createVerifiedProfile(
     fullName,
     birthday: birthday ?? '',
     gender: gender ?? '',
-  });
+  }), 'createVerifiedProfile');
 
   console.log('createVerifiedProfile result:', result);
 
@@ -579,7 +631,7 @@ export async function getProfileByIdentity(identity: string): Promise<ProfileLoo
   }
 
   try {
-    const r = await dbConnection.procedures.getProfileByIdentity({ identityHex: identity });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileByIdentity({ identityHex: identity }), 'getProfileByIdentity');
     return rowFromProcedure(r);
   } catch (e) {
     console.error('Error getting profile by identity:', e);
@@ -619,7 +671,7 @@ export function getProfileByIdentitySync(identityHex: string): ProfileLookupRow 
 export async function callProfileStories(profileIdentityHex: string): Promise<any[]> {
   if (!dbConnection) return [];
   try {
-    const r = await dbConnection.procedures.getProfileStories({ profileOwnerIdentityHex: profileIdentityHex });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileStories({ profileOwnerIdentityHex: profileIdentityHex }), 'getProfileStories');
     return (r?.stories ?? []).map((s: any) => ({
       id: s.id,
       posterIdentity: s.posterIdentityHex,
@@ -643,7 +695,7 @@ export async function callProfileStories(profileIdentityHex: string): Promise<an
 export async function callProfileFriends(identityHex: string): Promise<Array<{ identity: string; fullName: string; picture: string; city: string }>> {
   if (!dbConnection) return [];
   try {
-    const r = await dbConnection.procedures.getProfileFriends({ targetIdentityHex: identityHex });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileFriends({ targetIdentityHex: identityHex }), 'getProfileFriends');
     return (r?.friends ?? []).map((f: any) => ({
       identity: f.identityHex,
       fullName: f.fullName,
@@ -659,7 +711,7 @@ export async function callProfileFriends(identityHex: string): Promise<Array<{ i
 export async function callOrgMembers(orgId: bigint): Promise<Array<{ identity: string; fullName: string; picture: string; city: string; role: string }>> {
   if (!dbConnection) return [];
   try {
-    const r = await dbConnection.procedures.getOrgMembers({ orgId });
+    const r = await withSocketTimeout(dbConnection.procedures.getOrgMembers({ orgId }), 'getOrgMembers');
     return (r?.members ?? []).map((m: any) => ({
       identity: m.identityHex,
       fullName: m.fullName,
@@ -676,7 +728,7 @@ export async function callOrgMembers(orgId: bigint): Promise<Array<{ identity: s
 export async function callProfileGallery(ownerIdentityHex: string): Promise<any[]> {
   if (!dbConnection) return [];
   try {
-    const r = await dbConnection.procedures.getProfileGallery({ ownerIdentityHex });
+    const r = await withSocketTimeout(dbConnection.procedures.getProfileGallery({ ownerIdentityHex }), 'getProfileGallery');
     return (r?.photos ?? []).map((g: any) => ({
       id: g.id,
       s3Key: g.s3Key,
@@ -695,7 +747,7 @@ export async function callProfileGallery(ownerIdentityHex: string): Promise<any[
 export async function callOrgProfile(orgId: bigint): Promise<any | null> {
   if (!dbConnection) return null;
   try {
-    const r = await dbConnection.procedures.getOrgProfile({ orgId });
+    const r = await withSocketTimeout(dbConnection.procedures.getOrgProfile({ orgId }), 'getOrgProfile');
     if (!r?.found) return null;
     return {
       id: r.orgId,
@@ -754,11 +806,11 @@ export async function followUser(targetIdentity: string, actingAsOrgId?: bigint)
   }
 
   const identity = Identity.fromString(targetIdentity);
-  await dbConnection.reducers.follow({
+  await withSocketTimeout(dbConnection.reducers.follow({
     targetIdentity: identity,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'follow');
 }
 
 export async function unfollowUser(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
@@ -767,11 +819,11 @@ export async function unfollowUser(targetIdentity: string, actingAsOrgId?: bigin
   }
 
   const identity = Identity.fromString(targetIdentity);
-  await dbConnection.reducers.unfollow({
+  await withSocketTimeout(dbConnection.reducers.unfollow({
     targetIdentity: identity,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'unfollow');
 }
 
 export async function createStoryPost(
@@ -790,7 +842,7 @@ export async function createStoryPost(
   }
 
   const identity = Identity.fromString(profileOwnerIdentity);
-  await dbConnection.reducers.createStoryPost({
+  await withSocketTimeout(dbConnection.reducers.createStoryPost({
     profileOwnerIdentity: identity,
     content,
     mediaData,
@@ -800,7 +852,7 @@ export async function createStoryPost(
     mediaUrl,
     mediaBytes,
     mediaType,
-  });
+  }), 'createStoryPost');
 }
 
 // Local pre-check for the daily post budget (mirrors the backend gate so the
@@ -862,9 +914,9 @@ export async function deleteStoryPost(postId: bigint): Promise<void> {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  await dbConnection.reducers.deleteStoryPost({
+  await withSocketTimeout(dbConnection.reducers.deleteStoryPost({
     postId,
-  });
+  }), 'deleteStoryPost');
 }
 
 const PAGE_SIZE = 20;
@@ -890,7 +942,7 @@ export async function refreshFeed(): Promise<void> {
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  await dbConnection.reducers.refreshFeed({});
+  await withSocketTimeout(dbConnection.reducers.refreshFeed({}), 'refreshFeed');
 }
 
 export async function updateFeedScrollPosition(lastReadAt: Date): Promise<void> {
@@ -898,9 +950,9 @@ export async function updateFeedScrollPosition(lastReadAt: Date): Promise<void> 
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  await dbConnection.reducers.updateFeedScrollPosition({
+  await withSocketTimeout(dbConnection.reducers.updateFeedScrollPosition({
     lastReadAt: Timestamp.fromDate(lastReadAt),
-  });
+  }), 'updateFeedScrollPosition');
 }
 
 export function getMyFeedStories(orderOldToNew: boolean = true): FeedStory[] {
@@ -981,9 +1033,9 @@ export async function setFeedPosition(_currentIdentityHex: string, lastReadAt: D
     throw new Error('Not connected to SpaceTimeDB');
   }
 
-  await dbConnection.reducers.updateFeedScrollPosition({
+  await withSocketTimeout(dbConnection.reducers.updateFeedScrollPosition({
     lastReadAt: Timestamp.fromDate(lastReadAt),
-  });
+  }), 'updateFeedScrollPosition');
 }
 
 // ─── Organization APIs ───────────────────────────────────────────
@@ -996,14 +1048,14 @@ export async function createOrganization(
   pictureSmall?: string, pictureUrl?: string,
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.createOrganization({
+  await withSocketTimeout(dbConnection.reducers.createOrganization({
     name, picture, city, description,
     locationLat,
     locationLng,
     locationPrecision,
     pictureSmall: pictureSmall ?? undefined,
     pictureUrl: pictureUrl ?? undefined,
-  });
+  }), 'createOrganization');
 }
 
 export async function updateOrganization(
@@ -1012,14 +1064,14 @@ export async function updateOrganization(
   hideMembers?: boolean, gender?: string
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.updateOrganization({
+  await withSocketTimeout(dbConnection.reducers.updateOrganization({
     orgId, picture: picture ?? undefined, pictureSmall: pictureSmall ?? undefined,
     pictureUrl: pictureUrl ?? undefined, city: city ?? undefined, description: description ?? undefined,
     locationLat: locationLat ?? undefined,
     locationLng: locationLng ?? undefined,
     hideMembers: hideMembers ?? undefined,
     gender: gender ?? undefined,
-  });
+  }), 'updateOrganization');
 }
 
 // My organizations — the my_orgs view (per-subscriber, includes my role).
@@ -1062,91 +1114,91 @@ export function getOrganizationMembers(orgId: bigint) {
 
 export async function acceptOrgMember(requestId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.acceptOrgMember({ requestId });
+  await withSocketTimeout(dbConnection.reducers.acceptOrgMember({ requestId }), 'acceptOrgMember');
 }
 
 export async function declineOrgMember(requestId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.declineOrgMember({ requestId });
+  await withSocketTimeout(dbConnection.reducers.declineOrgMember({ requestId }), 'declineOrgMember');
 }
 
 export async function promoteToCoLeader(orgId: bigint, memberIdentity: string): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.promoteToCoLeader({
+  await withSocketTimeout(dbConnection.reducers.promoteToCoLeader({
     orgId,
     memberIdentity: Identity.fromString(memberIdentity),
-  });
+  }), 'promoteToCoLeader');
 }
 
 export async function demoteCoLeader(orgId: bigint, memberIdentity: string): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.demoteCoLeader({
+  await withSocketTimeout(dbConnection.reducers.demoteCoLeader({
     orgId,
     memberIdentity: Identity.fromString(memberIdentity),
-  });
+  }), 'demoteCoLeader');
 }
 
 export async function transferLeadership(orgId: bigint, newLeaderIdentity: string): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.transferLeadership({
+  await withSocketTimeout(dbConnection.reducers.transferLeadership({
     orgId,
     newLeaderIdentity: Identity.fromString(newLeaderIdentity),
-  });
+  }), 'transferLeadership');
 }
 
 export async function removeOrgMember(orgId: bigint, memberIdentity: string): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.removeOrgMember({
+  await withSocketTimeout(dbConnection.reducers.removeOrgMember({
     orgId,
     memberIdentity: Identity.fromString(memberIdentity),
-  });
+  }), 'removeOrgMember');
 }
 
 // ─── Friend Request APIs ──────────────────────────────────────────
 
 export async function sendFriendRequest(toIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendFriendRequest({
+  await withSocketTimeout(dbConnection.reducers.sendFriendRequest({
     toIdentity: Identity.fromString(toIdentity),
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'sendFriendRequest');
 }
 
 export async function acceptFriendRequest(requestId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.acceptFriendRequest({
+  await withSocketTimeout(dbConnection.reducers.acceptFriendRequest({
     requestId,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'acceptFriendRequest');
 }
 
 export async function declineFriendRequest(requestId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.declineFriendRequest({
+  await withSocketTimeout(dbConnection.reducers.declineFriendRequest({
     requestId,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'declineFriendRequest');
 }
 
 export async function cancelFriendRequest(toIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.cancelFriendRequest({
+  await withSocketTimeout(dbConnection.reducers.cancelFriendRequest({
     toIdentity: Identity.fromString(toIdentity),
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'cancelFriendRequest');
 }
 
 export async function unfriend(targetIdentity: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.unfriend({
+  await withSocketTimeout(dbConnection.reducers.unfriend({
     targetIdentity: Identity.fromString(targetIdentity),
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'unfriend');
 }
 
 export function checkIsFriend(_currentIdentityHex: string, otherIdentity: string): boolean {
@@ -1183,11 +1235,11 @@ export function getOrgMemberRequestStatus(orgId: bigint, _fromIdentity: string):
 
 export async function sendOrgMemberRequest(orgId: bigint, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendOrgMemberRequest({
+  await withSocketTimeout(dbConnection.reducers.sendOrgMemberRequest({
     orgId,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'sendOrgMemberRequest');
 }
 
 // Leave an organization = UNFRIEND the org's account identity (membership ≡
@@ -1202,17 +1254,17 @@ export async function leaveOrg(orgId: bigint): Promise<void> {
 
 export async function sendDirectMessage(recipientIdentity: string, content: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendDirectMessage({
+  await withSocketTimeout(dbConnection.reducers.sendDirectMessage({
     recipientIdentity: Identity.fromString(recipientIdentity),
     content,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgId !== undefined ? Identity.fromString(orgAccountIdentityHex(actingAsOrgId)) : undefined,
-  });
+  }), 'sendDirectMessage');
 }
 
 export async function sendOrgMessage(orgId: bigint, content: string, actingAsOrgId?: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.sendOrgMessage({ orgId, content, actingAsOrgId: actingAsOrgId ?? undefined });
+  await withSocketTimeout(dbConnection.reducers.sendOrgMessage({ orgId, content, actingAsOrgId: actingAsOrgId ?? undefined }), 'sendOrgMessage');
 }
 
 export function getDirectMessages(userA: string, userB: string) {
@@ -1335,35 +1387,35 @@ export function getUnreadNotificationCount(identity: string): number {
 
 export async function updateLocation(lat: number, lng: number, precision: 'off' | 'approx' | 'exact'): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.updateLocation({ lat, lng, precision });
+  await withSocketTimeout(dbConnection.reducers.updateLocation({ lat, lng, precision }), 'updateLocation');
 }
 
 // Downgrade to approximate: backend jitters the last stored precise location (no new fetch)
 export async function jitterToApprox(): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.jitterToApprox({});
+  await withSocketTimeout(dbConnection.reducers.jitterToApprox({}), 'jitterToApprox');
 }
 
 export async function updateOrgLocation(
   orgId: bigint, lat: number, lng: number, precision: 'off' | 'approx' | 'exact'
 ): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.updateOrgLocation({ orgId, lat, lng, precision });
+  await withSocketTimeout(dbConnection.reducers.updateOrgLocation({ orgId, lat, lng, precision }), 'updateOrgLocation');
 }
 
 export async function jitterOrgToApprox(orgId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.jitterOrgToApprox({ orgId });
+  await withSocketTimeout(dbConnection.reducers.jitterOrgToApprox({ orgId }), 'jitterOrgToApprox');
 }
 
 export async function resolveNotification(notificationId: bigint): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.resolveNotification({ notificationId });
+  await withSocketTimeout(dbConnection.reducers.resolveNotification({ notificationId }), 'resolveNotification');
 }
 
 export async function cancelProSubscription(): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.cancelProSubscription({});
+  await withSocketTimeout(dbConnection.reducers.cancelProSubscription({}), 'cancelProSubscription');
 }
 
 // One-time org claim fee rows for the current caller (my_org_claim_fee view).
@@ -1500,11 +1552,11 @@ export async function deleteGalleryPhoto(
     const text = await res.text().catch(() => '');
     throw new Error(text?.includes('Not your photo') ? 'You can only delete your own gallery photos' : `Could not delete photo (${res.status})`);
   }
-  await dbConnection.reducers.deleteGalleryPhoto({
+  await withSocketTimeout(dbConnection.reducers.deleteGalleryPhoto({
     photoId: photo.id,
     actingAsOrgId: actingAsOrgId ?? undefined,
     actingAsOrgIdentity: actingAsOrgIdentityHex ? Identity.fromString(actingAsOrgIdentityHex) : undefined,
-  });
+  }), 'deleteGalleryPhoto');
 }
 
 export interface OrgRating {
@@ -1523,7 +1575,7 @@ export interface RatingsSummary {
 export async function getRatings(targetIdentityHex: string): Promise<RatingsSummary> {
   if (!dbConnection) return { count: 0, average: 0, ratings: [] };
   try {
-    const r = await dbConnection.procedures.getRatings({ targetIdentityHex });
+    const r = await withSocketTimeout(dbConnection.procedures.getRatings({ targetIdentityHex }), 'getRatings');
     return {
       count: Number(r?.count ?? 0),
       average: Number(r?.average ?? 0),
@@ -1540,9 +1592,9 @@ export async function getRatings(targetIdentityHex: string): Promise<RatingsSumm
 
 export async function giveRating(targetIdentityHex: string, stars: number): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.giveRating({
+  await withSocketTimeout(dbConnection.reducers.giveRating({
     targetIdentity: Identity.fromString(targetIdentityHex),
     stars,
-  });
+  }), 'giveRating');
 }
 

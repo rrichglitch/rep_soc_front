@@ -1,5 +1,5 @@
 // OAuth relay client: claim + session helpers.
-import { getDbConnection } from './spacetime';
+import { getDbConnection, withSocketTimeout } from './spacetime';
 
 export interface OAuthClaimResult {
   success: boolean;
@@ -19,13 +19,13 @@ export async function oauthClaimProfile(
 ): Promise<OAuthClaimResult> {
   const db = getDbConnection();
   if (!db) throw new Error('Not connected to SpacetimeDB');
-  const result = await db.procedures.oauthClaimProfile({
+  const result = await withSocketTimeout(db.procedures.oauthClaimProfile({
     provider,
     oauthToken,
     sub,
     email,
     identityHex,
-  });
+  }), 'oauthClaimProfile');
   return {
     success: Boolean(result.success),
     already_owned: Boolean(result.alreadyOwned),

@@ -13,7 +13,7 @@ export async function semanticSearch(
   query: string,
   filters: import('./searchProvider').SearchFilters
 ): Promise<import('./searchProvider').SearchResult[]> {
-  const { getDbConnection } = await import('./spacetime');
+  const { getDbConnection, withSocketTimeout } = await import('./spacetime');
   const db = getDbConnection();
   if (!db) throw new Error('Not connected to SpacetimeDB');
 
@@ -84,7 +84,10 @@ export async function semanticSearch(
 
   let poll: ReturnType<typeof setInterval> | null = null;
   try {
-    await (db as any).reducers.requestSemanticSearch({ nonce, query, paramsJson: params });
+    await withSocketTimeout(
+      (db as any).reducers.requestSemanticSearch({ nonce, query, paramsJson: params }),
+      'requestSemanticSearch'
+    );
     if (!subscribed) {
       // Poll the locally-cached view until the row lands or we time out.
       const pollStart = Date.now();

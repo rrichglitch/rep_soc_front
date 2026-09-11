@@ -109,6 +109,13 @@ function SearchPage() {
   // Bumped on every explicit submit so re-running the SAME query still
   // triggers a fresh search (e.g. after changing the options).
   const [searchTick, setSearchTick] = useState(0);
+  // Dead-socket auto-retry budget: ONE reconnect+rerun per distinct search.
+  // Without the cap, a persistently-dead server loops forever (connect
+  // succeeds on a fresh socket, the call times out again, repeat) — an
+  // eternal spinner burning battery. Past budget the page stops loading and
+  // offers a manual retry instead.
+  const [connDead, setConnDead] = useState(false);
+  const healRef = useRef({ key: '', n: 0 });
   const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
   const [ageMin, setAgeMin] = useState<string>(() => localStorage.getItem('veri_ageMin') || '');
   const [ageMax, setAgeMax] = useState<string>(() => localStorage.getItem('veri_ageMax') || '');
@@ -292,6 +299,11 @@ function SearchPage() {
         setIsLoading(false);
         return;
       }
+      // New user-initiated search: fresh retry budget, clear any dead flag.
+      // (Tick-bump reruns from the auto-retry keep the same key on purpose.)
+      const searchKey = JSON.stringify([query, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations, claimableOnly, providerMode]);
+      if (healRef.current.key !== searchKey) healRef.current = { key: searchKey, n: 0 };
+      if (connDead) setConnDead(false);
 
       // Never burn a search on a dead connection: the isConnected dep
       // re-runs this effect the moment connect lands, so waiting is free.
@@ -377,9 +389,15 @@ function SearchPage() {
         } else if (e?.message === 'allowance_disabled') {
           setAllowanceNotice('Your ability to earn descriptive searches has been disabled.');
         } else if (String(e?.message ?? e).includes('Not connected')) {
-          // Connection dropped mid-session (maincloud reaps idle conns):
-          // re-establish once and re-run via the tick. Bounded — a failed
-          // reconnect just leaves the empty result, no loop.
+          // Connection dropped mid-session (backgrounded socket, idle reap):
+          // re-establish ONCE per search and re-run via the tick. A second
+          // consecutive failure means the server itself is unreachable —
+          // stop loading and offer a manual retry instead of loop-spinning.
+          if (healRef.current.n >= 1) {
+            if (!cancelled) { setIsLoading(false); setConnDead(true); }
+            return;
+          }
+          healRef.current.n += 1;
           try {
             const session = getOAuthSession();
             if (session) await connectToSpacetimeDB(session.email, session.stToken);
@@ -573,7 +591,18 @@ function SearchPage() {
         ) : results.length === 0 ? (
           query ? (
             <div className="no-results">
-              <p>No results found matching "{query}"</p>
+              {connDead ? (
+                <>
+                  <p>Connection lost — couldn't reach the server.</p>
+                  <button
+                    onClick={() => { setConnDead(false); setSearchTick((t) => t + 1); }}
+                  >
+                    Retry search
+                  </button>
+                </>
+              ) : (
+                <p>No results found matching "{query}"</p>
+              )}
             </div>
           ) : (
             <div className="no-results">

@@ -13,7 +13,7 @@
 //   free      → stdb(people) + gpu(orgs) with stdb fallback
 //   pro       → gpu(everything) with stdb fallback
 
-import { getDbConnection, markConnectionDead } from './spacetime';
+import { getDbConnection, withSocketTimeout } from './spacetime';
 import { haversineMiles } from './geo';
 import { preloadProfile, preloadOrg } from './clientData';
 
@@ -72,30 +72,15 @@ async function callStdbSearch(params: Record<string, unknown>): Promise<{
 }> {
   const db = getDbConnection();
   if (!db) throw new Error('Not connected to SpacetimeDB');
-  // Bound the call: on a half-open socket (mobile backgrounded, close frame
-  // never processed) the await below hangs FOREVER — no resolve, no reject —
-  // which wedged the page on an eternal spinner. Time out, bury the corpse
-  // so reconnect builds fresh, and throw the marker the page's
-  // reconnect-and-rerun handler keys off.
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let result: any;
-  try {
-    result = await Promise.race([
-      // @ts-expect-error — procedures map is generated without a static type for dynamic calls
-      db.procedures.searchProfiles(params),
-      new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error('search_call_timeout')), 15000);
-      }),
-    ]);
-  } catch (e) {
-    if ((e as any)?.message === 'search_call_timeout') {
-      markConnectionDead();
-      throw new Error('Not connected to SpacetimeDB');
-    }
-    throw e;
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+  // Bounded by the shared socket guard: on a half-open socket this hangs
+  // forever, which wedged the page on an eternal spinner. Timeout buries the
+  // corpse and throws the marker the page's reconnect-and-rerun handler keys
+  // off.
+  const result: any = await withSocketTimeout(
+    // @ts-expect-error — procedures map is generated without a static type for dynamic calls
+    db.procedures.searchProfiles(params),
+    'searchProfiles'
+  );
   const out: SearchResult[] = (result?.results ?? []).map((r: any) => ({
     type: r.resultType === 'org' ? ('org' as const) : ('person' as const),
     identity: r.identityHex || '',
