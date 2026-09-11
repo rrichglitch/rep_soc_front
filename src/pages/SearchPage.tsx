@@ -476,7 +476,7 @@ function SearchPage() {
             }}
             value={inputValue}
             onChange={setInputValue}
-            onOptionsClick={signedIn ? () => setShowSearchOptions((v) => !v) : undefined}
+            onOptionsClick={() => setShowSearchOptions((v) => !v)}
             onInputFocus={() => setShowSearchOptions(false)}
           />
           {showSearchOptions && (
@@ -844,6 +844,14 @@ function SearchPage() {
         }
         @media (min-width: 768px) {
           .search-options-menu { min-width: 286px; }
+        }
+        @media (max-width: 767px) {
+          /* Phone: full-width sheet under the top bar — centering a 286px
+             menu on the narrow topbar slot pushed it partly off-screen. */
+          .search-options-menu {
+            position: fixed; top: 64px; left: 12px; right: 12px;
+            transform: none; min-width: 0; max-width: none;
+          }
         }
         .search-opt {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
