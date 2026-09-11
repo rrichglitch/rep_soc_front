@@ -227,10 +227,12 @@ function SearchPage() {
     };
     init();
     // The socket can die after mount (mobile backgrounding, idle reap):
-    // mirror disconnects into the gate so the next search reconnects
-    // instead of firing into a dead connection.
+    // mirror disconnects AND reconnects into the gate. One-sided mirroring
+    // (disconnects only) wedged the page: the foreground heal buries the
+    // socket (false) then silently rebuilds it, and with the rebuild ignored
+    // the gate stayed shut — spinner on return, every later search gated too.
     const offConn = onConnectionChange((connected) => {
-      if (!connected) setIsConnected(false);
+      setIsConnected(connected);
     });
     return offConn;
   }, []);
