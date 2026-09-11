@@ -840,18 +840,10 @@ function SearchPage() {
           position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
           background: white; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
           padding: 6px; min-width: 286px; max-width: calc(100vw - 32px); z-index: 200;
-          display: flex; flex-direction: column;
+          display: flex; flex-direction: column; text-align: left;
         }
         @media (min-width: 768px) {
           .search-options-menu { min-width: 286px; }
-        }
-        @media (max-width: 767px) {
-          /* Phone: full-width sheet under the top bar — centering a 286px
-             menu on the narrow topbar slot pushed it partly off-screen. */
-          .search-options-menu {
-            position: fixed; top: 64px; left: 12px; right: 12px;
-            transform: none; min-width: 0; max-width: none;
-          }
         }
         .search-opt {
           display: flex; align-items: center; justify-content: space-between; gap: 12px;
