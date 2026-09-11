@@ -107,6 +107,10 @@ async function awaitSubscription(p: Promise<void>): Promise<void> {
   }
 }
 
+// Timestamp of the last socket OPEN, for the search gate watchdog: a
+// resolved connect that never produces an OPEN is a dead rebuild (fresh
+// socket dies in the wake-radio race) and must be retried, not trusted.
+export let lastSockOpenAt = 0;
 // Deduped connect for parked callers (the search gate): concurrent callers
 // share one in-flight build instead of stampeding the server.
 let inflightConnect: Promise<DbConnection> | null = null;
@@ -148,6 +152,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
       .onConnect((_conn, id) => {
         console.log('Connected to SpacetimeDB with identity:', id.toHexString());
         hasConnectedOnce = true;
+        lastSockOpenAt = Date.now();
         emitConn(true);
       })
       .onDisconnect(() => {

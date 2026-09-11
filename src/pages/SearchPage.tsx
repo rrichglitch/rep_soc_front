@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate, useNavigationType } from 'react-rou
 import { isSignedIn } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import { useApp } from '../App';
-import { connectToSpacetimeDB, ensureConnected, onConnectionChange, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
+import { connectToSpacetimeDB, ensureConnected, markConnectionDead, lastSockOpenAt, onConnectionChange, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
 import { fetchOrgProfile } from '../utils/clientData';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
 import { linkify } from '../utils/linkify';
@@ -116,7 +116,7 @@ function SearchPage() {
   // eternal spinner burning battery. Past budget the page stops loading and
   // offers a manual retry instead.
   const [connDead, setConnDead] = useState(false);
-  const healRef = useRef({ key: '', n: 0 });
+  const healRef = useRef({ key: '', n: 0, g: 0 });
   const [genderFilter, setGenderFilter] = useState<string>(() => localStorage.getItem('veri_genderFilter') || 'any');
   const [ageMin, setAgeMin] = useState<string>(() => localStorage.getItem('veri_ageMin') || '');
   const [ageMax, setAgeMax] = useState<string>(() => localStorage.getItem('veri_ageMax') || '');
@@ -306,7 +306,7 @@ function SearchPage() {
       // New user-initiated search: fresh retry budget, clear any dead flag.
       // (Tick-bump reruns from the auto-retry keep the same key on purpose.)
       const searchKey = JSON.stringify([query, genderFilter, ageMin, ageMax, showIndividuals, showOrganizations, claimableOnly, providerMode]);
-      if (healRef.current.key !== searchKey) healRef.current = { key: searchKey, n: 0 };
+      if (healRef.current.key !== searchKey) healRef.current = { key: searchKey, n: 0, g: 0 };
       if (connDead) setConnDead(false);
 
       // Never burn a search on a dead connection: the isConnected dep
@@ -322,7 +322,29 @@ function SearchPage() {
         // mid-session drop while visible fires no heal at all — both wedged
         // here on an eternal spinner with every later search gated too.
         ensureConnected().then(
-          () => { dbg('ensure ok (awaiting sock OPEN)'); },
+          () => {
+            dbg('ensure ok (watching for sock OPEN)');
+            // A resolved connect that never produces an OPEN is a dead
+            // rebuild — the fresh socket died in the wake-radio race (seen
+            // in the field: ensure ok, then SHUTs, no OPEN, parked forever).
+            // Watchdog: no OPEN in 10s → bury, one auto re-ensure, then the
+            // manual-retry UI. The spinner can never park here again.
+            const knownOpen = lastSockOpenAt;
+            setTimeout(() => {
+              if (cancelled || lastSockOpenAt !== knownOpen) return;
+              dbg('watchdog: NO OPEN — bury + re-ensure');
+              markConnectionDead();
+              if (cancelled) return;
+              if (healRef.current.g < 1) {
+                healRef.current.g += 1;
+                setSearchTick((t) => t + 1);
+              } else {
+                dbg('watchdog BUDGET OUT — connDead UI');
+                setIsLoading(false);
+                setConnDead(true);
+              }
+            }, 10000);
+          },
           () => { dbg('ensure FAIL'); if (!cancelled) { setIsLoading(false); setConnDead(true); } }
         );
         return;
