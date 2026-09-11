@@ -37,13 +37,32 @@ function emitConn(connected: boolean) {
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  const heal = () => {
-    if (document.visibilityState !== 'visible') return;
-    if (!hasConnectedOnce || expectDisconnect || dbConnection) return;
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') { hiddenAt = Date.now(); return; }
+    heal(hiddenAt);
+  });
+  window.addEventListener('online', () => heal(0));
+}
+
+// declared below — hoisted function.
+function heal(hiddenSince: number) {
+  if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+  if (!hasConnectedOnce || expectDisconnect) return;
+  if (!dbConnection) {
     connectToSpacetimeDB(lastEmail, lastToken).catch(() => { /* next heal retries */ });
-  };
-  document.addEventListener('visibilitychange', heal);
-  window.addEventListener('online', heal);
+    return;
+  }
+  // A non-null connection after a long background can't be trusted: mobile
+  // browsers freeze the tab and the TCP socket dies silently, so the SDK's
+  // onDisconnect never fires and procedure calls hang forever on the corpse
+  // (eternal spinner). After 45s hidden, bury it and silently rebuild — cost
+  // on a healthy socket is one invisible resubscribe; the search-time timeout
+  // in searchProvider is the backstop for mid-session deaths while visible.
+  if (hiddenSince && Date.now() - hiddenSince > 45_000) {
+    markConnectionDead();
+    connectToSpacetimeDB(lastEmail, lastToken).catch(() => { /* next heal retries */ });
+  }
 }
 
 // Matches backend Gmail normalization in profile_reducers.ts
@@ -218,6 +237,20 @@ async function subscribeToTables(): Promise<void> {
 
 export function getDbConnection(): DbConnection | null {
   return dbConnection;
+}
+
+// A live-looking connection that answers nothing (half-open socket after
+// mobile backgrounding: onDisconnect never fired). Tear it down synchronously
+// so the next connect builds a fresh socket — connectToSpacetimeDB would
+// otherwise "reuse" the corpse. Does NOT set expectDisconnect: this death was
+// unplanned, auto-heal stays armed. Idempotent with the onDisconnect handler.
+export function markConnectionDead() {
+  try { dbConnection?.disconnect(); } catch { /* already gone */ }
+  dbConnection = null;
+  subscriptionPromise = null;
+  currentToken = undefined;
+  setClientDb(null);
+  emitConn(false);
 }
 
 export function disconnectFromSpacetimeDB() {
