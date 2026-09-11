@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { linkify } from '../utils/linkify';
 import { OrgRatingNumber } from './Ratings';
+import SafeImg from './SafeImg';
 
 export interface MapResult {
   type: 'person' | 'org';
@@ -279,7 +280,12 @@ function MapView({ results, center, onResultClick }: MapViewProps) {
           onClick={() => onResultClickRef.current(activeCard.result)}
         >
           {activeCard.result.profilePicture ? (
-            <img src={activeCard.result.profilePicture} alt={activeCard.result.fullName} className="mpc-pic" />
+            <SafeImg
+              src={activeCard.result.profilePicture}
+              alt={activeCard.result.fullName}
+              className="mpc-pic"
+              placeholder={<div className="mpc-pic mpc-pic-placeholder" />}
+            />
           ) : (
             <div className="mpc-pic mpc-pic-placeholder" />
           )}

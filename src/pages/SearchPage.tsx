@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate, useNavigationType } from 'react-rou
 import { isSignedIn } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import { useApp } from '../App';
-import { connectToSpacetimeDB, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
+import { connectToSpacetimeDB, onConnectionChange, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
 import { fetchOrgProfile } from '../utils/clientData';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
 import { linkify } from '../utils/linkify';
@@ -17,6 +17,7 @@ import {
 
 import MapView from '../components/MapView';
 import { OrgRatingNumber } from '../components/Ratings';
+import SafeImg from '../components/SafeImg';
 import SwipeView from '../components/SwipeView';
 import ProfileTabs from '../components/ProfileTabs';
 import TopBar from '../components/TopBar';
@@ -218,6 +219,13 @@ function SearchPage() {
       }
     };
     init();
+    // The socket can die after mount (mobile backgrounding, idle reap):
+    // mirror disconnects into the gate so the next search reconnects
+    // instead of firing into a dead connection.
+    const offConn = onConnectionChange((connected) => {
+      if (!connected) setIsConnected(false);
+    });
+    return offConn;
   }, []);
 
   // Load my stored location (only if not 'off')
@@ -582,7 +590,12 @@ function SearchPage() {
                 return (
                   <Link to={linkTo} key={result.type === 'org' ? `org-${result.orgId}` : result.identity} className="result-card">
                     {result.profilePicture ? (
-                      <img src={result.profilePicture} alt={result.fullName} className="result-avatar" />
+                      <SafeImg
+                        src={result.profilePicture}
+                        alt={result.fullName}
+                        className="result-avatar"
+                        placeholder={<div className="result-avatar-placeholder" />}
+                      />
                     ) : (
                       <div className="result-avatar-placeholder" />
                     )}

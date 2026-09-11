@@ -5,6 +5,7 @@ import {
   orgAccountIdentityHex, getDbConnection,
 } from '../utils/spacetime';
 import { OrgRatingNumber } from './Ratings';
+import SafeImg from './SafeImg';
 
 export interface SwipeResult {
   type: 'person' | 'org';
@@ -329,7 +330,12 @@ function SwipeView({ results, myIdentity, activeOrgId, isDesktop, onIndexChange 
             onClick={handleCardTap(r)}
           >
             {r.fullPicture || r.profilePicture ? (
-              <img src={r.fullPicture || r.profilePicture} alt={r.fullName} className="swipe-bg" draggable={false} />
+              <SafeImg
+                src={r.fullPicture || r.profilePicture}
+                alt={r.fullName}
+                className="swipe-bg"
+                placeholder={<div className="swipe-bg-placeholder" />}
+              />
             ) : (
               <div className="swipe-bg-placeholder" />
             )}

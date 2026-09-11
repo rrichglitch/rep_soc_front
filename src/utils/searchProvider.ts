@@ -126,6 +126,11 @@ export async function keywordSearch(
     }
     return { results: all.slice(0, SEARCH_RESULT_CAP), degraded: false };
   } catch (e) {
+    // A dead connection must REJECT, not resolve empty: SearchPage's
+    // reconnect-and-rerun handler keys off the 'Not connected' throw, and
+    // resolving [] here is what wedged the page at "No results found"
+    // with every later search equally dead.
+    if (String((e as any)?.message ?? e).includes('Not connected')) throw e;
     console.error('keywordSearch failed:', e);
     return { results: [], degraded: true };
   }
@@ -163,6 +168,9 @@ export async function runSearch(
         (err as any).code = e.message;
         throw err;
       }
+      // Dead connection: skip the keyword fallback (it would fail the same
+      // way) and let SearchPage's reconnect-and-rerun handler take it.
+      if (String(e?.message ?? e).includes('Not connected')) throw e;
       console.warn('GPU search unavailable, falling back to keyword:', e);
     }
   }

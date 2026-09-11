@@ -9,6 +9,43 @@ let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
 let currentToken: string | undefined = undefined;
 
+// Auto-heal bookkeeping: mobile browsers kill background websockets; when the
+// socket dies unexpectedly we reconnect on next foreground/network-restore
+// instead of leaving every later search silently empty.
+let lastEmail = '';
+let lastToken: string | undefined = undefined;
+let hasConnectedOnce = false;
+let expectDisconnect = false;
+
+type ConnListener = (connected: boolean) => void;
+const connListeners = new Set<ConnListener>();
+
+// React subscription for connection state (drives the search gate).
+export function onConnectionChange(cb: ConnListener): () => void {
+  connListeners.add(cb);
+  return () => {
+    connListeners.delete(cb);
+  };
+}
+
+function emitConn(connected: boolean) {
+  connListeners.forEach((cb) => {
+    try {
+      cb(connected);
+    } catch { /* listener must never break the socket */ }
+  });
+}
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  const heal = () => {
+    if (document.visibilityState !== 'visible') return;
+    if (!hasConnectedOnce || expectDisconnect || dbConnection) return;
+    connectToSpacetimeDB(lastEmail, lastToken).catch(() => { /* next heal retries */ });
+  };
+  document.addEventListener('visibilitychange', heal);
+  window.addEventListener('online', heal);
+}
+
 // Matches backend Gmail normalization in profile_reducers.ts
 export function sanitizeEmail(email: string): string {
   const normalized = email.toLowerCase().trim();
@@ -23,6 +60,10 @@ export function sanitizeEmail(email: string): string {
 }
 
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
+  // Any explicit connect cancels the "we meant to be offline" flag.
+  expectDisconnect = false;
+  lastEmail = _email;
+  lastToken = token;
   // If we have a connection with the same token, reuse it
   if (dbConnection && currentToken === token && subscriptionPromise) {
     await subscriptionPromise;
@@ -45,6 +86,8 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
       .withDatabaseName(SPACETIMEDB_MODULE)
       .onConnect((_conn, id) => {
         console.log('Connected to SpacetimeDB with identity:', id.toHexString());
+        hasConnectedOnce = true;
+        emitConn(true);
       })
       .onDisconnect(() => {
         console.log('Disconnected from SpacetimeDB');
@@ -52,6 +95,7 @@ export async function connectToSpacetimeDB(_email: string, token?: string): Prom
         subscriptionPromise = null;
         currentToken = undefined;
         setClientDb(null);
+        emitConn(false);
       })
       .onConnectError((_ctx, err) => {
         console.error('Error connecting to SpacetimeDB:', err);
@@ -177,6 +221,8 @@ export function getDbConnection(): DbConnection | null {
 }
 
 export function disconnectFromSpacetimeDB() {
+  // Deliberate teardown (logout / invalid session): do NOT auto-heal this.
+  expectDisconnect = true;
   if (dbConnection) {
     dbConnection.disconnect();
     dbConnection = null;
