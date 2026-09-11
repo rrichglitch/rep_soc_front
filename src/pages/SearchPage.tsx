@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate, useNavigationType } from 'react-rou
 import { isSignedIn } from '../utils/authState';
 import { getOAuthSession } from '../utils/oauthSession';
 import { useApp } from '../App';
-import { connectToSpacetimeDB, onConnectionChange, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
+import { connectToSpacetimeDB, ensureConnected, onConnectionChange, getProfileByEmail, getDbConnection, getOrganizationById } from '../utils/spacetime';
 import { fetchOrgProfile } from '../utils/clientData';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
 import { linkify } from '../utils/linkify';
@@ -313,6 +313,15 @@ function SearchPage() {
       // the failed run rendered before the slow anon subscription applied.)
       if (!isConnected) {
         setIsLoading(true);
+        // The gate must ACTIVELY reconnect: nothing else initiates a connect
+        // while parked. The foreground heal runs only on foreground/online
+        // events (one failed silent rebuild left the page stuck), and a
+        // mid-session drop while visible fires no heal at all — both wedged
+        // here on an eternal spinner with every later search gated too.
+        ensureConnected().then(
+          () => { /* onConnect flips the gate via the listener; effect re-runs */ },
+          () => { if (!cancelled) { setIsLoading(false); setConnDead(true); } }
+        );
         return;
       }
 

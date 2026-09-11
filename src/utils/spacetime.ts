@@ -101,6 +101,19 @@ async function awaitSubscription(p: Promise<void>): Promise<void> {
   }
 }
 
+// Deduped connect for parked callers (the search gate): concurrent callers
+// share one in-flight build instead of stampeding the server.
+let inflightConnect: Promise<DbConnection> | null = null;
+export function ensureConnected(): Promise<DbConnection> {
+  if (dbConnection) return Promise.resolve(dbConnection);
+  if (!inflightConnect) {
+    inflightConnect = connectToSpacetimeDB(lastEmail, lastToken).finally(() => {
+      inflightConnect = null;
+    });
+  }
+  return inflightConnect;
+}
+
 export async function connectToSpacetimeDB(_email: string, token?: string): Promise<DbConnection> {
   // Any explicit connect cancels the "we meant to be offline" flag.
   expectDisconnect = false;
