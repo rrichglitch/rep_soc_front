@@ -7,7 +7,6 @@ import { connectToSpacetimeDB, ensureConnected, markConnectionDead, lastSockOpen
 import { fetchOrgProfile } from '../utils/clientData';
 import { runSearch as executeSearch, type SearchResult, type SearchMode, getSearchProvider, setSearchProvider } from '../utils/searchProvider';
 import { linkify } from '../utils/linkify';
-import { dbg, DbgView } from '../utils/connDbg';
 import { formatMiles } from '../utils/geo';
 
 // Local helper so the identity-resolution path keeps working without leaking
@@ -296,7 +295,6 @@ function SearchPage() {
       }
     }
     const searchQuery = async () => {
-      dbg(`run q="${query}" conn=${isConnected} tick=${searchTick}`);
       if (!query.trim()) {
         setResults([]);
         setAllowanceNotice(null);
@@ -315,7 +313,6 @@ function SearchPage() {
       // the failed run rendered before the slow anon subscription applied.)
       if (!isConnected) {
         setIsLoading(true);
-        dbg('gate PARKED — ensure');
         // The gate must ACTIVELY reconnect: nothing else initiates a connect
         // while parked. The foreground heal runs only on foreground/online
         // events (one failed silent rebuild left the page stuck), and a
@@ -323,7 +320,6 @@ function SearchPage() {
         // here on an eternal spinner with every later search gated too.
         ensureConnected().then(
           () => {
-            dbg('ensure ok (watching for sock OPEN)');
             // A resolved connect that never produces an OPEN is a dead
             // rebuild — the fresh socket died in the wake-radio race (seen
             // in the field: ensure ok, then SHUTs, no OPEN, parked forever).
@@ -332,26 +328,23 @@ function SearchPage() {
             const knownOpen = lastSockOpenAt;
             setTimeout(() => {
               if (cancelled || lastSockOpenAt !== knownOpen) return;
-              dbg('watchdog: NO OPEN — bury + re-ensure');
               markConnectionDead();
               if (cancelled) return;
               if (healRef.current.g < 1) {
                 healRef.current.g += 1;
                 setSearchTick((t) => t + 1);
               } else {
-                dbg('watchdog BUDGET OUT — connDead UI');
                 setIsLoading(false);
                 setConnDead(true);
               }
             }, 10000);
           },
-          () => { dbg('ensure FAIL'); if (!cancelled) { setIsLoading(false); setConnDead(true); } }
+          () => { if (!cancelled) { setIsLoading(false); setConnDead(true); } }
         );
         return;
       }
 
       setIsLoading(true);
-      dbg('search start');
       try {
         // Server-side search via the searchProvider abstraction:
         //   'stdb' → keyword procedure on SpacetimeDB (always available)
@@ -375,7 +368,6 @@ function SearchPage() {
           activePos,
         });
         if (cancelled) return;
-        dbg(`search ok n=${found.length}`);
 
         let filtered = found;
         if (claimableOnly) {
@@ -417,7 +409,6 @@ function SearchPage() {
           if (oldest !== undefined) searchResultCache.delete(oldest);
         }
       } catch (e: any) {
-        dbg(`search THROW ${String(e?.message ?? e).slice(0, 50)}`);
         if (e?.message === 'allowance_exhausted') {
           const { fetchMyAllowance, allowanceMessage } = await import('../utils/allowance');
           const info = await fetchMyAllowance();
@@ -433,12 +424,10 @@ function SearchPage() {
           // consecutive failure means the server itself is unreachable —
           // stop loading and offer a manual retry instead of loop-spinning.
           if (healRef.current.n >= 1) {
-            dbg('retry BUDGET OUT — connDead UI');
             if (!cancelled) { setIsLoading(false); setConnDead(true); }
             return;
           }
           healRef.current.n += 1;
-          dbg(`retrying connect n=${healRef.current.n}`);
           try {
             const session = getOAuthSession();
             if (session) await connectToSpacetimeDB(session.email, session.stToken);
@@ -628,7 +617,6 @@ function SearchPage() {
         {isLoading ? (
           <div className="loading">
             <div className="spinner"></div>
-            <DbgView />
           </div>
         ) : results.length === 0 ? (
           query ? (
