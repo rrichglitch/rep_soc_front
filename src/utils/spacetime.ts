@@ -4,6 +4,7 @@ import { SPACETIMEDB_HOST, SPACETIMEDB_MODULE, IMAGES_RELAY_URL, DIDIT_RELAY_URL
 import { getOAuthSession } from './oauthSession';
 import { getProfileSnapshot, getOwnProfileRow, getTodayPostCount, getMyFriendsList, getMyOrgsList, getMyPostsList, getMyOrgMembersList, getMyStories, fetchProfileStories, setClientDb } from './clientData';
 import { preloadProfile, preloadOwnProfile } from './clientData';
+import { dbg } from './connDbg';
 
 let dbConnection: DbConnection | null = null;
 let subscriptionPromise: Promise<void> | null = null;
@@ -29,6 +30,7 @@ export function onConnectionChange(cb: ConnListener): () => void {
 }
 
 function emitConn(connected: boolean) {
+  dbg(`sock ${connected ? 'OPEN' : 'SHUT'}`);
   connListeners.forEach((cb) => {
     try {
       cb(connected);
@@ -60,8 +62,12 @@ function heal(hiddenSince: number) {
   // on a healthy socket is one invisible resubscribe; the search-time timeout
   // in searchProvider is the backstop for mid-session deaths while visible.
   if (hiddenSince && Date.now() - hiddenSince > 45_000) {
+    dbg('heal bury+rebuild');
     markConnectionDead();
-    connectToSpacetimeDB(lastEmail, lastToken).catch(() => { /* next heal retries */ });
+    connectToSpacetimeDB(lastEmail, lastToken).then(
+      () => dbg('heal ok'),
+      (e) => dbg(`heal FAIL ${String((e as any)?.message ?? e).slice(0, 60)}`)
+    );
   }
 }
 
@@ -299,6 +305,7 @@ export async function withSocketTimeout<T>(p: Promise<T>, what: string): Promise
     ]);
   } catch (e) {
     if (String((e as any)?.message ?? e).startsWith('socket_timeout:')) {
+      dbg(`TIMEOUT ${what} — burying`);
       markConnectionDead();
       throw new Error('Not connected to SpacetimeDB');
     }

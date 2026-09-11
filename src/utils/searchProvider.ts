@@ -14,6 +14,7 @@
 //   pro       → gpu(everything) with stdb fallback
 
 import { getDbConnection, withSocketTimeout } from './spacetime';
+import { dbg } from './connDbg';
 import { haversineMiles } from './geo';
 import { preloadProfile, preloadOrg } from './clientData';
 
@@ -76,6 +77,7 @@ async function callStdbSearch(params: Record<string, unknown>): Promise<{
   // forever, which wedged the page on an eternal spinner. Timeout buries the
   // corpse and throws the marker the page's reconnect-and-rerun handler keys
   // off.
+  dbg('kw call');
   const result: any = await withSocketTimeout(
     // @ts-expect-error — procedures map is generated without a static type for dynamic calls
     db.procedures.searchProfiles(params),
