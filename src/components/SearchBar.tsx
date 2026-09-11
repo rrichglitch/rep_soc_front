@@ -16,6 +16,7 @@ interface SearchBarProps {
   placeholder?: string;
   className?: string;
   onOptionsClick?: () => void;
+  optionsOpen?: boolean;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
   /** Explicit shared history bucket id. When omitted, the bar derives one
@@ -24,7 +25,7 @@ interface SearchBarProps {
   historyId?: string;
 }
 
-function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick, onInputFocus, onInputBlur, historyId }: SearchBarProps) {
+function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, className, onOptionsClick, optionsOpen, onInputFocus, onInputBlur, historyId }: SearchBarProps) {
   const [internalQuery, setInternalQuery] = useState('');
   const isControlled = value !== undefined;
   const query = isControlled ? value : internalQuery;
@@ -125,7 +126,7 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
         </button>
       )}
       {onOptionsClick && (
-        <button type="button" onClick={onOptionsClick} className="search-options-btn" aria-label="Search options">
+        <button type="button" onClick={onOptionsClick} className={`search-options-btn${optionsOpen ? ' open' : ''}`} aria-label="Search options" aria-expanded={optionsOpen === true}>
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <line x1="2" y1="4.5" x2="14" y2="4.5" />
             <circle cx="6" cy="4.5" r="1.7" fill="currentColor" stroke="none" />
@@ -256,6 +257,7 @@ function SearchBar({ onSearch, value, onChange, autoFocus, placeholder, classNam
           align-items: center;
         }
         .search-options-btn:hover { color: #667eea; }
+        .search-options-btn.open { color: #667eea; }
 
         .search-button {
           flex: 0 0 auto;

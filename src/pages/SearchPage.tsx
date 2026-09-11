@@ -477,6 +477,7 @@ function SearchPage() {
             value={inputValue}
             onChange={setInputValue}
             onOptionsClick={() => setShowSearchOptions((v) => !v)}
+            optionsOpen={showSearchOptions}
             onInputFocus={() => setShowSearchOptions(false)}
           />
           {showSearchOptions && (
