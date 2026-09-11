@@ -624,7 +624,6 @@ export type Rating = __Infer<typeof Rating>;
 export const RatingItem = __t.object("RatingItem", {
   raterIdentityHex: __t.string(),
   stars: __t.u8(),
-  text: __t.string(),
   createdAtMicros: __t.u64(),
 });
 export type RatingItem = __Infer<typeof RatingItem>;

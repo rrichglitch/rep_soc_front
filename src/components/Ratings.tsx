@@ -1,136 +1,93 @@
 import { useEffect, useState } from 'react';
-import { getRatings, giveRating, deleteRating, type RatingsSummary } from '../utils/spacetime';
+import { getRatings, giveRating } from '../utils/spacetime';
 import { getOAuthSession } from '../utils/oauthSession';
 
-interface RatingsProps {
-  /** Org account identity hex (ratings are only surfaced for orgs). */
-  orgIdentityHex: string;
-}
+const DEEP_GOLD = '#d97706'; // up to the lower of (your vote, average)
+const LIGHT_GOLD = '#fbbf24'; // past it, up to the higher
+const UNRATED = '#e5e7eb';
 
-function Stars({ value, onPick, size }: { value: number; onPick?: (n: number) => void; size?: number }) {
+// One star: your vote fills whole stars only, the average fills fractionally.
+// The lower of the two renders deep gold; the stretch to the higher renders
+// light gold; the rest stays gray.
+function Star({ userFill, avgFill, size }: { userFill: number; avgFill: number; size: number }) {
+  const lo = Math.min(userFill, avgFill);
+  const hi = Math.max(userFill, avgFill);
+  const clip = (frac: number, color: string) => (
+    <span
+      style={{
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: `${Math.min(Math.max(frac, 0), 1) * 100}%`,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        color,
+      }}
+    >
+      ★
+    </span>
+  );
   return (
-    <span style={{ fontSize: size ?? 20, letterSpacing: 2 }}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <span
-          key={n}
-          onClick={onPick ? () => onPick(n) : undefined}
-          style={{ cursor: onPick ? 'pointer' : 'default', color: n <= Math.round(value) ? '#f59e0b' : '#d1d5db' }}
-          role={onPick ? 'button' : undefined}
-          aria-label={onPick ? `${n} star${n > 1 ? 's' : ''}` : undefined}
-        >
-          ★
-        </span>
-      ))}
+    <span style={{ position: 'relative', display: 'inline-block', fontSize: size, lineHeight: 1, color: UNRATED }}>
+      ★
+      {hi > 0 && clip(hi, LIGHT_GOLD)}
+      {lo > 0 && clip(lo, DEEP_GOLD)}
     </span>
   );
 }
 
-// 5-star org ratings: average + count, review list, and a give/update form.
-// Mounted on org profile pages only — individuals have no ratings UI.
-function Ratings({ orgIdentityHex }: RatingsProps) {
-  const [summary, setSummary] = useState<RatingsSummary>({ count: 0, average: 0, ratings: [] });
-  const [stars, setStars] = useState(5);
-  const [text, setText] = useState('');
+// Org star ratings, shown right under the org name. Click a star to vote
+// (re-voting overwrites). No text, no deletion — a vote is a vote.
+function Ratings({ orgIdentityHex }: { orgIdentityHex: string }) {
+  const [average, setAverage] = useState(0);
+  const [mine, setMine] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const ownHex = getOAuthSession()?.identityHex ?? '';
-
-  const refresh = async () => {
-    setSummary(await getRatings(orgIdentityHex));
-  };
 
   useEffect(() => {
     let alive = true;
-    getRatings(orgIdentityHex).then((s) => { if (alive) setSummary(s); });
-    const interval = setInterval(() => {
-      getRatings(orgIdentityHex).then((s) => { if (alive) setSummary(s); });
-    }, 10000);
-    return () => { alive = false; clearInterval(interval); };
-  }, [orgIdentityHex]);
+    const load = async () => {
+      const s = await getRatings(orgIdentityHex);
+      if (!alive) return;
+      setAverage(s.average);
+      setMine(s.ratings.find((r) => r.raterIdentityHex === ownHex)?.stars ?? 0);
+    };
+    load();
+    const timer = setInterval(load, 10000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, [orgIdentityHex, ownHex]);
 
-  // Prefill the form with the viewer's existing rating, if any.
-  useEffect(() => {
-    const mine = summary.ratings.find((r) => r.raterIdentityHex === ownHex);
-    if (mine) {
-      setStars(mine.stars);
-      setText(mine.text);
-    }
-  }, [summary, ownHex]);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const vote = async (n: number) => {
+    if (!ownHex || busy) return;
     setBusy(true);
-    setError(null);
     try {
-      await giveRating(orgIdentityHex, stars, text.trim());
-      await refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Could not save rating');
+      await giveRating(orgIdentityHex, n);
+      const s = await getRatings(orgIdentityHex);
+      setAverage(s.average);
+      setMine(s.ratings.find((r) => r.raterIdentityHex === ownHex)?.stars ?? n);
     } finally {
       setBusy(false);
     }
   };
-
-  const remove = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      await deleteRating(orgIdentityHex);
-      setStars(5);
-      setText('');
-      await refresh();
-    } catch (err: any) {
-      setError(err?.message ?? 'Could not delete rating');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const mine = summary.ratings.find((r) => r.raterIdentityHex === ownHex);
 
   return (
-    <section>
-      <h3>Ratings</h3>
-      {summary.count === 0 ? (
-        <p>No ratings yet — be the first.</p>
-      ) : (
-        <p>
-          <Stars value={summary.average} /> {summary.average.toFixed(1)} · {summary.count} rating{summary.count === 1 ? '' : 's'}
-        </p>
-      )}
-
-      <form onSubmit={submit}>
-        <Stars value={stars} onPick={setStars} />
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Write a review (optional)…"
-          maxLength={500}
-          rows={2}
-        />
-        <div>
-          <button type="submit" disabled={busy}>
-            {mine ? 'Update rating' : 'Rate'}
-          </button>
-          {mine && (
-            <button type="button" onClick={remove} disabled={busy}>
-              Remove
-            </button>
-          )}
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-      </form>
-
-      <ul>
-        {summary.ratings.map((r) => (
-          <li key={r.raterIdentityHex}>
-            <Stars value={r.stars} size={14} />{' '}
-            {r.text && <span>{r.text}</span>}{' '}
-            <small>{r.createdAt.toLocaleDateString()}</small>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span
+          key={n}
+          onClick={ownHex ? () => vote(n) : undefined}
+          style={{ cursor: ownHex ? 'pointer' : 'default' }}
+          role={ownHex ? 'button' : undefined}
+          aria-label={ownHex ? `Rate ${n} star${n > 1 ? 's' : ''}` : undefined}
+        >
+          <Star userFill={mine >= n ? 1 : 0} avgFill={average - (n - 1)} size={22} />
+        </span>
+      ))}{' '}
+      ({average.toFixed(1)})
+    </div>
   );
 }
 

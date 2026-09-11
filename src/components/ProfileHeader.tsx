@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 import FollowButton from './FollowButton';
 import PictureZoom from './PictureZoom';
+import Ratings from './Ratings';
 import { linkify } from '../utils/linkify';
 import { sendFriendRequest, cancelFriendRequest, unfriend, checkIsFriend, getFriendRequestStatus } from '../utils/spacetime';
 import { useOrg } from '../contexts/OrgContext';
@@ -123,6 +124,7 @@ function ProfileHeader({
           <h2 className="profile-name">{profile.full_name}</h2>
           {isOrgProfile && <span className="org-badge">Organization</span>}
         </div>
+        {isOrgProfile && <Ratings orgIdentityHex={profile.identity} />}
         {profile.city && <p className="profile-city">{profile.city}</p>}
         {(() => {
           const line = [profile.age !== undefined ? `${profile.age}` : '', profile.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : ''].filter(Boolean).join(' · ');

@@ -29,7 +29,6 @@ import DeclineFriendRequestReducer from "../decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "../decline_org_member_reducer";
 import DeleteGalleryPhotoReducer from "../delete_gallery_photo_reducer";
 import DeleteOrganizationReducer from "../delete_organization_reducer";
-import DeleteRatingReducer from "../delete_rating_reducer";
 import DeleteStoryPostReducer from "../delete_story_post_reducer";
 import DeliverSearchResultReducer from "../deliver_search_result_reducer";
 import DemoteCoLeaderReducer from "../demote_co_leader_reducer";
@@ -85,7 +84,6 @@ export type DeclineFriendRequestParams = __Infer<typeof DeclineFriendRequestRedu
 export type DeclineOrgMemberParams = __Infer<typeof DeclineOrgMemberReducer>;
 export type DeleteGalleryPhotoParams = __Infer<typeof DeleteGalleryPhotoReducer>;
 export type DeleteOrganizationParams = __Infer<typeof DeleteOrganizationReducer>;
-export type DeleteRatingParams = __Infer<typeof DeleteRatingReducer>;
 export type DeleteStoryPostParams = __Infer<typeof DeleteStoryPostReducer>;
 export type DeliverSearchResultParams = __Infer<typeof DeliverSearchResultReducer>;
 export type DemoteCoLeaderParams = __Infer<typeof DemoteCoLeaderReducer>;

@@ -57,7 +57,6 @@ import DeclineFriendRequestReducer from "./decline_friend_request_reducer";
 import DeclineOrgMemberReducer from "./decline_org_member_reducer";
 import DeleteGalleryPhotoReducer from "./delete_gallery_photo_reducer";
 import DeleteOrganizationReducer from "./delete_organization_reducer";
-import DeleteRatingReducer from "./delete_rating_reducer";
 import DeleteStoryPostReducer from "./delete_story_post_reducer";
 import DeliverSearchResultReducer from "./deliver_search_result_reducer";
 import DemoteCoLeaderReducer from "./demote_co_leader_reducer";
@@ -417,7 +416,6 @@ const reducersSchema = __reducers(
   __reducerSchema("decline_org_member", DeclineOrgMemberReducer),
   __reducerSchema("delete_gallery_photo", DeleteGalleryPhotoReducer),
   __reducerSchema("delete_organization", DeleteOrganizationReducer),
-  __reducerSchema("delete_rating", DeleteRatingReducer),
   __reducerSchema("delete_story_post", DeleteStoryPostReducer),
   __reducerSchema("deliver_search_result", DeliverSearchResultReducer),
   __reducerSchema("demote_co_leader", DemoteCoLeaderReducer),

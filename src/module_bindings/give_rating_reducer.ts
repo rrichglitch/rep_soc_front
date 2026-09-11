@@ -13,5 +13,4 @@ import {
 export default {
   targetIdentity: __t.identity(),
   stars: __t.u8(),
-  text: __t.string(),
 };

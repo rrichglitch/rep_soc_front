@@ -1431,8 +1431,6 @@ export async function deleteGalleryPhoto(
 export interface OrgRating {
   raterIdentityHex: string;
   stars: number;
-  text: string;
-  createdAt: Date;
 }
 
 export interface RatingsSummary {
@@ -1441,7 +1439,7 @@ export interface RatingsSummary {
   ratings: OrgRating[];
 }
 
-// Public read: 5-star ratings for any profile identity (frontend only shows
+// Public read: 5-star votes for any profile identity (frontend only shows
 // org ratings, but the procedure works for individuals too).
 export async function getRatings(targetIdentityHex: string): Promise<RatingsSummary> {
   if (!dbConnection) return { count: 0, average: 0, ratings: [] };
@@ -1453,8 +1451,6 @@ export async function getRatings(targetIdentityHex: string): Promise<RatingsSumm
       ratings: (r?.ratings ?? []).map((g: any) => ({
         raterIdentityHex: g.raterIdentityHex,
         stars: g.stars,
-        text: g.text ?? '',
-        createdAt: new Date(Number(g.createdAtMicros) / 1000),
       })),
     };
   } catch (e) {
@@ -1463,19 +1459,11 @@ export async function getRatings(targetIdentityHex: string): Promise<RatingsSumm
   }
 }
 
-export async function giveRating(targetIdentityHex: string, stars: number, text: string): Promise<void> {
+export async function giveRating(targetIdentityHex: string, stars: number): Promise<void> {
   if (!dbConnection) throw new Error('Not connected');
   await dbConnection.reducers.giveRating({
     targetIdentity: Identity.fromString(targetIdentityHex),
     stars,
-    text,
-  });
-}
-
-export async function deleteRating(targetIdentityHex: string): Promise<void> {
-  if (!dbConnection) throw new Error('Not connected');
-  await dbConnection.reducers.deleteRating({
-    targetIdentity: Identity.fromString(targetIdentityHex),
   });
 }
 
