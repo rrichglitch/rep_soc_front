@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // <img> with lazy loading + bounded retry. Search cards fire up to 150 image
 // loads at once; mobile browsers fail a random subset under that pressure,
@@ -17,6 +17,13 @@ export default function SafeImg({
 }) {
   const [attempt, setAttempt] = useState(0);
   const [dead, setDead] = useState(false);
+
+  // Fresh src = fresh state. Without this, a re-used card instance kept a
+  // previous dead/attempt state and gave up on the new image immediately.
+  useEffect(() => {
+    setAttempt(0);
+    setDead(false);
+  }, [src]);
 
   if (!src || dead) return <>{placeholder}</>;
 
