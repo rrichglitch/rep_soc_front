@@ -668,8 +668,8 @@ function ProfilePage() {
 
         .claim-banner {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          align-items: flex-start;
           gap: 12px;
           background: #fffbeb;
           border: 1px solid #f59e0b;
