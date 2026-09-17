@@ -171,6 +171,8 @@ function ProfilePage() {
   const [isLoading, setIsLoading] = useState(() => profile === null);
   const [stories, setStories] = useState<StoryPost[]>([]);
   const [claiming, setClaiming] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [claimEmailResent, setClaimEmailResent] = useState(false);
   const [claimPendingTick, setClaimPendingTick] = useState(0);
   void claimPendingTick;
 
@@ -351,6 +353,24 @@ function ProfilePage() {
     }
   };
 
+  // Re-send the verification email for a pending claim. fileClaimAndNotify's
+  // duplicate-pending path (request_org_claim throws "already have a pending
+  // claim") re-triggers the relay notify — the designed retry for "payment
+  // went through but the email bounced/failed". Server-side, /api/claim-notify
+  // re-sends while the claim is still pending.
+  const handleResendClaimEmail = async () => {
+    setResending(true);
+    setClaimEmailResent(false);
+    try {
+      await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
+      setClaimEmailResent(true);
+    } catch (e: any) {
+      alert(e?.message || 'Could not re-send the verification email.');
+    } finally {
+      setResending(false);
+    }
+  };
+
   // Keep the pending-claim state fresh (subscription syncs every ~2s already).
   useEffect(() => {
     if (!isOrgView) return;
@@ -510,13 +530,27 @@ function ProfilePage() {
                   : 'Claim it to become its leader. A one-time $19.99 fee applies; claims are manually verified (max 3 per day).'}
               </span>
             </div>
-            <button
-              onClick={handleClaim}
-              disabled={claiming}
-              className="claim-banner-btn"
-            >
-              {claiming ? 'Working…' : claimPending ? 'View status' : 'Claim this organization'}
-            </button>
+            <div className="claim-banner-actions">
+              <button
+                onClick={handleClaim}
+                disabled={claiming}
+                className="claim-banner-btn"
+              >
+                {claiming ? 'Working…' : claimPending ? 'View status' : 'Claim this organization'}
+              </button>
+              {claimPending && (
+                <button
+                  onClick={handleResendClaimEmail}
+                  disabled={resending}
+                  className="claim-banner-btn secondary"
+                >
+                  {resending ? 'Sending…' : 'Resend verification email'}
+                </button>
+              )}
+            </div>
+            {claimEmailResent && (
+              <span className="claim-banner-note">Verification email re-sent.</span>
+            )}
           </div>
         )}
 
@@ -702,6 +736,10 @@ function ProfilePage() {
 
         .claim-banner-btn:hover { background: #d97706; }
         .claim-banner-btn:disabled { opacity: 0.7; cursor: default; }
+        .claim-banner-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .claim-banner-btn.secondary { background: white; border: 1px solid #667eea; color: #667eea; }
+        .claim-banner-btn.secondary:hover { background: #667eea; color: white; }
+        .claim-banner-note { color: #059669; font-size: 13px; font-weight: 600; }
 
         .story-form {
           background: white;
