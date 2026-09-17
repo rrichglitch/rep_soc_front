@@ -213,6 +213,13 @@ function ProfilePage() {
             setIsLoading(false);
             return;
           }
+          // getOrganizationById (member orgs) gives a leaderIdentity shim;
+          // fetchOrgProfile (everyone else, incl. claimable orgs) gives a
+          // leaderIdentityHex string instead. Read both shapes — the old
+          // direct call threw here, which hid the whole org body + banner.
+          const leaderHex = typeof (org as any).leaderIdentity?.toHexString === 'function'
+            ? (org as any).leaderIdentity.toHexString()
+            : String((org as any).leaderIdentityHex ?? '');
           setProfile({
             identity: orgIdentityHex,
             fullName: org.name,
@@ -225,7 +232,7 @@ function ProfilePage() {
             createdAt: org.createdAt,
             gender: org.gender,
             hideMembers: !!org.hideMembers,
-            leaderIdentityHex: org.leaderIdentity.toHexString(),
+            leaderIdentityHex: leaderHex,
           });
           // VISITED tier (orgs): top data for the last orgs opened.
           preloadOrg(orgId, {
@@ -243,7 +250,7 @@ function ProfilePage() {
             // Membership ≡ friendship with the org's account identity.
             setIsMember(checkIsFriend(currentIdentityHex, orgIdentityHex));
             setRequestPending(getOrgMemberRequestStatus(orgId, currentIdentityHex) === 'pending');
-            setIsLeader(org.leaderIdentity.toHexString() === currentIdentityHex);
+            setIsLeader(leaderHex === currentIdentityHex);
             const profileStories = await getStoriesForProfile(orgIdentityHex);
             setStories(profileStories);
           }
