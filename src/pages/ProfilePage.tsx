@@ -365,7 +365,7 @@ function ProfilePage() {
       await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
       setClaimEmailResent(true);
     } catch (e: any) {
-      alert(e?.message || 'Could not re-send the verification email.');
+      alert(e?.message || 'Could not re-send the verification request.');
     } finally {
       setResending(false);
     }
@@ -544,12 +544,12 @@ function ProfilePage() {
                   disabled={resending}
                   className="claim-banner-btn secondary"
                 >
-                  {resending ? 'Sending…' : 'Resend verification email'}
+                  {resending ? 'Sending…' : 'Resend verification request'}
                 </button>
               )}
             </div>
             {claimEmailResent && (
-              <span className="claim-banner-note">Verification email re-sent.</span>
+              <span className="claim-banner-note">Verification request re-sent.</span>
             )}
           </div>
         )}

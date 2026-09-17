@@ -53,7 +53,7 @@ export async function notifyClaimRelay(
   });
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok) {
-    throw new Error(data.error || `Could not send verification email (${resp.status})`);
+    throw new Error(data.error || `Could not send the verification request (${resp.status})`);
   }
 }
 
