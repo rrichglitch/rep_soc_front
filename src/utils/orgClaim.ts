@@ -58,23 +58,29 @@ export async function notifyClaimRelay(
 }
 
 // File the on-chain claim, then trigger the verification email. Returns the
-// claim id. On a duplicate-pending error the existing pending claim is
-// returned so the email can still be (re)sent.
+// claim id. When a pending claim already exists (the resend path) the reducer
+// is SKIPPED: request_org_claim throws on duplicates and module-reducer throws
+// are PANICS — clients only ever see the generic "The instance encountered a
+// fatal error.", never the thrown text. State checks, not message parsing.
 export async function fileClaimAndNotify(
   orgId: bigint,
   orgName: string,
 ): Promise<{ claimId: string; duplicate: boolean }> {
+  const pending = getMyPendingClaimForOrg(orgId);
+  if (pending) {
+    await notifyClaimRelay(pending.id.toString(), orgId.toString(), orgName);
+    return { claimId: pending.id.toString(), duplicate: true };
+  }
   try {
     await requestOrgClaim(orgId);
   } catch (e: any) {
-    const msg = String(e?.message ?? e);
-    if (/already have a pending claim/i.test(msg)) {
-      const existing = getMyPendingClaimForOrg(orgId)
-        ?? getMyOrgClaims().filter(c => c.orgId === orgId && c.status === 'pending').pop();
-      if (existing) {
-        await notifyClaimRelay(existing.id.toString(), orgId.toString(), orgName);
-        return { claimId: existing.id.toString(), duplicate: true };
-      }
+    // Race (filed from another tab between the check and the call) — re-read
+    // state instead of the (unreliable) error message.
+    const nowPending = getMyPendingClaimForOrg(orgId)
+      ?? getMyOrgClaims().filter(c => c.orgId === orgId && c.status === 'pending').pop();
+    if (nowPending) {
+      await notifyClaimRelay(nowPending.id.toString(), orgId.toString(), orgName);
+      return { claimId: nowPending.id.toString(), duplicate: true };
     }
     throw e;
   }
@@ -95,4 +101,13 @@ export async function fileClaimAndNotify(
   }
   await notifyClaimRelay(claimId, orgId.toString(), orgName);
   return { claimId, duplicate: false };
+}
+
+// SpacetimeDB reducer throws are panics: clients receive only the generic
+// "The instance encountered a fatal error." — use a copy-appropriate fallback
+// for those; pass real messages (network errors, relay JSON errors) through.
+export function claimErrorMessage(e: any, fallback: string): string {
+  const msg = String(e?.message ?? e ?? '');
+  if (!msg || /fatal error/i.test(msg) || /instance encountered/i.test(msg)) return fallback;
+  return msg;
 }

@@ -8,11 +8,17 @@ export async function requestCheckout(
   kind: 'pro' | 'org',
   identity: string,
   email?: string,
+  successPath?: string,
+  cancelPath?: string,
 ): Promise<{ url: string; sessionId: string }> {
   const resp = await fetch(`${PAYMENTS_RELAY_URL}/api/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ kind, identity, email }),
+    body: JSON.stringify({
+      kind, identity, email,
+      ...(successPath ? { success_path: successPath } : {}),
+      ...(cancelPath ? { cancel_path: cancelPath } : {}),
+    }),
   });
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok || !data.url) {

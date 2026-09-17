@@ -12,7 +12,10 @@ import {
   updateLocation,
   disconnectFromSpacetimeDB,
   uploadProfilePicture,
+  getMyOrgClaimFee,
 } from '../utils/spacetime';
+import { fetchOrgProfile } from '../utils/clientData';
+import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
 import { compressProfileImage, compressProfileThumb } from '../utils/imageCompress';
 import { fileToBase64 } from '../utils/sanitize';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
@@ -159,6 +162,42 @@ function MyProfilePage() {
     markCheckoutReturn();
     setShowClaimVerifying(true);
     window.history.replaceState({}, '', '/me');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Returning from Stripe Checkout after paying the one-time org-CLAIM fee:
+  // finish the claim HERE (the org-create page is not part of the claim flow).
+  // Poll for the fee row (webhook), file + notify, keep the verifying modal
+  // up. On failure, send the user back to the organization profile — the fee
+  // stays held, nothing is charged again.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('claim') !== 'success') return;
+    markCheckoutReturn();
+    window.history.replaceState({}, '', '/me');
+    setShowClaimVerifying(true);
+    let alive = true;
+    (async () => {
+      const parked = getPendingClaimOrg();
+      if (!parked) return;
+      const orgId = BigInt(parked);
+      for (let i = 0; i < 30 && alive && getMyOrgClaimFee().length === 0; i++) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+      if (!alive) return;
+      try {
+        const org = await fetchOrgProfile(orgId).catch(() => null);
+        await fileClaimAndNotify(orgId, org?.name || 'this organization');
+        clearPendingClaimOrg();
+      } catch (e: any) {
+        clearPendingClaimOrg();
+        if (!alive) return;
+        setShowClaimVerifying(false);
+        alert(claimErrorMessage(e, 'Payment confirmed, but the claim could not be filed. Please try again from the organization profile — you will not be charged again.'));
+        navigate(`/org/${parked}`, { replace: true });
+      }
+    })();
+    return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

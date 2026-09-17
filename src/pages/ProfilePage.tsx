@@ -11,7 +11,7 @@ import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia, getMyOrgClaimFee, getMyPendingClaimForOrg } from '../utils/spacetime';
 import { requestCheckout } from '../utils/payments';
-import { setPendingClaimOrg, fileClaimAndNotify } from '../utils/orgClaim';
+import { setPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
 import { preloadVisitedProfile, preloadOrg, getProfileSnapshot, getOrgSnapshot, fetchOrgProfile, refreshFetchedStories } from '../utils/clientData';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
@@ -338,16 +338,24 @@ function ProfilePage() {
     try {
       const paid = getMyOrgClaimFee().length > 0;
       if (!paid) {
-        // Park the claim, pay the one-time fee, finish filing on return.
+        // Park the claim, pay the one-time fee, finish filing on return. The
+        // return lands on /me (claim=success) — the org-CREATE page is not
+        // part of the claim flow; cancel goes back to the org being claimed.
         setPendingClaimOrg(orgId.toString());
-        const { url } = await requestCheckout('org', currentIdentityHex, currentUserEmail() || undefined);
+        const { url } = await requestCheckout(
+          'org',
+          currentIdentityHex,
+          currentUserEmail() || undefined,
+          '/me?claim=success',
+          `/org/${orgId.toString()}`,
+        );
         window.location.assign(url);
         return;
       }
       await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
       navigate('/me?claim=verifying');
     } catch (e: any) {
-      alert(e?.message || 'Failed to file claim. Please try again.');
+      alert(claimErrorMessage(e, 'Could not file the claim — please try again from the organization profile.'));
     } finally {
       setClaiming(false);
     }
@@ -365,7 +373,7 @@ function ProfilePage() {
       await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
       setClaimEmailResent(true);
     } catch (e: any) {
-      alert(e?.message || 'Could not re-send the verification request.');
+      alert(claimErrorMessage(e, 'Could not re-send the verification request.'));
     } finally {
       setResending(false);
     }

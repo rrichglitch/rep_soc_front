@@ -7,7 +7,7 @@ import { useApp } from '../App';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout } from '../utils/payments';
-import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify } from '../utils/orgClaim';
+import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
 import { fetchOrgProfile } from '../utils/clientData';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
@@ -154,7 +154,7 @@ function CreateOrgPage() {
           clearPendingClaimOrg();
           if (alive) {
             setConfirming(false);
-            alert(e?.message || 'Payment confirmed, but the claim could not be filed. Please try again from the organization profile — you will not be charged again.');
+            alert(claimErrorMessage(e, 'Payment confirmed, but the claim could not be filed. Please try again from the organization profile — you will not be charged again.'));
             navigate(`/org/${pendingClaimOrgId}`, { replace: true });
           }
         }
