@@ -321,7 +321,11 @@ function ProfilePage() {
   // on-chain claim + verification email, then back to /me with a verifying
   // modal. Max 3 attempts/day is enforced server-side.
   const ZERO_IDENTITY = '0000000000000000000000000000000000000000000000000000000000000000';
-  const isClaimableOrg = isOrgView && !!profile && (profile.leaderIdentityHex || '') === ZERO_IDENTITY
+  // The claim section is ONLY shown when the page was reached through the
+  // claimable flow (claimable search carries ?claimable=1 on result links) —
+  // casual org-page visits never surface the claim UI.
+  const claimableCtx = new URLSearchParams(window.location.search).get('claimable') === '1';
+  const isClaimableOrg = isOrgView && claimableCtx && !!profile && (profile.leaderIdentityHex || '') === ZERO_IDENTITY
     && !!currentIdentityHex && !isLeader;
   const claimPending = isOrgView ? getMyPendingClaimForOrg(orgId) !== null : false;
 
@@ -711,7 +715,8 @@ function ProfilePage() {
         .claim-banner {
           display: flex;
           flex-direction: column;
-          align-items: flex-start;
+          align-items: center;
+          text-align: center;
           gap: 12px;
           background: #fffbeb;
           border: 1px solid #f59e0b;

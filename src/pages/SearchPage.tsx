@@ -646,7 +646,9 @@ function SearchPage() {
             <div className="results">
               {results.map((result) => {
                 const isOwn = result.email === email;
-                const linkTo = result.type === 'org' ? `/org/${result.orgId}` : `/profile/${result.identity}`;
+                const linkTo = result.type === 'org'
+                  ? `/org/${result.orgId}${claimableOnly ? '?claimable=1' : ''}`
+                  : `/profile/${result.identity}`;
                 return (
                   <Link to={linkTo} key={result.type === 'org' ? `org-${result.orgId}` : result.identity} className="result-card">
                     {result.profilePicture ? (
@@ -696,7 +698,7 @@ function SearchPage() {
                   locationLng: r.locationLng!,
                 }))}
                 center={activePos ?? undefined}
-                onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}` : `/profile/${r.identity}`)}
+                onResultClick={(r) => navigate(r.type === 'org' ? `/org/${r.orgId}${claimableOnly ? '?claimable=1' : ''}` : `/profile/${r.identity}`)}
               />
             </div>
           )}
