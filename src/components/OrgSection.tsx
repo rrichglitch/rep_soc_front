@@ -98,9 +98,8 @@ function OrgSection({ profileIdentity }: { profileIdentity: string }) {
             <h3>Claim an Existing Organization</h3>
             <p>
               Search for organizations without a leader and tap <strong>Claim</strong> on their
-              profile to take over. A one-time $19.99 fee applies and each claim is
-              manually verified (max 3 claims per day) — you'll be notified here
-              once it's reviewed.
+              profile to take over. A one-time $19.99 fee applies — you become the leader
+              as soon as payment completes.
             </p>
             <div className="claim-modal-actions">
               <button onClick={() => setShowClaimInfo(false)} className="claim-modal-cancel">Cancel</button>

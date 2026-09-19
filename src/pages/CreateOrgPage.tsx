@@ -7,7 +7,7 @@ import { useApp } from '../App';
 import { getProfileByEmail, createOrganization, getMyOrganizations, getMyOrgClaimFee, disconnectFromSpacetimeDB } from '../utils/spacetime';
 import { clearOAuthSession } from '../utils/oauthSession';
 import { requestCheckout } from '../utils/payments';
-import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
+import { getPendingClaimOrg, clearPendingClaimOrg, fileClaim, claimErrorMessage } from '../utils/orgClaim';
 import { fetchOrgProfile } from '../utils/clientData';
 import { markCheckoutReturn, skipCheckoutDetour } from '../utils/checkoutReturn';
 import { getBrowserLocation, jitterLocation, reverseGeocodeResilient } from '../utils/geo';
@@ -147,9 +147,9 @@ function CreateOrgPage() {
         try {
           const orgId = BigInt(pendingClaimOrgId);
           const org = await fetchOrgProfile(orgId).catch(() => null);
-          await fileClaimAndNotify(orgId, org?.name || 'this organization');
+          await fileClaim(orgId);
           clearPendingClaimOrg();
-          navigate('/me?claim=verifying', { replace: true });
+          navigate(`/me?claim=done&org=${encodeURIComponent(org?.name || '')}`, { replace: true });
         } catch (e: any) {
           clearPendingClaimOrg();
           if (alive) {

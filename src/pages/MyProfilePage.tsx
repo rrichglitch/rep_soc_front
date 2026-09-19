@@ -15,7 +15,7 @@ import {
   getMyOrgClaimFee,
 } from '../utils/spacetime';
 import { fetchOrgProfile } from '../utils/clientData';
-import { getPendingClaimOrg, clearPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
+import { getPendingClaimOrg, clearPendingClaimOrg, fileClaim, claimErrorMessage } from '../utils/orgClaim';
 import { compressProfileImage, compressProfileThumb } from '../utils/imageCompress';
 import { fileToBase64 } from '../utils/sanitize';
 import { clearOAuthSession, getOAuthSession } from '../utils/oauthSession';
@@ -100,7 +100,10 @@ function MyProfilePage() {
   const [hideFriends, setHideFriends] = useState(false);
   const [isUpdatingHide, setIsUpdatingHide] = useState(false);
   const [proConfirmed, setProConfirmed] = useState(false);
-  const [showClaimVerifying, setShowClaimVerifying] = useState(false);
+  // Claim modal phase: null (hidden) | 'processing' (finalizing right after
+  // the Stripe payment) | 'done' (claim accepted — ownership transferred).
+  const [claimPhase, setClaimPhase] = useState<null | 'processing' | 'done'>(null);
+  const [claimDoneOrg, setClaimDoneOrg] = useState('');
    
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [showPictureSelect, setShowPictureSelect] = useState(false);
@@ -158,28 +161,33 @@ function MyProfilePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('claim') !== 'verifying') return;
+    if (params.get('claim') !== 'done') return;
     markCheckoutReturn();
-    setShowClaimVerifying(true);
+    setClaimDoneOrg(params.get('org') || '');
+    setClaimPhase('done');
     window.history.replaceState({}, '', '/me');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Returning from Stripe Checkout after paying the one-time org-CLAIM fee:
   // finish the claim HERE (the org-create page is not part of the claim flow).
-  // Poll for the fee row (webhook), file + notify, keep the verifying modal
-  // up. On failure, send the user back to the organization profile — the fee
-  // stays held, nothing is charged again.
+  // Poll for the fee row (webhook) and file — the claim is ACCEPTED server-side
+  // the moment it lands (one payment == instant ownership) — then show the
+  // success modal. On failure, send the user back to the organization profile;
+  // the fee stays held, nothing is charged again.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('claim') !== 'success') return;
     markCheckoutReturn();
     window.history.replaceState({}, '', '/me');
-    setShowClaimVerifying(true);
+    setClaimPhase('processing');
     let alive = true;
     (async () => {
       const parked = getPendingClaimOrg();
-      if (!parked) return;
+      if (!parked) {
+        if (alive) setClaimPhase(null);
+        return;
+      }
       const orgId = BigInt(parked);
       for (let i = 0; i < 30 && alive && getMyOrgClaimFee().length === 0; i++) {
         await new Promise(r => setTimeout(r, 500));
@@ -187,12 +195,15 @@ function MyProfilePage() {
       if (!alive) return;
       try {
         const org = await fetchOrgProfile(orgId).catch(() => null);
-        await fileClaimAndNotify(orgId, org?.name || 'this organization');
+        await fileClaim(orgId);
         clearPendingClaimOrg();
+        if (!alive) return;
+        setClaimDoneOrg(org?.name || '');
+        setClaimPhase('done');
       } catch (e: any) {
         clearPendingClaimOrg();
         if (!alive) return;
-        setShowClaimVerifying(false);
+        setClaimPhase(null);
         alert(claimErrorMessage(e, 'Payment confirmed, but the claim could not be filed. Please try again from the organization profile — you will not be charged again.'));
         navigate(`/org/${parked}`, { replace: true });
       }
@@ -508,17 +519,27 @@ function MyProfilePage() {
 
       </main>
 
-      {showClaimVerifying && (
-        <div className="claim-verify-backdrop" onClick={() => setShowClaimVerifying(false)}>
+      {claimPhase && (
+        <div className="claim-verify-backdrop" onClick={() => { if (claimPhase === 'done') setClaimPhase(null); }}>
           <div className="claim-verify-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Claim being verified</h3>
-            <p>
-              Your organization claim is being verified. You'll get a notification
-              here as soon as it's been reviewed — usually within a day.
-            </p>
-            <button onClick={() => setShowClaimVerifying(false)} className="claim-verify-ok">
-              Got it
-            </button>
+            {claimPhase === 'processing' ? (
+              <>
+                <h3>Finalizing your claim</h3>
+                <p>Confirming your payment — one moment.</p>
+              </>
+            ) : (
+              <>
+                <h3>Claim complete</h3>
+                <p>
+                  {claimDoneOrg
+                    ? <>You&apos;re now the leader of <strong>{claimDoneOrg}</strong>.</>
+                    : 'You are now the leader of the organization.'}
+                </p>
+                <button onClick={() => setClaimPhase(null)} className="claim-verify-ok">
+                  Got it
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

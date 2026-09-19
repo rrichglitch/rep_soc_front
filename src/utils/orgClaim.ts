@@ -1,15 +1,19 @@
-// Shared organization-claim flow (manual verification by the site owner).
+// Shared organization-claim flow.
 //
-// Flow: Claimable Org Profile -> Claim button -> Stripe $19.99 payment (if the
-// fee isn't already held) -> request_org_claim reducer -> claim-relay sends a
-// verification email to dev@veri.social -> owner replies ACCEPT/DENY ->
-// claimant gets a notification and leadership on accept.
+// CURRENT MODEL (2026-09-19): claiming a leaderless ("claimable") org is
+// IMMEDIATE. The user pays the one-time $19.99 Stripe fee (unless already
+// held) and request_org_claim ACCEPTS the claim server-side the moment it is
+// filed — one payment == instant ownership. The user lands on
+// /me?claim=done, which shows the "claim complete" modal.
 //
-// The Stripe leg reuses the existing org-fee Checkout (the relay returns to
-// /org/create?org_claim=success). A pending claim org id parked in
-// localStorage lets CreateOrgPage finish a claim instead of a create after
-// payment. After filing, the user lands on /me?claim=verifying, which shows
-// the "being verified" modal.
+// The earlier EMAIL-VERIFICATION flow is RETAINED for future use: the
+// claim-relay (notifyClaimRelay / fileClaimAndNotify) emails dev@veri.social
+// about a pending claim and the owner replies ACCEPT/DENY (resolve_org_claim).
+// Nothing in the current happy path calls it.
+//
+// The Stripe leg reuses the existing org-fee Checkout; the payments relay
+// returns to /me?claim=success. A pending claim org id parked in localStorage
+// lets MyProfilePage / CreateOrgPage finish a claim after payment.
 import { CLAIM_RELAY_URL } from '../config';
 import { getOAuthSession } from './oauthSession';
 import { requestOrgClaim, getMyPendingClaimForOrg, getMyOrgClaims } from './spacetime';
@@ -57,9 +61,23 @@ export async function notifyClaimRelay(
   }
 }
 
-// File the on-chain claim, then trigger the verification email. Returns the
-// claim id. When a pending claim already exists (the resend path) the reducer
-// is SKIPPED: request_org_claim throws on duplicates and module-reducer throws
+// File the claim — the current model: the server ACCEPTS it immediately
+// (leadership transfers + fee consumed in the same transaction). No
+// verification email, no relay call.
+//
+// Idempotent for the common re-entry cases (double-tap, the success effect
+// re-running, back-then-forward): when an ACCEPTED claim for this org is
+// already in the local cache, filing again would panic server-side (fee
+// already consumed) — treat it as done instead.
+export async function fileClaim(orgId: bigint): Promise<void> {
+  if (getMyOrgClaims().some(c => c.orgId === orgId && c.status === 'accepted')) return;
+  await requestOrgClaim(orgId);
+}
+
+// RETIRED HAPPY PATH — kept for the future email-verification flow. Files the
+// on-chain claim, then triggers the verification email. Returns the claim id.
+// When a pending claim already exists (the resend path) the reducer is
+// SKIPPED: request_org_claim throws on duplicates and module-reducer throws
 // are PANICS — clients only ever see the generic "The instance encountered a
 // fatal error.", never the thrown text. State checks, not message parsing.
 export async function fileClaimAndNotify(

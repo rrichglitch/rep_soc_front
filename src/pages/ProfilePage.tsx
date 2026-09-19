@@ -11,7 +11,7 @@ import TopBar from '../components/TopBar';
 import AuthActions from '../components/AuthActions';
 import { getProfileByIdentity, getProfileByIdentitySync, checkIsFollowing, createStoryPost, getTodayStoryPostCount, getStoriesForProfile, connectToSpacetimeDB, getProfileByEmail, getOrganizationById, orgAccountIdentityHex, checkIsFriend, getOrgMemberRequestStatus, sendOrgMemberRequest, leaveOrg, uploadStoryMedia, getMyOrgClaimFee, getMyPendingClaimForOrg } from '../utils/spacetime';
 import { requestCheckout } from '../utils/payments';
-import { setPendingClaimOrg, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
+import { setPendingClaimOrg, fileClaim, fileClaimAndNotify, claimErrorMessage } from '../utils/orgClaim';
 import { preloadVisitedProfile, preloadOrg, getProfileSnapshot, getOrgSnapshot, fetchOrgProfile, refreshFetchedStories } from '../utils/clientData';
 import { compressGalleryImage } from '../utils/imageCompress';
 import { CHAR_LIMITS, MAX_MEDIA_SIZE_BYTES, ALLOWED_MEDIA_TYPES, DAILY_POST_LIMIT } from '../config';
@@ -317,9 +317,11 @@ function ProfilePage() {
     }
   };
 
-  // Manual claim flow: Stripe $19.99 fee first (if not already held), then the
-  // on-chain claim + verification email, then back to /me with a verifying
-  // modal. Max 3 attempts/day is enforced server-side.
+  // Claim flow: Stripe $19.99 fee first (if not already held), then the
+  // on-chain claim — ACCEPTED IMMEDIATELY (current model), so the user lands
+  // on /me with the "claim complete" modal. The pending-state UI (re-send,
+  // "being verified") is kept for the retained email-verification flow.
+  // Max 3 attempts/day is enforced server-side.
   const ZERO_IDENTITY = '0000000000000000000000000000000000000000000000000000000000000000';
   // The claim section is ONLY shown when the page was reached through the
   // claimable flow (claimable search carries ?claimable=1 on result links) —
@@ -335,7 +337,9 @@ function ProfilePage() {
       return;
     }
     if (claimPending) {
-      navigate('/me?claim=verifying');
+      // Legacy/future pending claims (the verification flow) live on
+      // notifications now — the current model accepts claims on filing.
+      navigate('/notifications');
       return;
     }
     setClaiming(true);
@@ -356,8 +360,10 @@ function ProfilePage() {
         window.location.assign(url);
         return;
       }
-      await fileClaimAndNotify(orgId, profile?.fullName || 'this organization');
-      navigate('/me?claim=verifying');
+      // Fee already held: file now — the claim is accepted server-side the
+      // moment it lands (one payment == instant ownership).
+      await fileClaim(orgId);
+      navigate(`/me?claim=done&org=${encodeURIComponent(profile?.fullName || '')}`);
     } catch (e: any) {
       alert(claimErrorMessage(e, 'Could not file the claim — please try again from the organization profile.'));
     } finally {
@@ -539,7 +545,7 @@ function ProfilePage() {
               <span>
                 {claimPending
                   ? 'Your claim is being verified — we\'ll notify you once it\'s reviewed.'
-                  : 'Claim it to become its leader. A one-time $19.99 fee applies; claims are manually verified (max 3 per day).'}
+                  : 'Claim it to become its leader. A one-time $19.99 fee applies — you take over as soon as payment completes.'}
               </span>
             </div>
             <div className="claim-banner-actions">
