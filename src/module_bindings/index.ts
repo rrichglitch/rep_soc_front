@@ -45,6 +45,7 @@ import AdminSeedOrgRemoveReducer from "./admin_seed_org_remove_reducer";
 import AdminSeedRemoveMarkerReducer from "./admin_seed_remove_marker_reducer";
 import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetGenderReducer from "./admin_set_gender_reducer";
+import AdminSetOrgRatingsReducer from "./admin_set_org_ratings_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
 import AdminTransferIdentityReducer from "./admin_transfer_identity_reducer";
 import AdminUpdateProfileReducer from "./admin_update_profile_reducer";
@@ -96,6 +97,7 @@ import * as CanDeleteGalleryPhotoProcedure from "./can_delete_gallery_photo_proc
 import * as CheckDiditVerificationProcedure from "./check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "./create_verified_profile_procedure";
 import * as GalleryUploadCountTodayProcedure from "./gallery_upload_count_today_procedure";
+import * as GetClaimDetailProcedure from "./get_claim_detail_procedure";
 import * as GetOrgMembersProcedure from "./get_org_members_procedure";
 import * as GetOrgProfileProcedure from "./get_org_profile_procedure";
 import * as GetPendingRegistrationProcedure from "./get_pending_registration_procedure";
@@ -414,6 +416,7 @@ const reducersSchema = __reducers(
   __reducerSchema("admin_seed_remove_marker", AdminSeedRemoveMarkerReducer),
   __reducerSchema("admin_set_birthday", AdminSetBirthdayReducer),
   __reducerSchema("admin_set_gender", AdminSetGenderReducer),
+  __reducerSchema("admin_set_org_ratings", AdminSetOrgRatingsReducer),
   __reducerSchema("admin_set_pro", AdminSetProReducer),
   __reducerSchema("admin_transfer_identity", AdminTransferIdentityReducer),
   __reducerSchema("admin_update_profile", AdminUpdateProfileReducer),
@@ -467,6 +470,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("check_didit_verification", CheckDiditVerificationProcedure.params, CheckDiditVerificationProcedure.returnType),
   __procedureSchema("create_verified_profile", CreateVerifiedProfileProcedure.params, CreateVerifiedProfileProcedure.returnType),
   __procedureSchema("gallery_upload_count_today", GalleryUploadCountTodayProcedure.params, GalleryUploadCountTodayProcedure.returnType),
+  __procedureSchema("get_claim_detail", GetClaimDetailProcedure.params, GetClaimDetailProcedure.returnType),
   __procedureSchema("get_org_members", GetOrgMembersProcedure.params, GetOrgMembersProcedure.returnType),
   __procedureSchema("get_org_profile", GetOrgProfileProcedure.params, GetOrgProfileProcedure.returnType),
   __procedureSchema("get_pending_registration", GetPendingRegistrationProcedure.params, GetPendingRegistrationProcedure.returnType),

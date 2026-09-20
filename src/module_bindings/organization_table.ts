@@ -29,4 +29,7 @@ export default __t.row({
   pictureUrl: __t.option(__t.string()).name("picture_url"),
   pictureSource: __t.option(__t.string()).name("picture_source"),
   seedSourceId: __t.option(__t.string()).name("seed_source_id"),
+  ratingAvg: __t.f64().name("rating_avg"),
+  ratingCount: __t.u64().name("rating_count"),
+  ratingWeight: __t.u64().name("rating_weight"),
 });

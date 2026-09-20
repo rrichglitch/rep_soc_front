@@ -17,6 +17,7 @@ import AdminSeedOrgRemoveReducer from "../admin_seed_org_remove_reducer";
 import AdminSeedRemoveMarkerReducer from "../admin_seed_remove_marker_reducer";
 import AdminSetBirthdayReducer from "../admin_set_birthday_reducer";
 import AdminSetGenderReducer from "../admin_set_gender_reducer";
+import AdminSetOrgRatingsReducer from "../admin_set_org_ratings_reducer";
 import AdminSetProReducer from "../admin_set_pro_reducer";
 import AdminTransferIdentityReducer from "../admin_transfer_identity_reducer";
 import AdminUpdateProfileReducer from "../admin_update_profile_reducer";
@@ -74,6 +75,7 @@ export type AdminSeedOrgRemoveParams = __Infer<typeof AdminSeedOrgRemoveReducer>
 export type AdminSeedRemoveMarkerParams = __Infer<typeof AdminSeedRemoveMarkerReducer>;
 export type AdminSetBirthdayParams = __Infer<typeof AdminSetBirthdayReducer>;
 export type AdminSetGenderParams = __Infer<typeof AdminSetGenderReducer>;
+export type AdminSetOrgRatingsParams = __Infer<typeof AdminSetOrgRatingsReducer>;
 export type AdminSetProParams = __Infer<typeof AdminSetProReducer>;
 export type AdminTransferIdentityParams = __Infer<typeof AdminTransferIdentityReducer>;
 export type AdminUpdateProfileParams = __Infer<typeof AdminUpdateProfileReducer>;

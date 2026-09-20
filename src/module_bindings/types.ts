@@ -24,6 +24,16 @@ export const CheckDiditResult = __t.object("CheckDiditResult", {
 });
 export type CheckDiditResult = __Infer<typeof CheckDiditResult>;
 
+export const ClaimDetail = __t.object("ClaimDetail", {
+  found: __t.bool(),
+  orgId: __t.u64(),
+  claimantHex: __t.string(),
+  status: __t.string(),
+  orgName: __t.string(),
+  stripeSessionId: __t.string(),
+});
+export type ClaimDetail = __Infer<typeof ClaimDetail>;
+
 export const CleanupSweep = __t.object("CleanupSweep", {
   scheduledId: __t.u64(),
   scheduledAt: __t.scheduleAt(),
@@ -156,6 +166,8 @@ export const GetOrgProfileResult = __t.object("GetOrgProfileResult", {
   locationLat: __t.option(__t.f64()),
   locationLng: __t.option(__t.f64()),
   locationPrecision: __t.option(__t.string()),
+  ratingAvg: __t.option(__t.f64()),
+  ratingCount: __t.option(__t.u64()),
 });
 export type GetOrgProfileResult = __Infer<typeof GetOrgProfileResult>;
 
@@ -308,6 +320,8 @@ export const MyOrg = __t.object("MyOrg", {
   leaderIdentity: __t.identity(),
   createdAt: __t.timestamp(),
   isPro: __t.bool(),
+  ratingAvg: __t.f64(),
+  ratingCount: __t.u64(),
   myRole: __t.string(),
 });
 export type MyOrg = __Infer<typeof MyOrg>;
@@ -436,6 +450,27 @@ export const OrgClaimFeeInfo = __t.object("OrgClaimFeeInfo", {
 });
 export type OrgClaimFeeInfo = __Infer<typeof OrgClaimFeeInfo>;
 
+export const OrgClaimInfo = __t.object("OrgClaimInfo", {
+  id: __t.u64(),
+  orgId: __t.u64(),
+  status: __t.string(),
+  createdAt: __t.timestamp(),
+  resolvedAt: __t.option(__t.timestamp()),
+});
+export type OrgClaimInfo = __Infer<typeof OrgClaimInfo>;
+
+export const OrgClaimRequest = __t.object("OrgClaimRequest", {
+  id: __t.u64(),
+  orgId: __t.u64(),
+  claimantIdentity: __t.identity(),
+  status: __t.string(),
+  stripeSessionId: __t.string(),
+  amountCents: __t.u32(),
+  createdAt: __t.timestamp(),
+  resolvedAt: __t.option(__t.timestamp()),
+});
+export type OrgClaimRequest = __Infer<typeof OrgClaimRequest>;
+
 export const OrgMemberRequest = __t.object("OrgMemberRequest", {
   id: __t.u64(),
   orgId: __t.u64(),
@@ -453,6 +488,14 @@ export const OrgMemberResultItem = __t.object("OrgMemberResultItem", {
   role: __t.string(),
 });
 export type OrgMemberResultItem = __Infer<typeof OrgMemberResultItem>;
+
+export const OrgRatingEntry = __t.object("OrgRatingEntry", {
+  orgId: __t.u64(),
+  rating: __t.f64(),
+  count: __t.u64(),
+  weight: __t.u64(),
+});
+export type OrgRatingEntry = __Infer<typeof OrgRatingEntry>;
 
 export const Organization = __t.object("Organization", {
   id: __t.u64(),
@@ -473,6 +516,9 @@ export const Organization = __t.object("Organization", {
   pictureUrl: __t.option(__t.string()),
   pictureSource: __t.option(__t.string()),
   seedSourceId: __t.option(__t.string()),
+  ratingAvg: __t.f64(),
+  ratingCount: __t.u64(),
+  ratingWeight: __t.u64(),
 });
 export type Organization = __Infer<typeof Organization>;
 

@@ -10,6 +10,7 @@ import * as CanDeleteGalleryPhotoProcedure from "../can_delete_gallery_photo_pro
 import * as CheckDiditVerificationProcedure from "../check_didit_verification_procedure";
 import * as CreateVerifiedProfileProcedure from "../create_verified_profile_procedure";
 import * as GalleryUploadCountTodayProcedure from "../gallery_upload_count_today_procedure";
+import * as GetClaimDetailProcedure from "../get_claim_detail_procedure";
 import * as GetOrgMembersProcedure from "../get_org_members_procedure";
 import * as GetOrgProfileProcedure from "../get_org_profile_procedure";
 import * as GetPendingRegistrationProcedure from "../get_pending_registration_procedure";
@@ -33,6 +34,8 @@ export type CreateVerifiedProfileArgs = __Infer<typeof CreateVerifiedProfileProc
 export type CreateVerifiedProfileResult = __Infer<typeof CreateVerifiedProfileProcedure.returnType>;
 export type GalleryUploadCountTodayArgs = __Infer<typeof GalleryUploadCountTodayProcedure.params>;
 export type GalleryUploadCountTodayResult = __Infer<typeof GalleryUploadCountTodayProcedure.returnType>;
+export type GetClaimDetailArgs = __Infer<typeof GetClaimDetailProcedure.params>;
+export type GetClaimDetailResult = __Infer<typeof GetClaimDetailProcedure.returnType>;
 export type GetOrgMembersArgs = __Infer<typeof GetOrgMembersProcedure.params>;
 export type GetOrgMembersResult = __Infer<typeof GetOrgMembersProcedure.returnType>;
 export type GetOrgProfileArgs = __Infer<typeof GetOrgProfileProcedure.params>;

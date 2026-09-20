@@ -10,6 +10,13 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+import {
+  OrgRatingEntry,
+} from "./types";
+
 export default {
-  targetIdentity: __t.identity(),
+  get entries() {
+    return __t.array(OrgRatingEntry);
+  },
+  adminSecret: __t.string(),
 };

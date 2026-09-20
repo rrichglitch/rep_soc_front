@@ -24,5 +24,7 @@ export default __t.row({
   leaderIdentity: __t.identity().name("leader_identity"),
   createdAt: __t.timestamp().name("created_at"),
   isPro: __t.bool().name("is_pro"),
+  ratingAvg: __t.f64().name("rating_avg"),
+  ratingCount: __t.u64().name("rating_count"),
   myRole: __t.string().name("my_role"),
 });
