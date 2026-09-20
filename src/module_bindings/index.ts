@@ -38,6 +38,10 @@ import AcceptFriendRequestReducer from "./accept_friend_request_reducer";
 import AcceptOrgMemberReducer from "./accept_org_member_reducer";
 import AddGalleryPhotoReducer from "./add_gallery_photo_reducer";
 import AdminDeleteProfileReducer from "./admin_delete_profile_reducer";
+import AdminMigrateGalleryReducer from "./admin_migrate_gallery_reducer";
+import AdminMigrateOrgsReducer from "./admin_migrate_orgs_reducer";
+import AdminMigratePlaceholdersReducer from "./admin_migrate_placeholders_reducer";
+import AdminMigratePruneReducer from "./admin_migrate_prune_reducer";
 import AdminSeedBindSourceReducer from "./admin_seed_bind_source_reducer";
 import AdminSeedOrgBeginReducer from "./admin_seed_org_begin_reducer";
 import AdminSeedOrgFinalizeReducer from "./admin_seed_org_finalize_reducer";
@@ -107,6 +111,7 @@ import * as GetProfileFriendsProcedure from "./get_profile_friends_procedure";
 import * as GetProfileGalleryProcedure from "./get_profile_gallery_procedure";
 import * as GetProfileStoriesProcedure from "./get_profile_stories_procedure";
 import * as GetRatingsProcedure from "./get_ratings_procedure";
+import * as MigrateStatusProcedure from "./migrate_status_procedure";
 import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "./record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "./search_profiles_procedure";
@@ -409,6 +414,10 @@ const reducersSchema = __reducers(
   __reducerSchema("accept_org_member", AcceptOrgMemberReducer),
   __reducerSchema("add_gallery_photo", AddGalleryPhotoReducer),
   __reducerSchema("admin_delete_profile", AdminDeleteProfileReducer),
+  __reducerSchema("admin_migrate_gallery", AdminMigrateGalleryReducer),
+  __reducerSchema("admin_migrate_orgs", AdminMigrateOrgsReducer),
+  __reducerSchema("admin_migrate_placeholders", AdminMigratePlaceholdersReducer),
+  __reducerSchema("admin_migrate_prune", AdminMigratePruneReducer),
   __reducerSchema("admin_seed_bind_source", AdminSeedBindSourceReducer),
   __reducerSchema("admin_seed_org_begin", AdminSeedOrgBeginReducer),
   __reducerSchema("admin_seed_org_finalize", AdminSeedOrgFinalizeReducer),
@@ -480,6 +489,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("get_profile_gallery", GetProfileGalleryProcedure.params, GetProfileGalleryProcedure.returnType),
   __procedureSchema("get_profile_stories", GetProfileStoriesProcedure.params, GetProfileStoriesProcedure.returnType),
   __procedureSchema("get_ratings", GetRatingsProcedure.params, GetRatingsProcedure.returnType),
+  __procedureSchema("migrate_status", MigrateStatusProcedure.params, MigrateStatusProcedure.returnType),
   __procedureSchema("oauth_claim_profile", OauthClaimProfileProcedure.params, OauthClaimProfileProcedure.returnType),
   __procedureSchema("record_pending_registration", RecordPendingRegistrationProcedure.params, RecordPendingRegistrationProcedure.returnType),
   __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),

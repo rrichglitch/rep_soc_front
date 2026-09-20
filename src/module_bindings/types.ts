@@ -218,6 +218,48 @@ export const Message = __t.object("Message", {
 });
 export type Message = __Infer<typeof Message>;
 
+export const MigrateGallery = __t.object("MigrateGallery", {
+  orgId: __t.u64(),
+  s3Key: __t.string(),
+  url: __t.string(),
+  bytes: __t.u64(),
+  createdAtMicros: __t.u64(),
+  sourceUrl: __t.string(),
+  sourceTitle: __t.string(),
+});
+export type MigrateGallery = __Infer<typeof MigrateGallery>;
+
+export const MigrateOrg = __t.object("MigrateOrg", {
+  id: __t.u64(),
+  name: __t.string(),
+  city: __t.string(),
+  description: __t.string(),
+  picture: __t.string(),
+  pictureSmall: __t.string(),
+  pictureUrl: __t.string(),
+  pictureSource: __t.string(),
+  seedSourceId: __t.string(),
+  isPro: __t.bool(),
+  createdAtMicros: __t.u64(),
+  locationPrecision: __t.string(),
+  hideMembers: __t.bool(),
+  hasLocation: __t.bool(),
+  lat: __t.f64(),
+  lng: __t.f64(),
+  ratingAvg: __t.f64(),
+  ratingCount: __t.u64(),
+  ratingWeight: __t.u64(),
+});
+export type MigrateOrg = __Infer<typeof MigrateOrg>;
+
+export const MigrateStatus = __t.object("MigrateStatus", {
+  total: __t.u64(),
+  seeded: __t.u64(),
+  placeholders: __t.u64(),
+  galleryRows: __t.u64(),
+});
+export type MigrateStatus = __Infer<typeof MigrateStatus>;
+
 export const MonthlyVerificationCap = __t.object("MonthlyVerificationCap", {
   monthKey: __t.string(),
   completedCount: __t.u32(),
