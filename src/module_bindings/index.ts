@@ -51,6 +51,7 @@ import AdminSetBirthdayReducer from "./admin_set_birthday_reducer";
 import AdminSetGenderReducer from "./admin_set_gender_reducer";
 import AdminSetOrgRatingsReducer from "./admin_set_org_ratings_reducer";
 import AdminSetProReducer from "./admin_set_pro_reducer";
+import AdminSweepPurgeReducer from "./admin_sweep_purge_reducer";
 import AdminTransferIdentityReducer from "./admin_transfer_identity_reducer";
 import AdminUpdateProfileReducer from "./admin_update_profile_reducer";
 import CancelFriendRequestReducer from "./cancel_friend_request_reducer";
@@ -116,6 +117,7 @@ import * as OauthClaimProfileProcedure from "./oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "./record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "./search_profiles_procedure";
 import * as SeedOrgStatusProcedure from "./seed_org_status_procedure";
+import * as SweepStatusProcedure from "./sweep_status_procedure";
 import * as WhoamiProcedure from "./whoami_procedure";
 
 // Import all table schema definitions
@@ -427,6 +429,7 @@ const reducersSchema = __reducers(
   __reducerSchema("admin_set_gender", AdminSetGenderReducer),
   __reducerSchema("admin_set_org_ratings", AdminSetOrgRatingsReducer),
   __reducerSchema("admin_set_pro", AdminSetProReducer),
+  __reducerSchema("admin_sweep_purge", AdminSweepPurgeReducer),
   __reducerSchema("admin_transfer_identity", AdminTransferIdentityReducer),
   __reducerSchema("admin_update_profile", AdminUpdateProfileReducer),
   __reducerSchema("cancel_friend_request", CancelFriendRequestReducer),
@@ -494,6 +497,7 @@ const proceduresSchema = __procedures(
   __procedureSchema("record_pending_registration", RecordPendingRegistrationProcedure.params, RecordPendingRegistrationProcedure.returnType),
   __procedureSchema("search_profiles", SearchProfilesProcedure.params, SearchProfilesProcedure.returnType),
   __procedureSchema("seed_org_status", SeedOrgStatusProcedure.params, SeedOrgStatusProcedure.returnType),
+  __procedureSchema("sweep_status", SweepStatusProcedure.params, SweepStatusProcedure.returnType),
   __procedureSchema("whoami", WhoamiProcedure.params, WhoamiProcedure.returnType),
 );
 

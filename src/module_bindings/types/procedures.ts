@@ -25,6 +25,7 @@ import * as OauthClaimProfileProcedure from "../oauth_claim_profile_procedure";
 import * as RecordPendingRegistrationProcedure from "../record_pending_registration_procedure";
 import * as SearchProfilesProcedure from "../search_profiles_procedure";
 import * as SeedOrgStatusProcedure from "../seed_org_status_procedure";
+import * as SweepStatusProcedure from "../sweep_status_procedure";
 import * as WhoamiProcedure from "../whoami_procedure";
 
 export type CanDeleteGalleryPhotoArgs = __Infer<typeof CanDeleteGalleryPhotoProcedure.params>;
@@ -65,6 +66,8 @@ export type SearchProfilesArgs = __Infer<typeof SearchProfilesProcedure.params>;
 export type SearchProfilesResult = __Infer<typeof SearchProfilesProcedure.returnType>;
 export type SeedOrgStatusArgs = __Infer<typeof SeedOrgStatusProcedure.params>;
 export type SeedOrgStatusResult = __Infer<typeof SeedOrgStatusProcedure.returnType>;
+export type SweepStatusArgs = __Infer<typeof SweepStatusProcedure.params>;
+export type SweepStatusResult = __Infer<typeof SweepStatusProcedure.returnType>;
 export type WhoamiArgs = __Infer<typeof WhoamiProcedure.params>;
 export type WhoamiResult = __Infer<typeof WhoamiProcedure.returnType>;
 

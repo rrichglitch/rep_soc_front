@@ -851,6 +851,12 @@ export const StoryResultItem = __t.object("StoryResultItem", {
 });
 export type StoryResultItem = __Infer<typeof StoryResultItem>;
 
+export const SweepStatus = __t.object("SweepStatus", {
+  rows: __t.u64(),
+  maxId: __t.u64(),
+});
+export type SweepStatus = __Infer<typeof SweepStatus>;
+
 export const UserBirthday = __t.object("UserBirthday", {
   identity: __t.identity(),
   birthday: __t.string(),
